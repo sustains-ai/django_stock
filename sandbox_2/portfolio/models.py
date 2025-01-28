@@ -3,6 +3,8 @@ from django.db import models
 # Create your models here.
 from django.contrib.auth.models import User
 from django.db import models
+import yfinance as yf
+
 
 class Institute(models.Model):
     name = models.CharField(max_length=255)
@@ -26,13 +28,15 @@ class Portfolio(models.Model):
     def __str__(self):
         return f"{self.name} ({self.fund_manager.user.username})"
 
-import yfinance as yf
+
+
 
 class Stock(models.Model):
     portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name="stocks")
     symbol = models.CharField(max_length=10)  # Stock ticker symbol
     name = models.CharField(max_length=255)
     quantity = models.PositiveIntegerField(default=1)  # Number of shares owned
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Manually entered price
     added_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -48,9 +52,10 @@ class Stock(models.Model):
             return None
 
     def get_total_value(self):
-        """Calculate the total value of the stock based on live price."""
-        live_price = self.get_live_price()
+        """Calculate the total value of the stock."""
+        if self.price:  # Use manually entered price if available
+            return self.price * self.quantity
+        live_price = self.get_live_price()  # Fallback to live price
         if live_price:
             return live_price * self.quantity
         return 0
-

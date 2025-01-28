@@ -1,11 +1,17 @@
 from django.shortcuts import render, redirect
 from .models import Portfolio, FundManager
 from .forms import StockForm, PortfolioForm
-import yfinance as yf
-import riskfolio as rp
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 from django.contrib import messages
+import yfinance as yf
+import riskfolio as rp
+import matplotlib.pyplot as plt
+import io
+import base64
+from django.shortcuts import render, get_object_or_404
+from .models import Portfolio
+
 
 def index(request):
     return render(request, 'portfolio/index.html')
@@ -47,82 +53,40 @@ def add_stock(request):
 
 
 
-import yfinance as yf
-import riskfolio as rp
-import matplotlib.pyplot as plt
-import io
-import base64
-from django.shortcuts import render, get_object_or_404
-from .models import Portfolio
 
 def analyze_portfolio(request, portfolio_id):
     portfolio = get_object_or_404(Portfolio, id=portfolio_id, fund_manager__user=request.user)
     stocks = portfolio.stocks.all()
 
-    # Fetch stock symbols
-    tickers = [stock.symbol for stock in stocks]
-    if not tickers:
-        return render(request, 'portfolio/analyze_portfolio.html', {
-            'portfolio': portfolio,
-            'weights': {},
-            'report': "No stocks available in the portfolio for analysis.",
-            'allocation_chart': None,
-        })
+    stock_data = []
+    total_value = 0
 
-    # Fetch data from Yahoo Finance
-    data = yf.download(tickers, period="1y", interval="1d")
+    for stock in stocks:
+        manual_price = stock.price
+        live_price = stock.get_live_price()
+        price = manual_price if manual_price else live_price
 
-    # Check if 'Adj Close' column exists
-    if 'Adj Close' not in data:
-        return render(request, 'portfolio/analyze_portfolio.html', {
-            'portfolio': portfolio,
-            'weights': {},
-            'report': "Failed to fetch adjusted close prices. Please check the stock symbols.",
-            'allocation_chart': None,
-        })
+        if price:  # Only process stocks with valid prices
+            stock_total = price * stock.quantity
+            total_value += stock_total
 
-    # Extract the 'Adj Close' column and handle missing data
-    data = data['Adj Close'].dropna(how='all')
-    if data.empty:
-        return render(request, 'portfolio/analyze_portfolio.html', {
-            'portfolio': portfolio,
-            'weights': {},
-            'report': "No valid stock data available for the selected portfolio.",
-            'allocation_chart': None,
-        })
+            stock_data.append({
+                'name': stock.name,
+                'symbol': stock.symbol,
+                'quantity': stock.quantity,
+                'manual_price': manual_price,
+                'live_price': live_price,
+                'total_value': stock_total,
+            })
 
-    # Perform risk analysis with Riskfolio-Lib
-    model = rp.HCPortfolio(returns=data.pct_change().dropna())
-    try:
-        weights = model.optimization(model="Classic", rm="MV", rf=0, l=0)
-        report = model.risk_contribution(weights)
-    except ValueError as e:
-        return render(request, 'portfolio/analyze_portfolio.html', {
-            'portfolio': portfolio,
-            'weights': {},
-            'report': f"Error during analysis: {str(e)}",
-            'allocation_chart': None,
-        })
-
-    # Generate a pie chart for portfolio allocation
-    plt.figure(figsize=(6, 4))
-    weights.plot(kind='pie', autopct='%1.1f%%', legend=False)
-    plt.title("Portfolio Allocation")
-    plt.ylabel("")
-
-    # Save the chart to a URL
-    buf = io.BytesIO()
-    plt.savefig(buf, format='png', bbox_inches='tight')
-    buf.seek(0)
-    allocation_chart = base64.b64encode(buf.read()).decode('utf-8')
-    buf.close()
+    print("DEBUG STOCK DATA:", stock_data)  # Print debug info
 
     return render(request, 'portfolio/analyze_portfolio.html', {
         'portfolio': portfolio,
-        'weights': weights.to_dict(),
-        'report': report.to_dict(),
-        'allocation_chart': allocation_chart,
+        'stock_data': stock_data,
+        'total_value': total_value,
     })
+
 
 
 
