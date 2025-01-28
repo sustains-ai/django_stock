@@ -5,6 +5,7 @@ import yfinance as yf
 import riskfolio as rp
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
+from django.contrib import messages
 
 def index(request):
     return render(request, 'portfolio/index.html')
@@ -95,3 +96,11 @@ def analyze_portfolio(request, portfolio_id):
         'weights': weights.to_dict(),
         'report': report.to_dict(),
     })
+
+def delete_portfolio(request, portfolio_id):
+    if request.method == "POST":
+        portfolio = get_object_or_404(Portfolio, id=portfolio_id)
+        portfolio_name = portfolio.name
+        portfolio.delete()
+        messages.success(request, f'Portfolio "{portfolio_name}" has been deleted successfully.')
+    return redirect('portfolio_list')

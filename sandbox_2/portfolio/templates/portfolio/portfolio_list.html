@@ -1,54 +1,35 @@
+{% extends 'portfolio/base.html' %}
 
-<!--<h1>Your Portfolios</h1>-->
-<!--<ul>-->
-<!--    {% for portfolio in portfolios %}-->
-<!--    <li>-->
-<!--        {{ portfolio.name }}-->
-<!--        <a href="{% url 'analyze_portfolio' portfolio.id %}">Analyze</a>-->
-<!--    </li>-->
-<!--    {% endfor %}-->
-<!--</ul>-->
-<!--<a href="{% url 'add_portfolio' %}">Add Portfolio</a>-->
-<!--<a href="{% url 'add_stock' %}">Add Stock</a>-->
+{% block title %}Your Portfolios{% endblock %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Portfolios</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 min-h-screen flex flex-col items-center p-4">
-
-    <div class="w-full max-w-4xl bg-white shadow-lg rounded-lg p-6">
-        <h1 class="text-2xl font-bold text-center mb-6 text-gray-800">Your Portfolios</h1>
-
-        <ul class="space-y-4">
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-header bg-success text-white text-center">
+        <h2>Your Portfolios</h2>
+    </div>
+    <div class="card-body">
+        <ul class="list-group mb-3">
             {% for portfolio in portfolios %}
-            <li class="flex justify-between items-center bg-gray-50 p-4 rounded-lg shadow">
-                <span class="font-semibold text-gray-700">{{ portfolio.name }}</span>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>{{ portfolio.name }}</span>
                 <div>
-                    <a href="{% url 'analyze_portfolio' portfolio.id %}"
-                       class="text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded shadow">
+                    <a href="{% url 'analyze_portfolio' portfolio.id %}" class="btn btn-primary btn-sm me-2">
                         Analyze
                     </a>
+                    <form action="{% url 'delete_portfolio' portfolio.id %}" method="POST" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            Delete
+                        </button>
+                    </form>
                 </div>
             </li>
             {% endfor %}
         </ul>
-
-        <div class="mt-6 flex justify-between">
-            <a href="{% url 'add_portfolio' %}"
-               class="text-sm font-medium text-white bg-green-500 hover:bg-green-600 px-4 py-2 rounded shadow">
-                Add Portfolio
-            </a>
-            <a href="{% url 'add_stock' %}"
-               class="text-sm font-medium text-white bg-purple-500 hover:bg-purple-600 px-4 py-2 rounded shadow">
-                Add Stock
-            </a>
+        <div class="d-flex justify-content-between">
+            <a href="{% url 'add_portfolio' %}" class="btn btn-success">Add Portfolio</a>
+            <a href="{% url 'add_stock' %}" class="btn btn-secondary">Add Stock</a>
         </div>
     </div>
-
-</body>
-</html>
+</div>
+{% endblock %}
