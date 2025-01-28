@@ -1,0 +1,23 @@
+
+
+/* Custom header background and text color */
+.custom-header {
+    background-color: #0ABF53; /* Vibrant green */
+    color: #FFFFFF; /* White text */
+}
+
+/* Custom footer background and text color */
+.custom-footer {
+    background-color: #0ABF53; /* Vibrant green */
+    color: #FFFFFF; /* White text */
+}
+
+/* Custom link color */
+.custom-link {
+    color: #FFFFFF; /* White text */
+    text-decoration: none; /* Remove underline */
+}
+
+.custom-link:hover {
+    color: #E0E0E0; /* Light gray on hover */
+}

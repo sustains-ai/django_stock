@@ -1,0 +1,13 @@
+<h1>Risk Analysis for {{ portfolio.name }}</h1>
+<h2>Weights</h2>
+<ul>
+    {% for stock, weight in weights.items %}
+    <li>{{ stock }}: {{ weight|floatformat:2 }}</li>
+    {% endfor %}
+</ul>
+<h2>Risk Contribution</h2>
+<ul>
+    {% for risk, value in report.items %}
+    <li>{{ risk }}: {{ value|floatformat:2 }}</li>
+    {% endfor %}
+</ul>

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Welcome, {{ user.username }}</h1>
+<h2>Your Portfolios</h2>
+<ul>
+    {% for portfolio in portfolios %}
+    <li><a href="{% url 'portfolio_details' portfolio.id %}">{{ portfolio.name }}</a></li>
+    {% endfor %}
+</ul>
+{% endblock %}

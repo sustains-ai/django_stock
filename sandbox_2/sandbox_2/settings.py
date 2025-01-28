@@ -25,7 +25,7 @@ SECRET_KEY = "django-insecure-6343glt(nkn1shlr$-a*bo0+)-8ve)q4y!q=2^6ft6%!)kb5i#
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "sandbox_2.herokuapp.com"]
 
 
 # Application definition
@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "portfolio",
 ]
 
 MIDDLEWARE = [
@@ -54,7 +55,7 @@ ROOT_URLCONF = "sandbox_2.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],  # Custom templates folder
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -121,3 +122,12 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+
+# Authentication redirects
+LOGIN_URL = "/accounts/login/"  # Redirects to the login page if user isn't authenticated
+LOGIN_REDIRECT_URL = "/"  # Redirects after a successful login
+LOGOUT_REDIRECT_URL = "/accounts/login/"  # Redirects after logout
+
+

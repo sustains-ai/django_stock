@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Portfolio: {{ portfolio.name }}</h1>
+<h2>Stocks</h2>
+<ul>
+    {% for stock in stocks %}
+    <li>{{ stock.name }} ({{ stock.symbol }})</li>
+    {% endfor %}
+</ul>
+
+<h2>Risk Analysis</h2>
+<pre>{{ analysis }}</pre>
+{% endblock %}
