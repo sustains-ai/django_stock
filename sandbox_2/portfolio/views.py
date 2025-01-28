@@ -44,6 +44,17 @@ def add_stock(request):
     return render(request, 'portfolio/add_stock.html', {'form': form})
 
 
+
+
+
+import yfinance as yf
+import riskfolio as rp
+import matplotlib.pyplot as plt
+import io
+import base64
+from django.shortcuts import render, get_object_or_404
+from .models import Portfolio
+
 def analyze_portfolio(request, portfolio_id):
     portfolio = get_object_or_404(Portfolio, id=portfolio_id, fund_manager__user=request.user)
     stocks = portfolio.stocks.all()
@@ -55,10 +66,10 @@ def analyze_portfolio(request, portfolio_id):
             'portfolio': portfolio,
             'weights': {},
             'report': "No stocks available in the portfolio for analysis.",
+            'allocation_chart': None,
         })
 
     # Fetch data from Yahoo Finance
-    import yfinance as yf
     data = yf.download(tickers, period="1y", interval="1d")
 
     # Check if 'Adj Close' column exists
@@ -67,6 +78,7 @@ def analyze_portfolio(request, portfolio_id):
             'portfolio': portfolio,
             'weights': {},
             'report': "Failed to fetch adjusted close prices. Please check the stock symbols.",
+            'allocation_chart': None,
         })
 
     # Extract the 'Adj Close' column and handle missing data
@@ -76,10 +88,10 @@ def analyze_portfolio(request, portfolio_id):
             'portfolio': portfolio,
             'weights': {},
             'report': "No valid stock data available for the selected portfolio.",
+            'allocation_chart': None,
         })
 
     # Perform risk analysis with Riskfolio-Lib
-    import riskfolio as rp
     model = rp.HCPortfolio(returns=data.pct_change().dropna())
     try:
         weights = model.optimization(model="Classic", rm="MV", rf=0, l=0)
@@ -89,13 +101,33 @@ def analyze_portfolio(request, portfolio_id):
             'portfolio': portfolio,
             'weights': {},
             'report': f"Error during analysis: {str(e)}",
+            'allocation_chart': None,
         })
+
+    # Generate a pie chart for portfolio allocation
+    plt.figure(figsize=(6, 4))
+    weights.plot(kind='pie', autopct='%1.1f%%', legend=False)
+    plt.title("Portfolio Allocation")
+    plt.ylabel("")
+
+    # Save the chart to a URL
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png', bbox_inches='tight')
+    buf.seek(0)
+    allocation_chart = base64.b64encode(buf.read()).decode('utf-8')
+    buf.close()
 
     return render(request, 'portfolio/analyze_portfolio.html', {
         'portfolio': portfolio,
         'weights': weights.to_dict(),
         'report': report.to_dict(),
+        'allocation_chart': allocation_chart,
     })
+
+
+
+
+
 
 def delete_portfolio(request, portfolio_id):
     if request.method == "POST":
