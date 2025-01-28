@@ -1,11 +1,54 @@
-<h1>Your Portfolios</h1>
-<ul>
-    {% for portfolio in portfolios %}
-    <li>
-        {{ portfolio.name }}
-        <a href="{% url 'analyze_portfolio' portfolio.id %}">Analyze</a>
-    </li>
-    {% endfor %}
-</ul>
-<a href="{% url 'add_portfolio' %}">Add Portfolio</a>
-<a href="{% url 'add_stock' %}">Add Stock</a>
+
+<!--<h1>Your Portfolios</h1>-->
+<!--<ul>-->
+<!--    {% for portfolio in portfolios %}-->
+<!--    <li>-->
+<!--        {{ portfolio.name }}-->
+<!--        <a href="{% url 'analyze_portfolio' portfolio.id %}">Analyze</a>-->
+<!--    </li>-->
+<!--    {% endfor %}-->
+<!--</ul>-->
+<!--<a href="{% url 'add_portfolio' %}">Add Portfolio</a>-->
+<!--<a href="{% url 'add_stock' %}">Add Stock</a>-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Portfolios</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center p-4">
+
+    <div class="w-full max-w-4xl bg-white shadow-lg rounded-lg p-6">
+        <h1 class="text-2xl font-bold text-center mb-6 text-gray-800">Your Portfolios</h1>
+
+        <ul class="space-y-4">
+            {% for portfolio in portfolios %}
+            <li class="flex justify-between items-center bg-gray-50 p-4 rounded-lg shadow">
+                <span class="font-semibold text-gray-700">{{ portfolio.name }}</span>
+                <div>
+                    <a href="{% url 'analyze_portfolio' portfolio.id %}"
+                       class="text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded shadow">
+                        Analyze
+                    </a>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <div class="mt-6 flex justify-between">
+            <a href="{% url 'add_portfolio' %}"
+               class="text-sm font-medium text-white bg-green-500 hover:bg-green-600 px-4 py-2 rounded shadow">
+                Add Portfolio
+            </a>
+            <a href="{% url 'add_stock' %}"
+               class="text-sm font-medium text-white bg-purple-500 hover:bg-purple-600 px-4 py-2 rounded shadow">
+                Add Stock
+            </a>
+        </div>
+    </div>
+
+</body>
+</html>

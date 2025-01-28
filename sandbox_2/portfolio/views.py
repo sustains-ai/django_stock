@@ -6,6 +6,11 @@ import riskfolio as rp
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 
+def index(request):
+    return render(request, 'portfolio/index.html')
+
+
+
 def portfolio_list(request):
     portfolios = Portfolio.objects.filter(fund_manager__user=request.user)
     return render(request, 'portfolio/portfolio_list.html', {'portfolios': portfolios})

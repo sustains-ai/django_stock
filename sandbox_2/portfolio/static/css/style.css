@@ -1,23 +1,16 @@
 
+<style>
+    .navbar-custom {
+        background-color: #0ABF53; /* Your desired green color */
+        color: #ffffff; /* Optional: text color */
+    }
 
-/* Custom header background and text color */
-.custom-header {
-    background-color: #0ABF53; /* Vibrant green */
-    color: #FFFFFF; /* White text */
-}
+    .navbar-custom .nav-link {
+        color: #ffffff; /* Ensure the link text is visible */
+    }
 
-/* Custom footer background and text color */
-.custom-footer {
-    background-color: #0ABF53; /* Vibrant green */
-    color: #FFFFFF; /* White text */
-}
-
-/* Custom link color */
-.custom-link {
-    color: #FFFFFF; /* White text */
-    text-decoration: none; /* Remove underline */
-}
-
-.custom-link:hover {
-    color: #E0E0E0; /* Light gray on hover */
-}
+    .navbar-custom .nav-link:hover {
+        text-decoration: underline;
+        color: #d4d4d4; /* Optional: hover color */
+    }
+</style>
