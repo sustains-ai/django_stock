@@ -45,7 +45,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "sandbox_2.portfolio",
+    "portfolio",
 ]
 
 MIDDLEWARE = [
