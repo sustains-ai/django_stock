@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
-
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -22,10 +22,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "django-insecure-6343glt(nkn1shlr$-a*bo0+)-8ve)q4y!q=2^6ft6%!)kb5i#"
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+SECRET_KEY = os.getenv("SECRET_KEY")
+DEBUG = os.getenv("DEBUG") == "True"
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "sandbox_2.herokuapp.com"]
+# SECURITY WARNING: don't run with debug turned on in production!
+
+
+# ALLOWED_HOSTS = ["localhost", "127.0.0.1", "sandbox_2.herokuapp.com"]
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
 
 # Application definition
