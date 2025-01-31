@@ -4,7 +4,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.db import models
 import yfinance as yf
-
+from django.utils.timezone import now
 
 class Institute(models.Model):
     name = models.CharField(max_length=255)
@@ -59,3 +59,15 @@ class Stock(models.Model):
         if live_price:
             return live_price * self.quantity
         return 0
+
+class HistoricalStockData(models.Model):
+    portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name="historical_data")
+    symbol = models.CharField(max_length=10)  # Stock ticker
+    date = models.DateField()  # Date of the stock price
+    adjusted_close = models.FloatField()  # Adjusted closing price
+
+    class Meta:
+        unique_together = ('portfolio', 'symbol', 'date')  # Ensure unique data per portfolio
+
+    def __str__(self):
+        return f"{self.portfolio.name} - {self.symbol} - {self.date}: {self.adjusted_close}"

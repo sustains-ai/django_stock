@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from .models import Portfolio, FundManager
+from .models import Portfolio, FundManager,HistoricalStockData
 from .forms import StockForm, PortfolioForm
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
@@ -10,6 +10,10 @@ import matplotlib.pyplot as plt
 import io
 import base64
 from django.shortcuts import render, get_object_or_404
+from django.urls import reverse
+
+
+
 
 
 
@@ -39,20 +43,72 @@ def add_portfolio(request):
         form = PortfolioForm()
     return render(request, 'portfolio/add_portfolio.html', {'form': form})
 
+# def add_stock(request):
+#     if request.method == 'POST':
+#         form = StockForm(request.POST)
+#         if form.is_valid():
+#             form.save()
+#             return redirect('portfolio_list')
+#     else:
+#         form = StockForm()
+#     return render(request, 'portfolio/add_stock.html', {'form': form})
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Portfolio, Stock
+from .utils import fetch_and_store_historical_data  # Import function
+from .forms import StockForm  # Assuming you have a StockForm
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Portfolio, Stock
+from .utils import fetch_and_store_historical_data  # Import function
+from .forms import StockForm  # Assuming you have a StockForm
+
 def add_stock(request):
-    if request.method == 'POST':
+    portfolios = Portfolio.objects.filter(fund_manager__user=request.user)  # Get fund manager's portfolios
+
+    if request.method == "POST":
         form = StockForm(request.POST)
+
         if form.is_valid():
-            form.save()
-            return redirect('portfolio_list')
+            stock = form.save(commit=False)
+
+            # ✅ Get portfolio ID from the form dropdown
+            portfolio_id = request.POST.get("portfolio_id")
+            if not portfolio_id:
+                return render(request, "portfolio/add_stock.html", {
+                    "form": form,
+                    "portfolios": portfolios,
+                    "error": "Please select a portfolio!"
+                })
+
+            stock.portfolio = get_object_or_404(Portfolio, id=portfolio_id)
+            stock.save()
+
+            # ✅ Fetch historical data only if not already stored
+            existing_data = HistoricalStockData.objects.filter(
+                portfolio=stock.portfolio, symbol=stock.symbol
+            ).exists()
+            if not existing_data:
+                fetch_and_store_historical_data(stock.portfolio.id, stock.symbol)
+
+            return redirect("portfolio_list")
+
     else:
         form = StockForm()
-    return render(request, 'portfolio/add_stock.html', {'form': form})
+
+    return render(request, "portfolio/add_stock.html", {
+        "form": form,
+        "portfolios": portfolios
+    })
 
 
 
 
 
+
+
+from django.shortcuts import render, get_object_or_404
+from .models import Portfolio, HistoricalStockData
 
 def analyze_portfolio(request, portfolio_id):
     portfolio = get_object_or_404(Portfolio, id=portfolio_id, fund_manager__user=request.user)
@@ -60,6 +116,7 @@ def analyze_portfolio(request, portfolio_id):
 
     stock_data = []
     total_value = 0
+    historical_data = {}  # ✅ Ensure this is always initialized
 
     for stock in stocks:
         manual_price = stock.price
@@ -79,13 +136,27 @@ def analyze_portfolio(request, portfolio_id):
                 'total_value': stock_total,
             })
 
-    print("DEBUG STOCK DATA:", stock_data)  # Print debug info
+            # Fetch historical data for price fluctuation graph
+            historical_prices = HistoricalStockData.objects.filter(
+                portfolio=portfolio, symbol=stock.symbol
+            ).order_by("date")
+
+            if historical_prices.exists():
+                historical_data[stock.symbol] = {
+                    "dates": [data.date.strftime("%Y-%m-%d") for data in historical_prices],
+                    "prices": [data.adjusted_close for data in historical_prices],
+                }
+
+    print("DEBUG STOCK DATA:", stock_data)  # Debugging Pie Chart Data
+    print("DEBUG HISTORICAL DATA:", historical_data)  # Debugging Line Chart Data
 
     return render(request, 'portfolio/analyze_portfolio.html', {
         'portfolio': portfolio,
-        'stock_data': stock_data,
+        'stock_data': stock_data,  # Used for Pie Chart
         'total_value': total_value,
+        'historical_data': historical_data  # Used for Price Fluctuation Graph
     })
+
 
 
 

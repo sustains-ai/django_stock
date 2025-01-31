@@ -1,6 +1,29 @@
 <h1>Add Stock</h1>
+
 <form method="post">
     {% csrf_token %}
+
+    <!-- Portfolio Selection Dropdown -->
+    <label for="portfolio_id">Select Portfolio:</label>
+    <select name="portfolio_id" id="portfolio_id" required>
+        <option value="">-- Select Portfolio --</option>
+        {% for portfolio in portfolios %}
+            <option value="{{ portfolio.id }}">{{ portfolio.name }}</option>
+        {% endfor %}
+    </select>
+
+    <!-- Stock Form Fields -->
     {{ form.as_p }}
-    <button type="submit">Add</button>
+
+    <button type="submit">Add Stock</button>
 </form>
+<!--<h1>Add Stock</h1>-->
+
+<!--<form method="post">-->
+<!--    {% csrf_token %}-->
+
+<!--    &lt;!&ndash; Stock Form Fields (Including Portfolio) &ndash;&gt;-->
+<!--    {{ form.as_p }}-->
+
+<!--    <button type="submit">Add Stock</button>-->
+<!--</form>-->
