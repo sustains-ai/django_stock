@@ -1,6 +1,7 @@
 {% extends 'portfolio/base.html' %}
 
 {% block title %}Analyze Portfolio: {{ portfolio.name }}{% endblock %}
+{% load custom_filters %}
 
 {% block content %}
 <div class="container mt-4">
@@ -59,6 +60,38 @@
         <canvas id="stockChart"></canvas>
     </div>
 
+    <!-- Portfolio Optimization Results -->
+    {% if portfolio_analysis %}
+        <h3>Portfolio Risk Analysis</h3>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Stock Symbol</th>
+                    <th>Mean-Variance (MV) Weight</th>
+                    <th>Conditional Value at Risk (CVaR) Weight</th>
+                    <th>Equal Risk Contribution (ERC) Weight</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for symbol, weight in portfolio_analysis.mean_variance.items %}
+                <tr>
+                    <td>{{ symbol }}</td>
+                    <td>{{ weight|floatformat:4 }}</td>
+                    <td>{{ portfolio_analysis.cvar|get_item:symbol|floatformat:4 }}</td>
+                    <td>{{ portfolio_analysis.erc|get_item:symbol|floatformat:4 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Risk-Based Portfolio Allocation Chart -->
+        <h3>Risk-Based Portfolio Allocations</h3>
+        <div class="chart-container">
+            <canvas id="riskAllocationChart"></canvas>
+        </div>
+    {% else %}
+        <p class="text-danger">No risk analysis data available.</p>
+    {% endif %}
 </div>
 
 <style>
@@ -69,7 +102,7 @@
         justify-content: flex-start; /* Align left */
         align-items: center;
     }
-    #portfolioChart, #stockChart {
+    #portfolioChart, #stockChart, #riskAllocationChart {
         max-width: 100%;
         max-height: 100%;
     }
@@ -134,6 +167,32 @@
                 scales: {
                     x: { title: { display: true, text: 'Date' } },
                     y: { title: { display: true, text: 'Price (Adjusted Close)' } }
+                }
+            }
+        });
+
+        // Risk-Based Portfolio Allocation Chart
+        const riskCtx = document.getElementById("riskAllocationChart").getContext("2d");
+        const symbols = Object.keys({{ portfolio_analysis.mean_variance|safe }});
+        const mvWeights = Object.values({{ portfolio_analysis.mean_variance|safe }});
+        const cvarWeights = Object.values({{ portfolio_analysis.cvar|safe }});
+        const ercWeights = Object.values({{ portfolio_analysis.erc|safe }});
+
+        new Chart(riskCtx, {
+            type: 'bar',
+            data: {
+                labels: symbols,
+                datasets: [
+                    { label: "Mean-Variance", data: mvWeights, backgroundColor: 'rgba(255, 99, 132, 0.6)' },
+                    { label: "CVaR", data: cvarWeights, backgroundColor: 'rgba(54, 162, 235, 0.6)' },
+                    { label: "ERC", data: ercWeights, backgroundColor: 'rgba(75, 192, 192, 0.6)' }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Allocation (%)' } }
                 }
             }
         });

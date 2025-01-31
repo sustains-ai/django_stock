@@ -138,4 +138,5 @@ LOGIN_URL = "/accounts/login/"  # Redirects to the login page if user isn't auth
 LOGIN_REDIRECT_URL = "/"  # Redirects after a successful login
 LOGOUT_REDIRECT_URL = "/accounts/login/"  # Redirects after logout
 
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
