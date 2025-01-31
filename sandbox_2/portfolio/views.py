@@ -102,47 +102,14 @@ def add_stock(request):
     })
 
 
-import pandas as pd
-import riskfolio as rp
+
+
+
+
 from django.shortcuts import render, get_object_or_404
-from .models import Portfolio, HistoricalStockData
-
 import pandas as pd
-import riskfolio as rp
-from django.shortcuts import render, get_object_or_404
 from .models import Portfolio, HistoricalStockData
-
-
-import pandas as pd
-import riskfolio as rp
-from django.shortcuts import render, get_object_or_404
-from .models import Portfolio, HistoricalStockData
-
-import pandas as pd
-import riskfolio as rp
-from django.shortcuts import render, get_object_or_404
-from .models import Portfolio, HistoricalStockData
-
-import pandas as pd
-import riskfolio as rp
-from django.shortcuts import render, get_object_or_404
-from .models import Portfolio, HistoricalStockData
-
-import pandas as pd
-import riskfolio as rp
-from django.shortcuts import render, get_object_or_404
-from .models import Portfolio, HistoricalStockData
-
-import pandas as pd
-import riskfolio as rp
-from django.shortcuts import render, get_object_or_404
-from .models import Portfolio, HistoricalStockData
-
-
-import pandas as pd
-import riskfolio as rp
-from django.shortcuts import render, get_object_or_404
-from .models import Portfolio, HistoricalStockData
+from .risk_analysis import perform_risk_analysis  # Import new function
 
 def analyze_portfolio(request, portfolio_id):
     portfolio = get_object_or_404(Portfolio, id=portfolio_id, fund_manager__user=request.user)
@@ -150,23 +117,18 @@ def analyze_portfolio(request, portfolio_id):
 
     stock_data = []
     total_value = 0
-    historical_data = {}  # ✅ Ensure this is always initialized
+    historical_data = {}
 
     stock_symbols = [stock.symbol for stock in stocks]
-
-    print(f"DEBUG: Portfolio '{portfolio.name}' contains {len(stocks)} stocks.")
 
     for stock in stocks:
         manual_price = stock.price
         live_price = stock.get_live_price()
         price = manual_price if manual_price else live_price
 
-        print(f"DEBUG: Stock {stock.symbol} - Manual: {manual_price}, Live: {live_price}, Final: {price}")
-
         if price is not None:
             stock_total = price * stock.quantity
             total_value += stock_total
-
             stock_data.append({
                 'name': stock.name,
                 'symbol': stock.symbol,
@@ -176,11 +138,9 @@ def analyze_portfolio(request, portfolio_id):
                 'total_value': stock_total,
             })
 
-    print("DEBUG: Stock Data before rendering ->", stock_data)
-
-    # Fetch historical stock prices using Django ORM
-    historical_prices_qs = HistoricalStockData.objects.filter(portfolio=portfolio, symbol__in=stock_symbols).order_by(
-        "date")
+    # Fetch historical prices
+    historical_prices_qs = HistoricalStockData.objects.filter(
+        portfolio=portfolio, symbol__in=stock_symbols).order_by("date")
 
     if not historical_prices_qs.exists():
         return render(request, 'portfolio/analyze_portfolio.html', {
@@ -192,24 +152,19 @@ def analyze_portfolio(request, portfolio_id):
             'error': "No historical data available for this portfolio."
         })
 
-    # Convert queryset to DataFrame
+    # Convert to DataFrame
     historical_prices_df = pd.DataFrame.from_records(
         historical_prices_qs.values("date", "symbol", "adjusted_close")
     )
 
-    print("DEBUG: Historical Prices DataFrame:\n", historical_prices_df.head())
-
-    # ✅ Update historical_data dictionary for price fluctuations
     for symbol in stock_symbols:
         symbol_data = historical_prices_df[historical_prices_df["symbol"] == symbol]
         historical_data[symbol] = {
-            "dates": list(symbol_data["date"].astype(str)),  # Convert dates to string format
+            "dates": list(symbol_data["date"].astype(str)),
             "prices": list(symbol_data["adjusted_close"])
         }
 
-    print("DEBUG: Historical Data before rendering ->", historical_data)
-
-    # Pivot the data to get a time series dataframe
+    # Pivot the data to get a time series
     daily_prices = historical_prices_df.pivot(index='date', columns='symbol', values='adjusted_close')
     daily_prices = daily_prices.dropna().reset_index(drop=True)
 
@@ -226,35 +181,10 @@ def analyze_portfolio(request, portfolio_id):
             'error': "Not enough historical price data to compute returns."
         })
 
-        # Create Portfolio object
-    port = rp.Portfolio(returns=X)
+    # ✅ Call risk analysis function
+    portfolio_analysis = perform_risk_analysis(X)
 
-    # Set estimation methods
-    method_mu = 'hist'  # Historical expected returns
-    method_cov = 'hist'  # Historical covariance matrix
-    port.assets_stats(method_mu=method_mu, method_cov=method_cov)
-
-    # Portfolio Optimization Parameters
-    model = 'Classic'
-    rf = 0  # Risk-free rate
-    l = 0  # Risk aversion factor
-    hist = True
-
-    # --- 1. Mean-Variance Optimization (MV) ---
-    w_mv = port.optimization(model=model, rm='MV', obj='Sharpe', rf=rf, hist=hist)
-
-    # --- 2. Conditional Value at Risk (CVaR) Optimization ---
-    w_cvar = port.optimization(model=model, rm='CVaR', obj='Sharpe', rf=rf, hist=hist)
-
-    # --- 3. Equal Risk Contribution (ERC) Portfolio ---
-    w_erc = port.rp_optimization(model=model, rm='MV', rf=rf, hist=hist)
-
-    # Debug optimization results
-    print("DEBUG: Mean-Variance Weights\n", w_mv)
-    print("DEBUG: CVaR Weights\n", w_cvar)
-    print("DEBUG: ERC Weights\n", w_erc)
-
-    if w_mv.empty or w_cvar.empty or w_erc.empty:
+    if portfolio_analysis is None:
         return render(request, 'portfolio/analyze_portfolio.html', {
             'portfolio': portfolio,
             'stock_data': stock_data,
@@ -264,13 +194,6 @@ def analyze_portfolio(request, portfolio_id):
             'error': "Portfolio optimization failed. Ensure enough price data is available."
         })
 
-    # Store portfolio data for rendering
-    portfolio_analysis = {
-        "mean_variance": w_mv.squeeze().to_dict(),
-        "cvar": w_cvar.squeeze().to_dict(),
-        "erc": w_erc.squeeze().to_dict()
-    }
-
     return render(request, 'portfolio/analyze_portfolio.html', {
         'portfolio': portfolio,
         'stock_data': stock_data,
@@ -278,12 +201,6 @@ def analyze_portfolio(request, portfolio_id):
         'historical_data': historical_data,
         'portfolio_analysis': portfolio_analysis
     })
-
-
-from django.shortcuts import render, get_object_or_404
-from .models import Portfolio, HistoricalStockData
-
-
 
 def delete_portfolio(request, portfolio_id):
     if request.method == "POST":
