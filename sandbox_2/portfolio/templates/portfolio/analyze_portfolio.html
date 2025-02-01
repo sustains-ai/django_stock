@@ -48,11 +48,42 @@
 
     <h3>Total Portfolio Value: ${{ total_value|floatformat:2 }}</h3>
 
-    <!-- Pie Chart Section -->
+    <!-- Portfolio Distribution (Pie Chart) -->
     <h3>Portfolio Distribution</h3>
     <div class="chart-container">
         <canvas id="portfolioChart"></canvas>
     </div>
+
+    <!-- ✅ Risk Measures Section -->
+    <h3 class="mt-4">Risk Measures</h3>
+    {% if risk_measures %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Stock Symbol</th>
+                <th>Mean Absolute Deviation (MAD)</th>
+                <th>Volatility</th>
+                <th>VaR (95%)</th>
+                <th>CVaR (95%)</th>
+                <th>Max Drawdown</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for symbol, measures in risk_measures.items %}
+            <tr>
+                <td>{{ symbol }}</td>
+                <td>{{ measures.MAD|floatformat:4 }}</td>
+                <td>{{ measures.Volatility|floatformat:4 }}</td>
+                <td>{{ measures.VaR_95|floatformat:4 }}</td>
+                <td>{{ measures.CVaR_95|floatformat:4 }}</td>
+                <td>{{ measures.Max_Drawdown|floatformat:4 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No risk measures available for this portfolio.</p>
+    {% endif %}
 
     <!-- Line Chart Section for Stock Price Fluctuations -->
     <h3>Stock Price Fluctuations</h3>
@@ -96,10 +127,10 @@
 
 <style>
     .chart-container {
-        width: 400px; /* Adjust chart size */
+        width: 400px;
         height: 300px;
         display: flex;
-        justify-content: flex-start; /* Align left */
+        justify-content: flex-start;
         align-items: center;
     }
     #portfolioChart, #stockChart, #riskAllocationChart {
@@ -155,7 +186,7 @@
         new Chart(lineCtx, {
             type: 'line',
             data: {
-                labels: historicalData[Object.keys(historicalData)[0]].dates, // Use first stock's dates
+                labels: historicalData[Object.keys(historicalData)[0]].dates,
                 datasets: datasets
             },
             options: {

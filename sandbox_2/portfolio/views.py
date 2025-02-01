@@ -11,7 +11,7 @@ import io
 import base64
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
-
+from .risk_analysis import calculate_risk_measures
 
 
 
@@ -172,6 +172,7 @@ def analyze_portfolio(request, portfolio_id):
             'total_value': total_value,
             'historical_data': {},
             'portfolio_analysis': None,
+            'risk_measures': {},
             'error': "No historical data available for this portfolio."
         })
 
@@ -201,11 +202,13 @@ def analyze_portfolio(request, portfolio_id):
             'total_value': total_value,
             'historical_data': {},
             'portfolio_analysis': None,
+            'risk_measures': {},
             'error': "Not enough historical price data to compute returns."
         })
 
     # ✅ Call risk analysis function
     portfolio_analysis = perform_risk_analysis(X)
+    risk_measures = calculate_risk_measures(X, stock_symbols)
 
     if portfolio_analysis is None:
         return render(request, 'portfolio/analyze_portfolio.html', {
@@ -214,16 +217,29 @@ def analyze_portfolio(request, portfolio_id):
             'total_value': total_value,
             'historical_data': {},
             'portfolio_analysis': None,
+            'risk_measures': risk_measures,
             'error': "Portfolio optimization failed. Ensure enough price data is available."
         })
+
+    print(stock_data)  # Check if it contains any data
+    print("Risk Measures:", risk_measures)  # Debugging output
 
     return render(request, 'portfolio/analyze_portfolio.html', {
         'portfolio': portfolio,
         'stock_data': stock_data,
         'total_value': total_value,
         'historical_data': historical_data,
-        'portfolio_analysis': portfolio_analysis
+        'portfolio_analysis': portfolio_analysis,
+        'risk_measures': risk_measures
     })
+
+
+
+
+
+
+
+
 
 def delete_portfolio(request, portfolio_id):
     if request.method == "POST":

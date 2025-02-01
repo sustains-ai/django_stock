@@ -39,3 +39,19 @@ def perform_risk_analysis(X):
         "cvar": w_cvar.squeeze().to_dict(),
         "erc": w_erc.squeeze().to_dict()
     }
+
+import numpy as np
+import riskfolio as rf  # Assuming you're using riskfolio
+
+def calculate_risk_measures(returns, stock_symbols):
+    risk_measures = {}
+    for symbol in stock_symbols:
+        stock_returns = returns[symbol]
+        risk_measures[symbol] = {
+            "MAD": rf.MAD(stock_returns),
+            "Volatility": np.std(stock_returns),
+            "VaR_95": np.percentile(stock_returns, 5),  # Changed key here
+            "CVaR_95": stock_returns[stock_returns <= np.percentile(stock_returns, 5)].mean(),  # Changed key here
+            "Max_Drawdown": (stock_returns.cumsum().cummax() - stock_returns.cumsum()).max()  # Changed key here
+        }
+    return risk_measures
