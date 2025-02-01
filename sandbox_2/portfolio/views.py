@@ -63,17 +63,21 @@ from .models import Portfolio, Stock
 from .utils import fetch_and_store_historical_data  # Import function
 from .forms import StockForm  # Assuming you have a StockForm
 
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import Portfolio, Stock, HistoricalStockData
+from .forms import StockForm
+from .utils import fetch_and_store_historical_data  # Assuming this exists
+
 def add_stock(request):
-    portfolios = Portfolio.objects.filter(fund_manager__user=request.user)  # Get fund manager's portfolios
+    portfolios = Portfolio.objects.filter(fund_manager__user=request.user)
 
     if request.method == "POST":
         form = StockForm(request.POST)
 
         if form.is_valid():
-            stock = form.save(commit=False)
-
-            # ✅ Get portfolio ID from the form dropdown
+            stock_data = form.save(commit=False)
             portfolio_id = request.POST.get("portfolio_id")
+
             if not portfolio_id:
                 return render(request, "portfolio/add_stock.html", {
                     "form": form,
@@ -81,15 +85,36 @@ def add_stock(request):
                     "error": "Please select a portfolio!"
                 })
 
-            stock.portfolio = get_object_or_404(Portfolio, id=portfolio_id)
-            stock.save()
+            portfolio = get_object_or_404(Portfolio, id=portfolio_id)
+            stock_data.portfolio = portfolio
 
-            # ✅ Fetch historical data only if not already stored
-            existing_data = HistoricalStockData.objects.filter(
-                portfolio=stock.portfolio, symbol=stock.symbol
-            ).exists()
-            if not existing_data:
-                fetch_and_store_historical_data(stock.portfolio.id, stock.symbol)
+            # ✅ Check if the stock already exists in the portfolio
+            existing_stock = portfolio.stocks.filter(symbol=stock_data.symbol).first()
+
+            if existing_stock:
+                # ✅ Weighted Average Price Calculation
+                total_quantity = existing_stock.quantity + stock_data.quantity
+                weighted_price = (
+                    (existing_stock.price * existing_stock.quantity) +
+                    (stock_data.price * stock_data.quantity)
+                ) / total_quantity
+
+                # ✅ Update existing stock
+                existing_stock.quantity = total_quantity
+                existing_stock.price = weighted_price
+                existing_stock.save()
+
+            else:
+                # ✅ Add as new stock if it doesn't exist
+                stock_data.save()
+
+                # ✅ Fetch historical data only if not already stored
+                existing_data = HistoricalStockData.objects.filter(
+                    portfolio=portfolio, symbol=stock_data.symbol
+                ).exists()
+
+                if not existing_data:
+                    fetch_and_store_historical_data(portfolio.id, stock_data.symbol)
 
             return redirect("portfolio_list")
 
@@ -100,8 +125,6 @@ def add_stock(request):
         "form": form,
         "portfolios": portfolios
     })
-
-
 
 
 

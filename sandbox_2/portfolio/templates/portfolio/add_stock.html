@@ -1,4 +1,39 @@
+<!--<h1>Add Stock</h1>-->
+
+<!--<form method="post">-->
+<!--    {% csrf_token %}-->
+
+<!--    &lt;!&ndash; Portfolio Selection Dropdown &ndash;&gt;-->
+<!--    <label for="portfolio_id">Select Portfolio:</label>-->
+<!--    <select name="portfolio_id" id="portfolio_id" required>-->
+<!--        <option value="">&#45;&#45; Select Portfolio &#45;&#45;</option>-->
+<!--        {% for portfolio in portfolios %}-->
+<!--            <option value="{{ portfolio.id }}">{{ portfolio.name }}</option>-->
+<!--        {% endfor %}-->
+<!--    </select>-->
+
+<!--    &lt;!&ndash; Stock Form Fields &ndash;&gt;-->
+<!--    {{ form.as_p }}-->
+
+<!--    <button type="submit">Add Stock</button>-->
+<!--</form>-->
+<!--&lt;!&ndash;<h1>Add Stock</h1>&ndash;&gt;-->
+
+<!--&lt;!&ndash;<form method="post">&ndash;&gt;-->
+<!--&lt;!&ndash;    {% csrf_token %}&ndash;&gt;-->
+
+<!--&lt;!&ndash;    &lt;!&ndash; Stock Form Fields (Including Portfolio) &ndash;&gt;&ndash;&gt;-->
+<!--&lt;!&ndash;    {{ form.as_p }}&ndash;&gt;-->
+
+<!--&lt;!&ndash;    <button type="submit">Add Stock</button>&ndash;&gt;-->
+<!--&lt;!&ndash;</form>&ndash;&gt;-->
+
+
 <h1>Add Stock</h1>
+
+{% if error %}
+    <p style="color: red;">{{ error }}</p>  <!-- Display error messages -->
+{% endif %}
 
 <form method="post">
     {% csrf_token %}
@@ -17,13 +52,3 @@
 
     <button type="submit">Add Stock</button>
 </form>
-<!--<h1>Add Stock</h1>-->
-
-<!--<form method="post">-->
-<!--    {% csrf_token %}-->
-
-<!--    &lt;!&ndash; Stock Form Fields (Including Portfolio) &ndash;&gt;-->
-<!--    {{ form.as_p }}-->
-
-<!--    <button type="submit">Add Stock</button>-->
-<!--</form>-->
