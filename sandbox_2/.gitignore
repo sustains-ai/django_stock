@@ -1,1 +1,17 @@
+# Environment Files
 .env
+venv/
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Django Migrations (Optional, if not needed)
+*/migrations/__pycache__/
+*.sqlite3
+
+# System Files (Optional)
+.DS_Store
+Thumbs.db
