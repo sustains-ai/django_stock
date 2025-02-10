@@ -1,4 +1,6 @@
-import riskfolio as rp
+import pandas as pd
+import numpy as np
+import riskfolio as rp  # Assuming you're using riskfolio
 
 def perform_risk_analysis(X):
     """
@@ -35,20 +37,29 @@ def perform_risk_analysis(X):
         return None  # Optimization failed
 
     return {
-        "mean_variance": w_mv.squeeze().to_dict(),
-        "cvar": w_cvar.squeeze().to_dict(),
-        "erc": w_erc.squeeze().to_dict()
+        # "mean_variance": w_mv.squeeze().to_dict(),
+        # "cvar": w_cvar.squeeze().to_dict(),
+        # "erc": w_erc.squeeze().to_dict()
+        "mean_variance": (
+            w_mv.squeeze().to_dict() if isinstance(w_mv.squeeze(), pd.Series) else w_mv.squeeze().item()
+        ),
+        "cvar": (
+            w_cvar.squeeze().to_dict() if isinstance(w_cvar.squeeze(), pd.Series) else w_cvar.squeeze().item()
+        ),
+        "erc": (
+            w_erc.squeeze().to_dict() if isinstance(w_erc.squeeze(), pd.Series) else w_erc.squeeze().item()
+        )
+
     }
 
-import numpy as np
-import riskfolio as rf  # Assuming you're using riskfolio
+
 
 def calculate_risk_measures(returns, stock_symbols):
     risk_measures = {}
     for symbol in stock_symbols:
         stock_returns = returns[symbol]
         risk_measures[symbol] = {
-            "MAD": rf.MAD(stock_returns),
+            "MAD": rp.MAD(stock_returns),
             "Volatility": np.std(stock_returns),
             "VaR_95": np.percentile(stock_returns, 5),  # Changed key here
             "CVaR_95": stock_returns[stock_returns <= np.percentile(stock_returns, 5)].mean(),  # Changed key here
