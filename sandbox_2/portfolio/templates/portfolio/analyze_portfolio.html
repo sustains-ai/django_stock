@@ -49,10 +49,17 @@
         </canvas>
     </div>
 
+
+<!-- Plotting the line chart-->
+
     <h3 class="text-center" style="margin-top: 20px; margin-bottom: 20px;">Stock Price Fluctuations</h3>
     <div id="historical-price-chart" class="chart-container">
         <canvas id="stockChart" data-historical='{{ historical_data|safe }}'></canvas>
     </div>
+
+
+
+
 
     <h3 id="risk-measures-title" class="text-center" style="margin-top: 20px; margin-bottom: 20px;">Risk Measures</h3>
     {% if risk_measures %}
@@ -120,107 +127,11 @@
 
 
 </div>
-
-
-
 <!-- ✅ Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{% static 'js/main.js' %}"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        // PIE CHART DATA
-        const pieCtx = document.getElementById("portfolioChart").getContext("2d");
-        const stockLabels = [{% for stock in stock_data %}"{{ stock.name }}",{% endfor %}];
-        const stockValues = [{% for stock in stock_data %}{{ stock.total_value }},{% endfor %}];
 
-        new Chart(pieCtx, {
-            type: "pie",
-            data: {
-                labels: stockLabels,
-                datasets: [{
-                    data: stockValues,
-                    backgroundColor: [
-                        'rgba(255, 99, 132, 0.6)',
-                        'rgba(54, 162, 235, 0.6)',
-                        'rgba(255, 206, 86, 0.6)',
-                        'rgba(75, 192, 192, 0.6)',
-                        'rgba(153, 102, 255, 0.6)',
-                        'rgba(255, 159, 64, 0.6)'
-                    ]
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'bottom' }
-                }
-            }
-        });
 
-        // LINE CHART DATA (Stock Price Fluctuations)
-        const lineCtx = document.getElementById("stockChart").getContext("2d");
-        const historicalData = {{ historical_data|safe }};
-
-        const datasets = Object.keys(historicalData).map(symbol => ({
-            label: symbol,
-            data: historicalData[symbol].prices,
-            borderColor: getRandomColor(),
-            fill: false
-        }));
-
-        new Chart(lineCtx, {
-            type: 'line',
-            data: {
-                labels: historicalData[Object.keys(historicalData)[0]].dates,
-                datasets: datasets
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'bottom' }
-                },
-                scales: {
-                    x: { title: { display: true, text: 'Date' } },
-                    y: { title: { display: true, text: 'Price (Adjusted Close)' } }
-                }
-            }
-        });
-
-        // Risk-Based Portfolio Allocation Chart
-        const riskCtx = document.getElementById("riskAllocationChart").getContext("2d");
-        const symbols = Object.keys({{ portfolio_analysis.mean_variance|safe }});
-        const mvWeights = Object.values({{ portfolio_analysis.mean_variance|safe }});
-        const cvarWeights = Object.values({{ portfolio_analysis.cvar|safe }});
-        const ercWeights = Object.values({{ portfolio_analysis.erc|safe }});
-
-        new Chart(riskCtx, {
-            type: 'bar',
-            data: {
-                labels: symbols,
-                datasets: [
-                    { label: "Mean-Variance", data: mvWeights, backgroundColor: 'rgba(255, 99, 132, 0.6)' },
-                    { label: "CVaR", data: cvarWeights, backgroundColor: 'rgba(54, 162, 235, 0.6)' },
-                    { label: "ERC", data: ercWeights, backgroundColor: 'rgba(75, 192, 192, 0.6)' }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: { beginAtZero: true, title: { display: true, text: 'Allocation (%)' } }
-                }
-            }
-        });
-
-        function getRandomColor() {
-            return `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 1)`;
-        }
-    });
-</script>
-
-{% endblock %}
+    {% endblock %}
 
 

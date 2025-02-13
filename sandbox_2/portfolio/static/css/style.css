@@ -131,3 +131,16 @@ canvas {
     margin-top: 20px;
     margin-bottom: 20px;
 }
+
+
+
+if(historicalData) {
+    try {
+        const parsedData = JSON.parse(historicalData);
+        // ... your code to use parsedData ...
+    } catch (error) {
+        console.error("Error parsing historicalData for stockChart:", error);
+    }
+  } else {
+    console.error('historicalData is undefined or null');
+  }

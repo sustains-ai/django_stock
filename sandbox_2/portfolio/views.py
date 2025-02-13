@@ -12,7 +12,7 @@ import base64
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from .risk_analysis import calculate_risk_measures
-
+import json
 
 
 
@@ -170,7 +170,7 @@ def analyze_portfolio(request, portfolio_id):
             'portfolio': portfolio,
             'stock_data': stock_data,
             'total_value': total_value,
-            'historical_data': {},
+            'historical_data': json.dumps({}),
             'portfolio_analysis': None,
             'risk_measures': {},
             'error': "No historical data available for this portfolio."
@@ -188,7 +188,38 @@ def analyze_portfolio(request, portfolio_id):
             "prices": list(symbol_data["adjusted_close"])
         }
 
-    # Pivot the data to get a time series
+        if historical_prices_df.empty:
+            return render(request, 'portfolio/analyze_portfolio.html', {
+                'portfolio': portfolio,
+                'stock_data': stock_data,
+                'total_value': total_value,
+                'historical_data': json.dumps({}),  # ✅ Ensure JSON format
+                'portfolio_analysis': None,
+                'risk_measures': {},
+                'error': "No historical data available for this portfolio."
+            })
+
+            # Convert historical prices to JSON
+        for symbol in stock_symbols:
+            symbol_data = historical_prices_df[historical_prices_df["symbol"] == symbol]
+            historical_data[symbol] = {
+                "dates": list(symbol_data["date"].astype(str)),
+                "prices": list(symbol_data["adjusted_close"])
+            }
+
+            # ✅ Convert historical_data to JSON properly
+        historical_data_json = json.dumps(historical_data)
+
+        # Debugging
+        print("Final historical_data JSON:", historical_data_json)
+
+
+
+
+
+
+
+            # Pivot the data to get a time series
     daily_prices = historical_prices_df.pivot(index='date', columns='symbol', values='adjusted_close')
     daily_prices = daily_prices.dropna().reset_index(drop=True)
 
@@ -228,16 +259,10 @@ def analyze_portfolio(request, portfolio_id):
         'portfolio': portfolio,
         'stock_data': stock_data,
         'total_value': total_value,
-        'historical_data': historical_data,
+        'historical_data': historical_data_json,
         'portfolio_analysis': portfolio_analysis,
         'risk_measures': risk_measures
     })
-
-
-
-
-
-
 
 
 
