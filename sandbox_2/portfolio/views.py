@@ -241,6 +241,8 @@ def analyze_portfolio(request, portfolio_id):
     portfolio_analysis = perform_risk_analysis(X)
     risk_measures = calculate_risk_measures(X, stock_symbols)
 
+    print("DEBUG: portfolio_analysis OUTPUT:", portfolio_analysis)
+
     # ✅ Ensure JSON is formatted correctly
 
     portfolio_analysis_json = {
@@ -269,6 +271,7 @@ def analyze_portfolio(request, portfolio_id):
         'total_value': total_value,
         'historical_data': json.dumps(historical_data),
         'portfolio_analysis': portfolio_analysis_json,
+        "optimal_table": portfolio_analysis,
         'risk_measures': risk_measures
     })
 
@@ -284,3 +287,6 @@ def delete_portfolio(request, portfolio_id):
         portfolio.delete()
         messages.success(request, f'Portfolio "{portfolio_name}" has been deleted successfully.')
     return redirect('portfolio_list')
+
+
+

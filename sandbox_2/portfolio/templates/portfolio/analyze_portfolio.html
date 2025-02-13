@@ -94,7 +94,7 @@
     {% endif %}
 
 <!-- Portfolio Optimization Results -->
-    {% if portfolio_analysis %}
+    {% if optimal_table %}
         <h3 class="text-center" style="margin-top: 20px; margin-bottom: 20px;">Optimal portfolio weights</h3>
         <table id="portfolio-optimization-results"   class="table table-bordered">
             <thead>
@@ -106,12 +106,12 @@
                 </tr>
             </thead>
             <tbody>
-                {% for symbol, weight in portfolio_analysis.mean_variance.items %}
+                {% for symbol, weight in optimal_table.mean_variance.items %}
                 <tr>
                     <td>{{ symbol }}</td>
                     <td>{{ weight|floatformat:4 }}</td>
-                    <td>{{ portfolio_analysis.cvar|get_item:symbol|floatformat:4 }}</td>
-                    <td>{{ portfolio_analysis.erc|get_item:symbol|floatformat:4 }}</td>
+                    <td>{{ optimal_table.cvar|get_item:symbol|floatformat:4 }}</td>
+                    <td>{{ optimal_table.erc|get_item:symbol|floatformat:4 }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
