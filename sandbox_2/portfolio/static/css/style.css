@@ -1,4 +1,4 @@
-/* Custom Styles */
+/* General Page Styling */
 body {
     display: flex;
     flex-direction: column;
@@ -15,23 +15,119 @@ footer {
     margin-top: auto;
     background-color: #0ABF53;
     color: #fff;
+    text-align: center;
+    padding: 10px;
 }
 
+/* Navbar Styling */
 .navbar-custom {
     background-color: #0ABF53; /* Navbar background color */
     color: #ffffff; /* Text color */
 }
 
 .navbar-custom .nav-link {
-    color: #ffffff !important; /* Ensure link text color */
+    color: #ffffff !important;
 }
 
 .navbar-custom .nav-link:hover {
     text-decoration: underline;
-    color: #d4d4d4 !important; /* Link hover color */
+    color: #d4d4d4 !important;
 }
 
 .navbar-brand {
     font-weight: bold;
     font-size: 1.5rem;
+}
+
+/* Global Heading Styling */
+h3, h1 {
+    text-align: center;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+/* TABLES STYLING */
+table {
+    width: 90%;
+    max-width: 800px;
+    margin: auto;
+    border-collapse: collapse;
+    background-color: #ffffff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Table Headers */
+thead {
+    background-color: #0ABF53;
+    color: white;
+    font-weight: bold;
+}
+
+/* Table Cells */
+th, td {
+    padding: 12px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+}
+
+/* Alternate row color */
+tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+/* Hover effect */
+tbody tr:hover {
+    background-color: #e0f7e9;
+    transition: background-color 0.3s ease;
+}
+
+/* CHART CONTAINERS */
+.chart-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 600px;
+    height: 400px;
+    margin: 20px auto;
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+canvas {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* RISK MEASURES TABLE */
+#risk-measures-container, #portfolio-optimization-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin: 20px auto;
+    padding: 10px;
+}
+
+/* OPTIMAL PORTFOLIO CHART */
+#optimal-portfolio-chart-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Ensure all elements have consistent spacing */
+#Total-portfolio-table, #stock-wise-risk, #portfolio-optimization-results {
+    margin-top: 20px;
+    margin-bottom: 20px;
 }

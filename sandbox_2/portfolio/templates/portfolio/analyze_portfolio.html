@@ -2,14 +2,19 @@
 
 {% block title %}Analyze Portfolio: {{ portfolio.name }}{% endblock %}
 {% load custom_filters %}
+{% load static %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'css/showoff.css' %}?v=1.0.1">
+{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h1 class="text-center text-success">Analysis of Portfolio: {{ portfolio.name }}</h1>
+    <h1 class="text-center text-success" style="margin-top: 20px; margin-bottom: 20px;">Analysis of Portfolio: {{ portfolio.name }}</h1>
     <hr>
 
-    <h3>Stocks in Portfolio</h3>
-    <table class="table table-bordered">
+    <h3 class="text-center" style="margin-top: 20px; margin-bottom: 20px;">Stocks in Portfolio</h3>
+    <table id="Total-portfolio-table" class="table table-bordered">
         <thead>
             <tr>
                 <th>Stock Name</th>
@@ -26,75 +31,65 @@
                 <td>{{ stock.name }}</td>
                 <td>{{ stock.symbol }}</td>
                 <td>{{ stock.quantity }}</td>
-                <td>
-                    {% if stock.manual_price %}
-                        ${{ stock.manual_price|floatformat:2 }}
-                    {% else %}
-                        <em>Not Set</em>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if stock.live_price %}
-                        ${{ stock.live_price|floatformat:2 }}
-                    {% else %}
-                        <em>Unavailable</em>
-                    {% endif %}
-                </td>
+                <td>{% if stock.manual_price %}${{ stock.manual_price|floatformat:2 }}{% else %}<em>Not Set</em>{% endif %}</td>
+                <td>{% if stock.live_price %}${{ stock.live_price|floatformat:2 }}{% else %}<em>Unavailable</em>{% endif %}</td>
                 <td>${{ stock.total_value|floatformat:2 }}</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 
-    <h3>Total Portfolio Value: ${{ total_value|floatformat:2 }}</h3>
+    <h3 class="text-center" style="margin-top: 20px; margin-bottom: 20px;">Total Portfolio Value: ${{ total_value|floatformat:2 }}</h3>
 
-    <!-- Portfolio Distribution (Pie Chart) -->
-    <h3>Portfolio Distribution</h3>
-    <div class="chart-container">
-        <canvas id="portfolioChart"></canvas>
+    <h3 class="text-center" style="margin-top: 20px; margin-bottom: 20px;">Portfolio Distribution</h3>
+    <div id="total-portfolio-piechart" class="chart-container">
+        <canvas id="portfolioChart"
+            data-labels='[{% for stock in stock_data %}"{{ stock.name }}"{% if not forloop.last %}, {% endif %}{% endfor %}]'
+            data-values='[{% for stock in stock_data %}{{ stock.total_value }}{% if not forloop.last %}, {% endif %}{% endfor %}]'>
+        </canvas>
     </div>
 
-    <!-- ✅ Risk Measures Section -->
-    <h3 class="mt-4">Risk Measures</h3>
+    <h3 class="text-center" style="margin-top: 20px; margin-bottom: 20px;">Stock Price Fluctuations</h3>
+    <div id="historical-price-chart" class="chart-container">
+        <canvas id="stockChart" data-historical='{{ historical_data|safe }}'></canvas>
+    </div>
+
+    <h3 id="risk-measures-title" class="text-center" style="margin-top: 20px; margin-bottom: 20px;">Risk Measures</h3>
     {% if risk_measures %}
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Stock Symbol</th>
-                <th>Mean Absolute Deviation (MAD)</th>
-                <th>Volatility</th>
-                <th>VaR (95%)</th>
-                <th>CVaR (95%)</th>
-                <th>Max Drawdown</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for symbol, measures in risk_measures.items %}
-            <tr>
-                <td>{{ symbol }}</td>
-                <td>{{ measures.MAD|floatformat:4 }}</td>
-                <td>{{ measures.Volatility|floatformat:4 }}</td>
-                <td>{{ measures.VaR_95|floatformat:4 }}</td>
-                <td>{{ measures.CVaR_95|floatformat:4 }}</td>
-                <td>{{ measures.Max_Drawdown|floatformat:4 }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div id="risk-measures-container">
+        <table id="stock-wise-risk">
+            <thead>
+                <tr>
+                    <th>Stock Symbol</th>
+                    <th>Mean Absolute Deviation (MAD)</th>
+                    <th>Volatility</th>
+                    <th>VaR (95%)</th>
+                    <th>CVaR (95%)</th>
+                    <th>Max Drawdown</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for symbol, measures in risk_measures.items %}
+                <tr>
+                    <td>{{ symbol }}</td>
+                    <td>{{ measures.MAD|floatformat:4 }}</td>
+                    <td>{{ measures.Volatility|floatformat:4 }}</td>
+                    <td>{{ measures.VaR_95|floatformat:4 }}</td>
+                    <td>{{ measures.CVaR_95|floatformat:4 }}</td>
+                    <td>{{ measures.Max_Drawdown|floatformat:4 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
     {% else %}
-    <p>No risk measures available for this portfolio.</p>
+    <p class="text-center">No risk measures available for this portfolio.</p>
     {% endif %}
 
-    <!-- Line Chart Section for Stock Price Fluctuations -->
-    <h3>Stock Price Fluctuations</h3>
-    <div class="chart-container">
-        <canvas id="stockChart"></canvas>
-    </div>
-
-    <!-- Portfolio Optimization Results -->
+<!-- Portfolio Optimization Results -->
     {% if portfolio_analysis %}
-        <h3>Portfolio Risk Analysis</h3>
-        <table class="table table-bordered">
+        <h3 class="text-center" style="margin-top: 20px; margin-bottom: 20px;">Portfolio Risk Analysis</h3>
+        <table id="portfolio-optimization-results"   class="table table-bordered">
             <thead>
                 <tr>
                     <th>Stock Symbol</th>
@@ -115,30 +110,22 @@
             </tbody>
         </table>
 
-        <!-- Risk-Based Portfolio Allocation Chart -->
-        <h3>Risk-Based Portfolio Allocations</h3>
+        <h3 class="text-center" style="margin-top: 20px; margin-bottom: 20px;">Risk-Based Portfolio Allocations</h3>
         <div class="chart-container">
             <canvas id="riskAllocationChart"></canvas>
         </div>
     {% else %}
-        <p class="text-danger">No risk analysis data available.</p>
+        <p class="text-danger text-center">No risk analysis data available.</p>
     {% endif %}
+
+
 </div>
 
-<style>
-    .chart-container {
-        width: 400px;
-        height: 300px;
-        display: flex;
-        justify-content: flex-start;
-        align-items: center;
-    }
-    #portfolioChart, #stockChart, #riskAllocationChart {
-        max-width: 100%;
-        max-height: 100%;
-    }
-</style>
 
+
+<!-- ✅ Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'js/main.js' %}"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
@@ -235,3 +222,5 @@
 </script>
 
 {% endblock %}
+
+

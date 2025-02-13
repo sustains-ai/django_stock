@@ -1,42 +1,7 @@
-/* Custom Styles */
+
 body {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    margin: 0;
-    font-family: 'Roboto', sans-serif;
+    border: 5px solid red;
 }
-
-main.container {
-    flex: 1;
-}
-
-footer {
-    margin-top: auto;
-    background-color: #0ABF53;
-    color: #fff;
-}
-
-.navbar-custom {
-    background-color: #0ABF53; /* Navbar background color */
-    color: #ffffff; /* Text color */
-}
-
-.navbar-custom .nav-link {
-    color: #ffffff !important; /* Ensure link text color */
-}
-
-.navbar-custom .nav-link:hover {
-    text-decoration: underline;
-    color: #d4d4d4 !important; /* Link hover color */
-}
-
-.navbar-brand {
-    font-weight: bold;
-    font-size: 1.5rem;
-}
-
-
 
 /* Style for the Total Portfolio Table */
 #Total-portfolio-table {
