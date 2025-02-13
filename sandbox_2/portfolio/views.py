@@ -241,6 +241,14 @@ def analyze_portfolio(request, portfolio_id):
     portfolio_analysis = perform_risk_analysis(X)
     risk_measures = calculate_risk_measures(X, stock_symbols)
 
+    # ✅ Ensure JSON is formatted correctly
+
+    portfolio_analysis_json = {
+        "mean_variance": json.dumps(portfolio_analysis["mean_variance"]),  # ✅ Correct dictionary access
+        "cvar": json.dumps(portfolio_analysis["cvar"]),
+        "erc": json.dumps(portfolio_analysis["erc"]),
+    }
+
     if portfolio_analysis is None:
         return render(request, 'portfolio/analyze_portfolio.html', {
             'portfolio': portfolio,
@@ -259,10 +267,13 @@ def analyze_portfolio(request, portfolio_id):
         'portfolio': portfolio,
         'stock_data': stock_data,
         'total_value': total_value,
-        'historical_data': historical_data_json,
-        'portfolio_analysis': portfolio_analysis,
+        'historical_data': json.dumps(historical_data),
+        'portfolio_analysis': portfolio_analysis_json,
         'risk_measures': risk_measures
     })
+
+
+
 
 
 

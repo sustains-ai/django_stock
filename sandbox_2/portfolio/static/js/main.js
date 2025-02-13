@@ -95,3 +95,72 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 });
+
+
+
+
+
+
+//Trying to generate the pie charts for optimal portfolio distribution
+
+document.addEventListener("DOMContentLoaded", function () {
+    // Helper function to parse JSON from dataset attributes
+    function parseDataAttribute(element, attribute) {
+        try {
+            return JSON.parse(element.dataset[attribute]);
+        } catch (error) {
+            console.error(`Error parsing ${attribute}:`, error);
+            return {};
+        }
+    }
+
+    // Function to generate random colors for pie charts
+    function getRandomColors(length) {
+        return Array.from({ length }, () =>
+            `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.7)`
+        );
+    }
+
+    // Function to create a pie chart
+    function createPieChart(canvasId, data, label) {
+        const chartElement = document.getElementById(canvasId);
+        if (!chartElement || Object.keys(data).length === 0) {
+            console.warn(`No data available for ${canvasId}`);
+            return;
+        }
+
+        const labels = Object.keys(data);
+        const values = Object.values(data);
+
+        new Chart(chartElement.getContext("2d"), {
+            type: "pie",
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: getRandomColors(labels.length),
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: "bottom" },
+                    title: { display: true, text: label }
+                }
+            }
+        });
+    }
+
+    // Generate Mean-Variance Allocation Pie Chart
+    const mvData = parseDataAttribute(document.getElementById("mvPieChart"), "mv");
+    createPieChart("mvPieChart", mvData, "Mean-Variance Allocation");
+
+    // Generate CVaR Allocation Pie Chart
+    const cvarData = parseDataAttribute(document.getElementById("cvarPieChart"), "cvar");
+    createPieChart("cvarPieChart", cvarData, "CVaR Allocation");
+
+    // Generate ERC Allocation Pie Chart
+    const ercData = parseDataAttribute(document.getElementById("ercPieChart"), "erc");
+    createPieChart("ercPieChart", ercData, "Equal Risk Contribution (ERC) Allocation");
+});

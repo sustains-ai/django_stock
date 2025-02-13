@@ -61,7 +61,7 @@
 
 
 
-    <h3 id="risk-measures-title" class="text-center" style="margin-top: 20px; margin-bottom: 20px;">Risk Measures</h3>
+    <h3 id="risk-measures-title" class="text-center" style="margin-top: 20px; margin-bottom: 20px;">Individual stock risk measures</h3>
     {% if risk_measures %}
     <div id="risk-measures-container">
         <table id="stock-wise-risk">
@@ -95,7 +95,7 @@
 
 <!-- Portfolio Optimization Results -->
     {% if portfolio_analysis %}
-        <h3 class="text-center" style="margin-top: 20px; margin-bottom: 20px;">Portfolio Risk Analysis</h3>
+        <h3 class="text-center" style="margin-top: 20px; margin-bottom: 20px;">Optimal portfolio weights</h3>
         <table id="portfolio-optimization-results"   class="table table-bordered">
             <thead>
                 <tr>
@@ -117,21 +117,39 @@
             </tbody>
         </table>
 
-        <h3 class="text-center" style="margin-top: 20px; margin-bottom: 20px;">Risk-Based Portfolio Allocations</h3>
-        <div class="chart-container">
-            <canvas id="riskAllocationChart"></canvas>
+
+
+    <h3 class="text-center" style="margin-top: 20px; margin-bottom: 20px;">Portfolio Allocation Pie Charts</h3>
+<div id="allocation-chart-container">
+    <div id="portfolio-allocation-charts">
+        <div class="allocation-chart-container">
+            <h4>Mean-Variance Allocation</h4>
+            <canvas id="mvPieChart" class="allocation-chart" data-mv='{{ portfolio_analysis.mean_variance|safe }}'></canvas>
         </div>
+        <div class="allocation-chart-container">
+            <h4>CVaR Allocation</h4>
+            <canvas id="cvarPieChart" class="allocation-chart" data-cvar='{{ portfolio_analysis.cvar|safe }}'></canvas>
+        </div>
+        <div class="allocation-chart-container">
+            <h4>ERC Allocation</h4>
+            <canvas id="ercPieChart" class="allocation-chart" data-erc='{{ portfolio_analysis.erc|safe }}'></canvas>
+        </div>
+    </div>
+    <div id="ai-explanation">
+        <h4>AI Insights (Coming Soon)</h4>
+        <p>This section will provide AI-based analysis and explanations of the portfolio allocations.</p>
+    </div>
+</div>
+
     {% else %}
         <p class="text-danger text-center">No risk analysis data available.</p>
     {% endif %}
-
-
 </div>
+
 <!-- ✅ Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{% static 'js/main.js' %}"></script>
 
-
-    {% endblock %}
+{% endblock %}
 
 
