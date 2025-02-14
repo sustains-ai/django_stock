@@ -132,16 +132,27 @@ canvas {
     width: 100%;
 }
 
-/* 📌 FIX: Portfolio Allocation Pie Charts Layout */
+/* 📌 Portfolio Allocation Pie Charts Layout */
 .allocation-chart-container {
     display: flex;
-    justify-content: space-around;  /* Ensures all charts are in a single row */
-    flex-wrap: wrap;  /* Wraps on smaller screens */
-    gap: 20px;
+    justify-content: space-between;  /* Ensures charts are side by side */
+    align-items: flex-start;
+    flex-wrap: nowrap;  /* Prevents charts from stacking */
+    gap: 50px;  /* Increased space between charts */
     margin-top: 20px;
+    width: 100%;
 }
 
-/* Individual Pie Charts */
+/* 📌 Individual Pie Charts */
+#portfolio-allocation-charts {
+    display: flex;
+    justify-content: space-evenly; /* Ensures even spacing */
+    flex-wrap: nowrap;
+    width: 70%; /* Charts take 70% of the row */
+    gap: 40px; /* Increased spacing between charts */
+}
+
+/* 📌 Fix: Chart Styling */
 .allocation-chart {
     background-color: #ffffff;
     border-radius: 10px;
@@ -149,55 +160,53 @@ canvas {
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
     text-align: center;
     flex: 1;
-    max-width: 300px;
-    min-width: 250px;
-    height: 350px;
+    max-width: 30%;
+    min-width: 280px;
+    height: 400px; /* Fixed size */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
-/* AI Explanation Section */
+/* Ensures the canvas fits properly inside */
+.allocation-chart canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* 📌 AI Explanation Section - Moves Below Charts */
+#ai-explanation-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 40px; /* Adds space below the charts */
+    width: 100%;
+}
+
+/* 📌 AI Explanation Box */
 #ai-explanation {
-    width: 30%;
-    padding-left: 20px;
+    width: 50%; /* Centered card, takes 50% width */
+    min-width: 320px;
+    max-width: 600px;
+    padding: 20px;
     font-size: 1rem;
     color: #333;
-    background-color: #f8f9fa;
-    border-radius: 10px;
-    padding: 15px;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.15);
+    text-align: center;
+    transition: all 0.3s ease-in-out;
 }
 
-/* BUTTON STYLING */
-.btn-primary {
-    background-color: #0ABF53;
-    border-color: #0ABF53;
-    font-weight: bold;
-    padding: 10px 15px;
-    border-radius: 5px;
+/* 📌 Hover effect for a modern feel */
+#ai-explanation:hover {
+    transform: scale(1.03);
+    box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.2);
 }
 
-.btn-primary:hover {
-    background-color: #008c3a;
-    border-color: #008c3a;
-}
-
-/* Responsive Design */
-@media (max-width: 1024px) {
-    .section-container {
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .section-left, .section-right {
-        width: 100%;
-    }
-
-    .allocation-chart-container {
-        flex-direction: column; /* Stack pie charts vertically on small screens */
-        align-items: center;
-    }
-
-    .allocation-chart {
-        width: 90%;
-        max-width: 400px;
+/* 📌 Responsive Fix for Smaller Screens */
+@media (max-width: 768px) {
+    #ai-explanation {
+        width: 80%;
     }
 }

@@ -141,28 +141,33 @@
             </tbody>
         </table>
 
-        <!-- Portfolio Allocation Pie Charts -->
-        <h3>Portfolio Allocation Pie Charts</h3>
-        <div class="allocation-chart-container">
-            <div id="portfolio-allocation-charts">
-                <div class="allocation-chart">
-                    <h4>Mean-Variance Allocation</h4>
-                    <canvas id="mvPieChart" data-mv='{{ portfolio_analysis.mean_variance|safe }}'></canvas>
-                </div>
-                <div class="allocation-chart">
-                    <h4>CVaR Allocation</h4>
-                    <canvas id="cvarPieChart" data-cvar='{{ portfolio_analysis.cvar|safe }}'></canvas>
-                </div>
-                <div class="allocation-chart">
-                    <h4>ERC Allocation</h4>
-                    <canvas id="ercPieChart" data-erc='{{ portfolio_analysis.erc|safe }}'></canvas>
-                </div>
-            </div>
-            <div id="ai-explanation">
-                <h4>AI Insights (Coming Soon)</h4>
-                <p>This section will provide AI-based analysis and explanations of the portfolio allocations.</p>
-            </div>
+       <!-- Portfolio Allocation Pie Charts -->
+<h3>Portfolio Allocation Pie Charts</h3>
+<div class="allocation-chart-container">
+    <div id="portfolio-allocation-charts">
+        <div class="allocation-chart">
+            <h4>Mean-Variance Allocation</h4>
+            <canvas id="mvPieChart" data-mv='{{ portfolio_analysis.mean_variance|safe }}'></canvas>
         </div>
+        <div class="allocation-chart">
+            <h4>CVaR Allocation</h4>
+            <canvas id="cvarPieChart" data-cvar='{{ portfolio_analysis.cvar|safe }}'></canvas>
+        </div>
+        <div class="allocation-chart">
+            <h4>ERC Allocation</h4>
+            <canvas id="ercPieChart" data-erc='{{ portfolio_analysis.erc|safe }}'></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- AI Insights Card Below Charts -->
+<div id="ai-explanation-container">
+    <div id="ai-explanation">
+        <h4>AI Insights (Coming Soon)</h4>
+        <p>This section will provide AI-based analysis and explanations of the portfolio allocations.</p>
+    </div>
+</div>
+
     </section>
     {% else %}
     <p class="text-danger text-center">No risk analysis data available.</p>
