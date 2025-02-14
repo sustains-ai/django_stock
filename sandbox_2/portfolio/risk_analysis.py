@@ -54,15 +54,31 @@ def perform_risk_analysis(X):
 
 
 
+# def calculate_risk_measures(returns, stock_symbols):
+#     risk_measures = {}
+#     for symbol in stock_symbols:
+#         stock_returns = returns[symbol]
+#         risk_measures[symbol] = {
+#             "MAD": rp.MAD(stock_returns),
+#             "Volatility": np.std(stock_returns),
+#             "VaR_95": np.percentile(stock_returns, 5),  # Changed key here
+#             "CVaR_95": stock_returns[stock_returns <= np.percentile(stock_returns, 5)].mean(),  # Changed key here
+#             "Max_Drawdown": (stock_returns.cumsum().cummax() - stock_returns.cumsum()).max()  # Changed key here
+#         }
+#     return risk_measures
+
 def calculate_risk_measures(returns, stock_symbols):
     risk_measures = {}
     for symbol in stock_symbols:
         stock_returns = returns[symbol]
+        var_95 = np.percentile(stock_returns, 5)
+        cvar_95 = stock_returns[stock_returns <= var_95].mean()
+
         risk_measures[symbol] = {
             "MAD": rp.MAD(stock_returns),
             "Volatility": np.std(stock_returns),
-            "VaR_95": np.percentile(stock_returns, 5),  # Changed key here
-            "CVaR_95": stock_returns[stock_returns <= np.percentile(stock_returns, 5)].mean(),  # Changed key here
-            "Max_Drawdown": (stock_returns.cumsum().cummax() - stock_returns.cumsum()).max()  # Changed key here
+            "VaR_95": -var_95,  # Make it positive
+            "CVaR_95": -cvar_95,  # Make it positive
+            "Max_Drawdown": (stock_returns.cumsum().cummax() - stock_returns.cumsum()).max()
         }
     return risk_measures
