@@ -13,8 +13,10 @@ from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from .risk_analysis import calculate_risk_measures
 import json
+from django.shortcuts import render, get_object_or_404
+from django.http import HttpResponse
 
-
+import numpy as np
 
 
 def index(request):
@@ -210,8 +212,6 @@ def analyze_portfolio(request, portfolio_id):
             # ✅ Convert historical_data to JSON properly
         historical_data_json = json.dumps(historical_data)
 
-        # Debugging
-        print("Final historical_data JSON:", historical_data_json)
 
 
 
@@ -241,7 +241,7 @@ def analyze_portfolio(request, portfolio_id):
     portfolio_analysis = perform_risk_analysis(X)
     risk_measures = calculate_risk_measures(X, stock_symbols)
 
-    print("DEBUG: portfolio_analysis OUTPUT:", portfolio_analysis)
+
 
     # ✅ Ensure JSON is formatted correctly
 
@@ -262,8 +262,7 @@ def analyze_portfolio(request, portfolio_id):
             'error': "Portfolio optimization failed. Ensure enough price data is available."
         })
 
-    print(stock_data)  # Check if it contains any data
-    print("Risk Measures:", risk_measures)  # Debugging output
+
 
     return render(request, 'portfolio/analyze_portfolio.html', {
         'portfolio': portfolio,
@@ -276,55 +275,122 @@ def analyze_portfolio(request, portfolio_id):
     })
 
 
+
 from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse
+import pandas as pd
+from .models import Portfolio, HistoricalStockData
+from .risk_analysis import calculate_portfolio_risk
 
 def portfolio_risk(request, portfolio_id):
+    """
+    Computes risk measures for the entire portfolio.
+    """
+
     portfolio = get_object_or_404(Portfolio, id=portfolio_id)
 
-    std_dev_data = {"AAPL": 0.25, "GOOGL": 0.18, "TSLA": 0.32}
-    var_data = {"AAPL": -0.05, "GOOGL": -0.07, "TSLA": -0.09}
-    cvar_data = {"AAPL": -0.08, "GOOGL": -0.10, "TSLA": -0.12}
+    # ✅ Fetch historical stock data
+    historical_prices_qs = HistoricalStockData.objects.filter(portfolio=portfolio).order_by("date")
 
+    if not historical_prices_qs.exists():
+        return render(request, "portfolio/portfolio_risk.html", {
+            "portfolio": portfolio,
+            "error": "No historical data available to calculate portfolio risk.",
+        })
+
+    # ✅ Convert to DataFrame
+    df = pd.DataFrame.from_records(historical_prices_qs.values("date", "symbol", "adjusted_close"))
+    price_data = df.pivot(index="date", columns="symbol", values="adjusted_close")
+
+    # ✅ Compute daily returns
+    X = price_data.pct_change(fill_method=None).dropna()
+
+    # ✅ Get optimal portfolio weights (from previous portfolio analysis)
+    portfolio_weights = {
+        stock.symbol: 1 / len(price_data.columns)  # Placeholder: Equal Weights
+        for stock in portfolio.stocks.all()
+    }
+
+    # ✅ Calculate portfolio risk
+    portfolio_risk_measures = calculate_portfolio_risk(X, portfolio_weights)
+
+    # ✅ Pass portfolio risk to template
     context = {
         "portfolio": portfolio,
-        "std_dev_data": std_dev_data,
-        "var_data": var_data,
-        "cvar_data": cvar_data,
+        "portfolio_risk_measures": portfolio_risk_measures,
     }
 
     return render(request, "portfolio/portfolio_risk.html", context)
 
 
-
-
-from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from .models import Portfolio, HistoricalStockData
+from .risk_analysis import calculate_portfolio_risk
+import pandas as pd
 
 
 def load_risk_measure(request, portfolio_id, measure):
-    """Loads the requested risk measure template dynamically for a specific portfolio."""
+    """
+    Dynamically loads the requested portfolio risk measure (std_dev, var, cvar)
+    and returns the computed values.
+    """
 
+    # ✅ Validate requested measure
     valid_measures = ["std_dev", "var", "cvar"]
     if measure not in valid_measures:
-        return HttpResponse("Invalid measure", status=400)
+        return JsonResponse({"error": "Invalid measure"}, status=400)
 
+    # ✅ Fetch the portfolio
     portfolio = get_object_or_404(Portfolio, id=portfolio_id)
 
-    # Example risk data (Replace this with actual calculations)
-    risk_data = {
-        "std_dev": {"AAPL": 0.25, "GOOGL": 0.18, "TSLA": 0.32},
-        "var": {"AAPL": -0.05, "GOOGL": -0.07, "TSLA": -0.09},
-        "cvar": {"AAPL": -0.08, "GOOGL": -0.10, "TSLA": -0.12},
+    # ✅ Fetch historical stock prices for portfolio
+    historical_prices_qs = HistoricalStockData.objects.filter(portfolio=portfolio).order_by("date")
+    if not historical_prices_qs.exists():
+        return JsonResponse({"error": "No historical data available"}, status=400)
+
+    # ✅ Convert to DataFrame
+    df = pd.DataFrame.from_records(historical_prices_qs.values("date", "symbol", "adjusted_close"))
+    price_data = df.pivot(index="date", columns="symbol", values="adjusted_close")
+
+    print("Price Data:\n", price_data.head())  # Debugging print
+
+    # ✅ Compute daily returns
+    X = price_data.pct_change().dropna()
+    print("Returns Data:\n", X.head())  # Debugging print
+
+    # ✅ Get portfolio weights (Replace with real allocation if available)
+    portfolio_weights = {
+        stock.symbol: 1 / len(price_data.columns)  # Placeholder: Equal weights
+        for stock in portfolio.stocks.all()
+    }
+    print("Portfolio Weights:\n", portfolio_weights)  # Debugging print
+
+    # ✅ Compute portfolio-level risk
+    portfolio_risk_measures = calculate_portfolio_risk(X, portfolio_weights)
+    print("Portfolio Risk Measures:\n", portfolio_risk_measures)  # Debugging print
+
+    # ✅ Map measure names correctly
+    key_mapping = {
+        "std_dev": "Std_Dev",
+        "var": "VaR_95",
+        "cvar": "CVaR_95"
     }
 
-    context = {
-        "portfolio": portfolio,
-        "risk_data": risk_data.get(measure, {}),
-    }
+    risk_value = portfolio_risk_measures.get(key_mapping.get(measure, ""), None)
 
-    template_path = f"portfolio/risk_measures/{measure}.html"
-    return render(request, template_path, context)
+    # ✅ Ensure risk_value is JSON-serializable
+    if isinstance(risk_value, np.ndarray):
+        risk_value = float(risk_value[0, 0]) if risk_value.size == 1 else risk_value.tolist()
+
+    print(f"Requested Risk Measure ({measure}):", risk_value)  # Debugging print
+
+    return JsonResponse({measure: risk_value})
+
+
+
+
+
+
 
 
 def delete_portfolio(request, portfolio_id):

@@ -82,3 +82,38 @@ def calculate_risk_measures(returns, stock_symbols):
             "Max_Drawdown": (stock_returns.cumsum().cummax() - stock_returns.cumsum()).max()
         }
     return risk_measures
+
+
+def calculate_portfolio_risk(X, weights):
+    """
+    Computes portfolio-level risk measures using Riskfolio-Lib.
+
+    Parameters:
+    - X (pd.DataFrame): Daily returns of assets in the portfolio.
+    - weights (dict): Optimal portfolio weights for each asset.
+
+    Returns:
+    - dict: Portfolio risk measures including Std Dev, VaR, and CVaR.
+    """
+    if X.empty or not weights:
+        return {
+            "Portfolio Std Dev": None,
+            "Portfolio VaR": None,
+            "Portfolio CVaR": None,
+        }
+
+    # Convert weights to a numpy array
+    w = np.array([weights[symbol] for symbol in X.columns]).reshape(-1, 1)
+
+    # Compute portfolio standard deviation (Volatility)
+    portfolio_std_dev = np.sqrt(np.dot(w.T, np.dot(X.cov(), w)))  # No indexing needed
+
+    # Compute historical VaR and CVaR (fixed indexing issue)
+    portfolio_var_95 = rp.VaR_Hist(X @ w, alpha=0.05)  # Removed [0, 0] indexing
+    portfolio_cvar_95 = rp.CVaR_Hist(X @ w, alpha=0.05)  # Removed [0, 0] indexing
+
+    return {
+        "Std_Dev": portfolio_std_dev,
+        "VaR_95": portfolio_var_95,
+        "CVaR_95": portfolio_cvar_95,
+    }

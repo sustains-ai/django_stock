@@ -11,33 +11,33 @@
     <h1 class="text-center text-danger">Risk Analysis of Portfolio: {{ portfolio.name }}</h1>
     <hr>
 
-    <!-- Dropdown to Select Risk Measure -->
+    <!-- ✅ SECTION 1: Risk Measure Selection -->
     <section class="portfolio-section">
         <h2 class="section-title">Select Risk Measure</h2>
-        <div class="text-center">
-            <label for="risk-selector">Choose Risk Measure:</label>
-            <select id="risk-selector" class="form-control">
+        <div class="risk-selector-container">
+            <label for="risk-selector" class="form-label">Choose Risk Measure:</label>
+            <select id="risk-selector" class="form-select">
                 <option value="std_dev">Standard Deviation</option>
                 <option value="var">Value at Risk (VaR)</option>
                 <option value="cvar">Conditional Value at Risk (CVaR)</option>
             </select>
         </div>
 
-        <!-- Load Risk Analysis Button -->
+        <!-- ✅ Load Risk Analysis Button -->
         <div class="text-center mt-3">
             <button id="load-risk-btn" class="btn btn-primary" onclick="loadRiskMeasure()">
                 Load Risk Analysis
             </button>
         </div>
 
-        <!-- Risk Measure Content -->
-        <div id="risk-content" class="mt-4">
+        <!-- ✅ Risk Measure Content (Dynamically Loaded) -->
+        <div id="risk-content" class="mt-4 risk-content-container">
             {% include 'portfolio/risk_measures/std_dev.html' %}
         </div>
     </section>
     <hr class="section-divider">
 
-    <!-- Button to Go Back to Portfolio Analysis -->
+    <!-- ✅ Back to Portfolio Analysis Button -->
     <div class="text-center mt-4">
         <a href="{% url 'analyze_portfolio' portfolio.id %}" class="btn btn-secondary">
             Back to Portfolio Overview
@@ -48,16 +48,26 @@
 <script>
     function loadRiskMeasure() {
         let selectedRisk = document.getElementById("risk-selector").value;
-        let portfolioId = "{{ portfolio.id }}";  // Get portfolio ID from template
+        let portfolioId = "{{ portfolio.id }}";
         let riskContent = document.getElementById("risk-content");
 
         // Show loading message
         riskContent.innerHTML = "<p class='text-center text-muted'>Loading...</p>";
 
         fetch(`/load-risk-measure/${portfolioId}/${selectedRisk}/`)
-            .then(response => response.text())
-            .then(html => {
-                riskContent.innerHTML = html;
+            .then(response => response.json())
+            .then(data => {
+                // Extract risk measure value dynamically
+                let measureKey = Object.keys(data)[0];
+                let measureValue = data[measureKey];
+
+                // Format output
+                riskContent.innerHTML = `
+                    <div class="risk-output">
+                        <h4>${measureKey.replace("_", " ").toUpperCase()}</h4>
+                        <p class="risk-value">${measureValue.toFixed(4)}</p>
+                    </div>
+                `;
             })
             .catch(error => {
                 riskContent.innerHTML = "<p class='text-danger'>Failed to load data.</p>";
