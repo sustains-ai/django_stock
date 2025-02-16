@@ -1,0 +1,17 @@
+<h3>Standard Deviation (Volatility) Analysis</h3>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Stock Symbol</th>
+            <th>Standard Deviation</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for symbol, std in std_dev_data.items %}
+        <tr>
+            <td>{{ symbol }}</td>
+            <td>{{ std|floatformat:4 }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

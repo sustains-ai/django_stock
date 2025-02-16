@@ -1,0 +1,70 @@
+{% extends 'portfolio/base.html' %}
+{% block title %}Portfolio Risk: {{ portfolio.name }}{% endblock %}
+{% load static %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'css/showoff.css' %}?v=1.0.1">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center text-danger">Risk Analysis of Portfolio: {{ portfolio.name }}</h1>
+    <hr>
+
+    <!-- Dropdown to Select Risk Measure -->
+    <section class="portfolio-section">
+        <h2 class="section-title">Select Risk Measure</h2>
+        <div class="text-center">
+            <label for="risk-selector">Choose Risk Measure:</label>
+            <select id="risk-selector" class="form-control">
+                <option value="std_dev">Standard Deviation</option>
+                <option value="var">Value at Risk (VaR)</option>
+                <option value="cvar">Conditional Value at Risk (CVaR)</option>
+            </select>
+        </div>
+
+        <!-- Load Risk Analysis Button -->
+        <div class="text-center mt-3">
+            <button id="load-risk-btn" class="btn btn-primary" onclick="loadRiskMeasure()">
+                Load Risk Analysis
+            </button>
+        </div>
+
+        <!-- Risk Measure Content -->
+        <div id="risk-content" class="mt-4">
+            {% include 'portfolio/risk_measures/std_dev.html' %}
+        </div>
+    </section>
+    <hr class="section-divider">
+
+    <!-- Button to Go Back to Portfolio Analysis -->
+    <div class="text-center mt-4">
+        <a href="{% url 'analyze_portfolio' portfolio.id %}" class="btn btn-secondary">
+            Back to Portfolio Overview
+        </a>
+    </div>
+</div>
+
+<script>
+    function loadRiskMeasure() {
+        let selectedRisk = document.getElementById("risk-selector").value;
+        let portfolioId = "{{ portfolio.id }}";  // Get portfolio ID from template
+        let riskContent = document.getElementById("risk-content");
+
+        // Show loading message
+        riskContent.innerHTML = "<p class='text-center text-muted'>Loading...</p>";
+
+        fetch(`/load-risk-measure/${portfolioId}/${selectedRisk}/`)
+            .then(response => response.text())
+            .then(html => {
+                riskContent.innerHTML = html;
+            })
+            .catch(error => {
+                riskContent.innerHTML = "<p class='text-danger'>Failed to load data.</p>";
+                console.error("Error loading risk measure:", error);
+            });
+    }
+</script>
+
+
+{% endblock %}

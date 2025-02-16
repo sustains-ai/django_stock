@@ -1,52 +1,89 @@
-/* General Page Styling */
+/* ✅ General Page Styling */
 body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
     margin: 0;
     font-family: 'Roboto', sans-serif;
-    background-color: #f8f9fa;
+    background-color: #f5f5f5;
 }
 
 main.container {
     flex: 1;
+    padding: 20px;
 }
 
-/* Section Styling */
-.portfolio-section {
-    margin-bottom: 40px;
-    padding: 30px;
-    background-color: #ffffff;
-    border-radius: 10px;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+/* ✅ Navbar Styling */
+.navbar-custom {
+    background-color: #0ABF53;
+    color: #ffffff;
 }
 
-/* Section Titles with Different Colors */
-.section-title {
-    font-size: 1.8rem;
+.navbar-custom .nav-link {
+    color: #ffffff !important;
+}
+
+.navbar-custom .nav-link:hover {
+    text-decoration: underline;
+    color: #d4d4d4 !important;
+}
+
+.navbar-brand {
     font-weight: bold;
+    font-size: 1.5rem;
+}
+
+/* ✅ Section Layout */
+.portfolio-section {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 40px;
+    box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* ✅ Section Titles */
+.section-title {
     text-align: center;
+    font-size: 24px;
+    font-weight: 600;
+    color: #0ABF53;
+    margin-bottom: 25px;
+    border-bottom: 3px solid #0ABF53;
     padding-bottom: 10px;
 }
 
-/* Different section heading colors */
-.portfolio-section:nth-child(odd) .section-title {
-    color: #0ABF53; /* Green for odd sections */
-}
-
-.portfolio-section:nth-child(even) .section-title {
-    color: #007BFF; /* Blue for even sections */
-}
-
-/* Horizontal Line (Section Divider) */
+/* ✅ Section Divider */
 .section-divider {
-    border: 0;
-    height: 3px;
-    background: linear-gradient(to right, #0ABF53, #007BFF);
-    margin: 30px 0;
+    margin: 40px 0;
+    border: 2px solid #ddd;
+    border-radius: 4px;
 }
 
-/* TABLE STYLING */
+/* ✅ Flexbox Layout for Sections */
+.section-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 40px;
+}
+
+/* ✅ Left Side (Tables) */
+.section-left {
+    flex: 1;
+    min-width: 48%;
+}
+
+/* ✅ Right Side (Charts) */
+.section-right {
+    flex: 1;
+    min-width: 48%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* ✅ Tables Styling */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -56,157 +93,111 @@ table {
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Table Headers */
+/* ✅ Table Headers */
 thead {
     background-color: #0ABF53;
     color: white;
     font-weight: bold;
 }
 
-/* Table Cells */
+/* ✅ Table Cells */
 th, td {
     padding: 12px;
     text-align: center;
     border-bottom: 1px solid #ddd;
 }
 
-/* Alternate row color */
+/* ✅ Alternate row color */
 tbody tr:nth-child(even) {
     background-color: #f9f9f9;
 }
 
-/* Hover effect */
+/* ✅ Hover effect */
 tbody tr:hover {
     background-color: #e0f7e9;
     transition: background-color 0.3s ease;
 }
 
-/* CHART CONTAINERS */
+/* ✅ Chart Containers */
 .chart-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
     width: 100%;
     max-width: 500px;
     height: 400px;
     background-color: #f8f9fa;
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 20px;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-    margin: auto;
-}
-
-/* Ensure Charts Have Consistent Sizing */
-canvas {
-    max-width: 100%;
-    max-height: 100%;
-}
-
-/* Layout Adjustments for Sections */
-.section-container {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 20px;
-    margin-bottom: 40px; /* Add spacing between sections */
-}
-
-/* Left column - Tables */
-.section-left {
-    flex: 1;
-    min-width: 48%;
-}
-
-/* Right column - Charts */
-.section-right {
-    flex: 1;
-    min-width: 48%;
-    display: flex;
-    flex-direction: column;
     align-items: center;
+    justify-content: center;
 }
 
-/* Ensure tables take up full width */
-.section-left table {
+/* ✅ Pie Charts: Align in Three Columns */
+#portfolio-allocation-charts{
     width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    justify-content: left;
+    margin-top: 50px;
+    margin-bottom: 100px;
 }
-
-/* 📌 Portfolio Allocation Pie Charts Layout */
-.allocation-chart-container {
-    display: flex;
-    justify-content: space-between;  /* Ensures charts are side by side */
-    align-items: flex-start;
-    flex-wrap: nowrap;  /* Prevents charts from stacking */
-    gap: 50px;  /* Increased space between charts */
-    margin-top: 20px;
-    width: 100%;
-}
-
-/* 📌 Individual Pie Charts */
-#portfolio-allocation-charts {
-    display: flex;
-    justify-content: space-evenly; /* Ensures even spacing */
-    flex-wrap: nowrap;
-    width: 70%; /* Charts take 70% of the row */
-    gap: 40px; /* Increased spacing between charts */
-}
-
-/* 📌 Fix: Chart Styling */
+/* ✅ Each Pie Chart of optimal portfolio allocation */
 .allocation-chart {
     background-color: #ffffff;
-    border-radius: 10px;
-    padding: 15px;
+    border-radius: 12px;
+    padding: 0px;
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
     text-align: center;
-    flex: 1;
-    max-width: 30%;
-    min-width: 280px;
-    height: 400px; /* Fixed size */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Ensures the canvas fits properly inside */
-.allocation-chart canvas {
-    width: 100% !important;
-    height: 100% !important;
-}
-
-/* 📌 AI Explanation Section - Moves Below Charts */
-#ai-explanation-container {
-    display: flex;
-    justify-content: center;
-    margin-top: 40px; /* Adds space below the charts */
     width: 100%;
+    max-width: 400px;
+    height: 450px;
 }
 
-/* 📌 AI Explanation Box */
+/* ✅ AI Explanation Section (Full Width) */
+#ai-explanation-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: 50px;
+}
+
 #ai-explanation {
-    width: 50%; /* Centered card, takes 50% width */
-    min-width: 320px;
-    max-width: 600px;
-    padding: 20px;
-    font-size: 1rem;
+    width: 80%;
+    max-width: 900px;
+    padding: 30px;
+    font-size: 1.1rem;
     color: #333;
     background-color: #ffffff;
     border-radius: 12px;
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.15);
     text-align: center;
-    transition: all 0.3s ease-in-out;
 }
 
-/* 📌 Hover effect for a modern feel */
-#ai-explanation:hover {
-    transform: scale(1.03);
-    box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.2);
-}
+/* ✅ Responsive Fixes */
+@media (max-width: 992px) {
+    .section-container {
+        flex-direction: column;
+    }
 
-/* 📌 Responsive Fix for Smaller Screens */
-@media (max-width: 768px) {
+    .allocation-chart-container {
+        grid-template-columns: repeat(1, 1fr); /* Two columns for smaller screens */
+    }
+
     #ai-explanation {
-        width: 80%;
+        width: 90%;
+    }
+}
+
+@media (max-width: 768px) {
+    .allocation-chart-container {
+        grid-template-columns: repeat(1, 1fr); /* One column for mobile */
+    }
+
+    .section-left, .section-right {
+        min-width: 100%;
+    }
+
+    #ai-explanation {
+        width: 100%;
     }
 }

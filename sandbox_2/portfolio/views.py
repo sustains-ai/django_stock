@@ -276,8 +276,55 @@ def analyze_portfolio(request, portfolio_id):
     })
 
 
+from django.shortcuts import render, get_object_or_404
+from django.http import HttpResponse
+
+def portfolio_risk(request, portfolio_id):
+    portfolio = get_object_or_404(Portfolio, id=portfolio_id)
+
+    std_dev_data = {"AAPL": 0.25, "GOOGL": 0.18, "TSLA": 0.32}
+    var_data = {"AAPL": -0.05, "GOOGL": -0.07, "TSLA": -0.09}
+    cvar_data = {"AAPL": -0.08, "GOOGL": -0.10, "TSLA": -0.12}
+
+    context = {
+        "portfolio": portfolio,
+        "std_dev_data": std_dev_data,
+        "var_data": var_data,
+        "cvar_data": cvar_data,
+    }
+
+    return render(request, "portfolio/portfolio_risk.html", context)
 
 
+
+
+from django.shortcuts import render, get_object_or_404
+from django.http import HttpResponse
+
+
+def load_risk_measure(request, portfolio_id, measure):
+    """Loads the requested risk measure template dynamically for a specific portfolio."""
+
+    valid_measures = ["std_dev", "var", "cvar"]
+    if measure not in valid_measures:
+        return HttpResponse("Invalid measure", status=400)
+
+    portfolio = get_object_or_404(Portfolio, id=portfolio_id)
+
+    # Example risk data (Replace this with actual calculations)
+    risk_data = {
+        "std_dev": {"AAPL": 0.25, "GOOGL": 0.18, "TSLA": 0.32},
+        "var": {"AAPL": -0.05, "GOOGL": -0.07, "TSLA": -0.09},
+        "cvar": {"AAPL": -0.08, "GOOGL": -0.10, "TSLA": -0.12},
+    }
+
+    context = {
+        "portfolio": portfolio,
+        "risk_data": risk_data.get(measure, {}),
+    }
+
+    template_path = f"portfolio/risk_measures/{measure}.html"
+    return render(request, template_path, context)
 
 
 def delete_portfolio(request, portfolio_id):

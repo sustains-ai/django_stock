@@ -3,33 +3,104 @@
 {% block title %}Your Portfolios{% endblock %}
 
 {% block content %}
-<div class="card shadow-sm">
-    <div class="card-header bg-success text-white text-center">
-        <h2>Your Portfolios</h2>
+<div class="container mt-4">
+    <div class="text-center mb-4">
+        <h2 class="text-success">Your Portfolios</h2>
+        <p class="text-muted">Manage your investments seamlessly.</p>
     </div>
-    <div class="card-body">
-        <ul class="list-group mb-3">
-            {% for portfolio in portfolios %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span>{{ portfolio.name }}</span>
-                <div>
-                    <a href="{% url 'analyze_portfolio' portfolio.id %}" class="btn btn-primary btn-sm me-2">
-                        Analyze
-                    </a>
-                    <form action="{% url 'delete_portfolio' portfolio.id %}" method="POST" style="display:inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-danger btn-sm">
-                            Delete
-                        </button>
-                    </form>
+
+    <!-- Portfolio Cards Grid -->
+    <div class="row">
+        {% for portfolio in portfolios %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm portfolio-card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">{{ portfolio.name }}</h5>
+                    <hr>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-around flex-wrap">
+                        <a href="{% url 'analyze_portfolio' portfolio.id %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-chart-line"></i> Analyze
+                        </a>
+
+                        <a href="{% url 'portfolio_risk' portfolio.id %}" class="btn btn-warning btn-sm">
+                            <i class="fas fa-cogs"></i> Advanced Analysis
+                        </a>
+                    </div>
+
+                    <div class="d-flex justify-content-around flex-wrap mt-3">
+                        <a href="{% url 'add_stock' %}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-plus"></i> Add Stock
+                        </a>
+
+                        <!-- Delete Portfolio Button -->
+                        <form action="{% url 'delete_portfolio' portfolio.id %}" method="POST" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm">
+                                <i class="fas fa-trash-alt"></i> Delete
+                            </button>
+                        </form>
+                    </div>
                 </div>
-            </li>
-            {% endfor %}
-        </ul>
-        <div class="d-flex justify-content-between">
-            <a href="{% url 'add_portfolio' %}" class="btn btn-success">Add Portfolio</a>
-            <a href="{% url 'add_stock' %}" class="btn btn-secondary">Add Stock</a>
+            </div>
         </div>
+        {% endfor %}
+    </div>
+
+    <!-- Add Portfolio Button -->
+    <div class="text-center mt-4">
+        <a href="{% url 'add_portfolio' %}" class="btn theme-button btn-lg">
+            <i class="fas fa-folder-plus"></i> Add Portfolio
+        </a>
     </div>
 </div>
+
+<!-- Custom Styling -->
+<style>
+    /* Portfolio Card Styling */
+    .portfolio-card {
+        border-radius: 12px;
+        transition: all 0.3s ease-in-out;
+        background: white;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .portfolio-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Buttons */
+    .btn-sm {
+        font-size: 14px;
+        padding: 8px 12px;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .btn-sm:hover {
+        transform: scale(1.05);
+    }
+
+    /* Theme Button Styling */
+    .theme-button {
+        background-color: #0ABF53;
+        color: white;
+        padding: 12px 20px;
+        font-weight: bold;
+        border-radius: 8px;
+        transition: all 0.3s ease-in-out;
+        text-shadow: 0px 1px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    .theme-button:hover {
+        background-color: #099847;
+        box-shadow: 0px 6px 15px rgba(10, 191, 83, 0.4);
+        transform: translateY(-2px);
+    }
+</style>
+
+<!-- Include FontAwesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
 {% endblock %}

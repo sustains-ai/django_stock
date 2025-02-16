@@ -1,0 +1,17 @@
+<h3>Conditional VaR (CVaR) - 95% Confidence</h3>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Stock Symbol</th>
+            <th>CVaR (95%)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for symbol, cvar in cvar_data.items %}
+        <tr>
+            <td>{{ symbol }}</td>
+            <td>{{ cvar|floatformat:4 }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
