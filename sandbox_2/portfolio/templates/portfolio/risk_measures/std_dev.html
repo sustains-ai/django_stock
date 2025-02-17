@@ -1,17 +1,126 @@
-<h3>Standard Deviation (Volatility) Analysis</h3>
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>Stock Symbol</th>
-            <th>Standard Deviation</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for symbol, std in std_dev_data.items %}
-        <tr>
-            <td>{{ symbol }}</td>
-            <td>{{ std|floatformat:4 }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+{% extends 'portfolio/base.html' %}
+{% block title %}Portfolio Risk: {{ portfolio.name }}{% endblock %}
+{% load static %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=1.0.1">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center text-danger">Risk Analysis of Portfolio: {{ portfolio.name }}</h1>
+    <hr>
+
+    <!-- ✅ SECTION 1: Risk Measure Selection -->
+    <section class="portfolio-section">
+        <h2 class="section-title">Select Risk Measure</h2>
+        <div class="risk-selector-container">
+            <label for="risk-selector" class="form-label">Choose Risk Measure:</label>
+            <select id="risk-selector" class="form-select">
+                <option value="std_dev">Standard Deviation</option>
+                <option value="var">Value at Risk (VaR)</option>
+                <option value="cvar">Conditional Value at Risk (CVaR)</option>
+            </select>
+        </div>
+
+        <!-- ✅ Load Risk Analysis Button -->
+        <div class="text-center mt-3">
+            <button id="load-risk-btn" class="btn btn-primary" onclick="loadRiskMeasure()">
+                Load Risk Analysis
+            </button>
+        </div>
+
+        <!-- ✅ Risk Measure Content (Dynamically Updated) -->
+        <div id="risk-measure-result" class="mt-4 text-center"></div>
+    </section>
+    <hr class="section-divider">
+
+    <!-- ✅ Portfolio Allocation Pie Chart (Always Visible) -->
+    <section class="portfolio-section">
+        <h2 class="section-title">Portfolio Allocation</h2>
+        <canvas id="portfolioChart"></canvas>
+    </section>
+    <hr class="section-divider">
+
+    <!-- ✅ Efficient Frontier (Always Visible) -->
+    <section class="portfolio-section">
+        <h2 class="section-title">Efficient Frontier</h2>
+        <canvas id="efficientFrontier"></canvas>
+    </section>
+    <hr class="section-divider">
+
+    <!-- ✅ Back to Portfolio Analysis Button -->
+    <div class="text-center mt-4">
+        <a href="{% url 'analyze_portfolio' portfolio.id %}" class="btn btn-secondary">
+            Back to Portfolio Overview
+        </a>
+    </div>
+</div>
+
+<!-- ✅ JavaScript to Handle Risk Analysis Updates -->
+<script>
+    function loadRiskMeasure() {
+        let selectedRisk = document.getElementById("risk-selector").value;
+        let portfolioId = "{{ portfolio.id }}";
+        let riskResult = document.getElementById("risk-measure-result");
+
+        // Show loading message
+        riskResult.innerHTML = "<p class='text-center text-muted'>Loading...</p>";
+
+        fetch(`/load-risk-measure/${portfolioId}/${selectedRisk}/`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    riskResult.innerHTML = `<p class='text-danger'>Error: ${data.error}</p>`;
+                } else {
+                    riskResult.innerHTML = `<h4 class='text-success'>${selectedRisk.toUpperCase()}: ${data[selectedRisk]}</h4>`;
+                }
+            })
+            .catch(error => {
+                riskResult.innerHTML = "<p class='text-danger'>Failed to load data.</p>";
+                console.error("Error loading risk measure:", error);
+            });
+    }
+
+    // ✅ Load Portfolio Allocation Pie Chart (ALWAYS VISIBLE)
+    const portfolioWeights = JSON.parse('{{ portfolio_weights_json|escapejs }}');
+    const ctxPortfolio = document.getElementById("portfolioChart").getContext("2d");
+    new Chart(ctxPortfolio, {
+        type: "pie",
+        data: {
+            labels: Object.keys(portfolioWeights),
+            datasets: [{
+                data: Object.values(portfolioWeights),
+                backgroundColor: ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"]
+            }]
+        }
+    });
+
+    // ✅ Load Efficient Frontier Scatter Plot (ALWAYS VISIBLE)
+    const frontierData = JSON.parse('{{ efficient_frontier_json|escapejs }}');
+    const ctxFrontier = document.getElementById("efficientFrontier").getContext("2d");
+    new Chart(ctxFrontier, {
+        type: "scatter",
+        data: {
+            datasets: [{
+                label: "Efficient Frontier",
+                data: frontierData,
+                backgroundColor: "#007bff",
+                pointRadius: 4
+            }]
+        },
+        options: {
+            scales: {
+                x: { title: { display: true, text: "Risk (Std Dev)" }},
+                y: { title: { display: true, text: "Expected Return" }}
+            }
+        }
+    });
+</script>
+
+{% endblock %}

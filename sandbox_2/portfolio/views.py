@@ -1,22 +1,23 @@
-from django.shortcuts import render, redirect
+
 from .models import Portfolio, FundManager,HistoricalStockData
 from .forms import StockForm, PortfolioForm
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 from django.contrib import messages
-import yfinance as yf
-import riskfolio as rp
-import matplotlib.pyplot as plt
-import io
-import base64
-from django.shortcuts import render, get_object_or_404
-from django.urls import reverse
 from .risk_analysis import calculate_risk_measures
-import json
-from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse
-
+from django.http import JsonResponse
 import numpy as np
+import riskfolio as rp
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import Portfolio, Stock, HistoricalStockData
+from .forms import StockForm
+from .utils import fetch_and_store_historical_data
+from .risk_analysis import calculate_portfolio_risk
+from django.shortcuts import render, get_object_or_404
+import pandas as pd
+from .models import Portfolio, HistoricalStockData
+from .risk_analysis import perform_risk_analysis  # Import new function
+
 
 
 def index(request):
@@ -45,30 +46,9 @@ def add_portfolio(request):
         form = PortfolioForm()
     return render(request, 'portfolio/add_portfolio.html', {'form': form})
 
-# def add_stock(request):
-#     if request.method == 'POST':
-#         form = StockForm(request.POST)
-#         if form.is_valid():
-#             form.save()
-#             return redirect('portfolio_list')
-#     else:
-#         form = StockForm()
-#     return render(request, 'portfolio/add_stock.html', {'form': form})
-from django.shortcuts import render, redirect, get_object_or_404
-from .models import Portfolio, Stock
-from .utils import fetch_and_store_historical_data  # Import function
-from .forms import StockForm  # Assuming you have a StockForm
 
 
-from django.shortcuts import render, redirect, get_object_or_404
-from .models import Portfolio, Stock
-from .utils import fetch_and_store_historical_data  # Import function
-from .forms import StockForm  # Assuming you have a StockForm
 
-from django.shortcuts import render, get_object_or_404, redirect
-from .models import Portfolio, Stock, HistoricalStockData
-from .forms import StockForm
-from .utils import fetch_and_store_historical_data  # Assuming this exists
 
 def add_stock(request):
     portfolios = Portfolio.objects.filter(fund_manager__user=request.user)
@@ -131,10 +111,7 @@ def add_stock(request):
 
 
 
-from django.shortcuts import render, get_object_or_404
-import pandas as pd
-from .models import Portfolio, HistoricalStockData
-from .risk_analysis import perform_risk_analysis  # Import new function
+
 
 def analyze_portfolio(request, portfolio_id):
     portfolio = get_object_or_404(Portfolio, id=portfolio_id, fund_manager__user=request.user)
@@ -276,10 +253,8 @@ def analyze_portfolio(request, portfolio_id):
 
 
 
-from django.shortcuts import render, get_object_or_404
-import pandas as pd
-from .models import Portfolio, HistoricalStockData
-from .risk_analysis import calculate_portfolio_risk
+
+
 
 def portfolio_risk(request, portfolio_id):
     """
@@ -322,75 +297,101 @@ def portfolio_risk(request, portfolio_id):
     return render(request, "portfolio/portfolio_risk.html", context)
 
 
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
-from .models import Portfolio, HistoricalStockData
-from .risk_analysis import calculate_portfolio_risk
-import pandas as pd
+
+
+
+
+
+
+
+def calculate_efficient_frontier(X, portfolio_weights):
+    """
+    Computes the Efficient Frontier using standard deviation (volatility) as the risk measure.
+    """
+    # Create Portfolio object
+    port = rp.Portfolio(returns=X)
+
+    # Estimate expected returns & covariance
+    port.assets_stats(method_mu="hist", method_cov="hist")
+
+    # Compute efficient frontier
+    points = 50  # Number of portfolios
+    rm = "MV"  # Mean-Variance (Standard Deviation) Risk Measure
+    hist = True
+    w_frontier = port.efficient_frontier(model="Classic", rm=rm, points=points, hist=hist)
+
+    # Compute portfolio returns and standard deviation
+    mu = port.mu.values.flatten()  # Expected returns
+    sigma = port.cov.values  # Covariance matrix
+
+    frontier_returns = np.dot(w_frontier.T, mu)  # Portfolio expected return
+    frontier_risks = np.sqrt(np.einsum('ij,jk,ik->i', w_frontier.T, sigma, w_frontier.T))  # Portfolio volatility
+
+    # Format output as risk-return points
+    efficient_frontier_data = [{"x": float(frontier_risks[i]), "y": float(frontier_returns[i])} for i in range(points)]
+
+    return efficient_frontier_data
 
 
 def load_risk_measure(request, portfolio_id, measure):
-    """
-    Dynamically loads the requested portfolio risk measure (std_dev, var, cvar)
-    and returns the computed values.
-    """
+    print(f"🔹 Received request for {measure} of portfolio {portfolio_id}")
 
-    # ✅ Validate requested measure
     valid_measures = ["std_dev", "var", "cvar"]
     if measure not in valid_measures:
+        print("❌ Invalid measure requested")
         return JsonResponse({"error": "Invalid measure"}, status=400)
 
-    # ✅ Fetch the portfolio
     portfolio = get_object_or_404(Portfolio, id=portfolio_id)
 
-    # ✅ Fetch historical stock prices for portfolio
     historical_prices_qs = HistoricalStockData.objects.filter(portfolio=portfolio).order_by("date")
     if not historical_prices_qs.exists():
+        print("❌ No historical data available")
         return JsonResponse({"error": "No historical data available"}, status=400)
 
-    # ✅ Convert to DataFrame
     df = pd.DataFrame.from_records(historical_prices_qs.values("date", "symbol", "adjusted_close"))
     price_data = df.pivot(index="date", columns="symbol", values="adjusted_close")
 
-    print("Price Data:\n", price_data.head())  # Debugging print
+    print("📊 Price Data:")
+    print(price_data.head())  # Print first few rows for debugging
 
-    # ✅ Compute daily returns
-    X = price_data.pct_change().dropna()
-    print("Returns Data:\n", X.head())  # Debugging print
+    X = price_data.pct_change(fill_method=None).dropna()
+    print("📈 Returns Data:")
+    print(X.head())  # Print first few rows
 
-    # ✅ Get portfolio weights (Replace with real allocation if available)
     portfolio_weights = {
         stock.symbol: 1 / len(price_data.columns)  # Placeholder: Equal weights
         for stock in portfolio.stocks.all()
     }
-    print("Portfolio Weights:\n", portfolio_weights)  # Debugging print
+    print("⚖️ Portfolio Weights:", portfolio_weights)
 
-    # ✅ Compute portfolio-level risk
     portfolio_risk_measures = calculate_portfolio_risk(X, portfolio_weights)
-    print("Portfolio Risk Measures:\n", portfolio_risk_measures)  # Debugging print
+    print("🔢 Portfolio Risk Measures:", portfolio_risk_measures)
 
-    # ✅ Map measure names correctly
-    key_mapping = {
+    # ✅ Select only the requested measure
+
+    # Map measure names to correct keys
+    measure_mapping = {
         "std_dev": "Std_Dev",
         "var": "VaR_95",
-        "cvar": "CVaR_95"
+        "cvar": "CVaR_95",
     }
 
-    risk_value = portfolio_risk_measures.get(key_mapping.get(measure, ""), None)
+    # Get the correct key from the mapping
+    normalized_key = measure_mapping.get(measure, None)
 
-    # ✅ Ensure risk_value is JSON-serializable
+    if normalized_key is None:
+        return JsonResponse({"error": "Invalid measure requested"}, status=400)
+
+    print(f"🔍 Looking for key: {normalized_key}")  # Debugging
+
+    risk_value = portfolio_risk_measures.get(normalized_key, None)
+
+    # If it's a NumPy array, extract the value
     if isinstance(risk_value, np.ndarray):
-        risk_value = float(risk_value[0, 0]) if risk_value.size == 1 else risk_value.tolist()
+        risk_value = float(risk_value[0, 0])  # Extract the scalar
 
-    print(f"Requested Risk Measure ({measure}):", risk_value)  # Debugging print
-
+    print(f"✅ Returning Risk Measure ({measure}): {risk_value}")
     return JsonResponse({measure: risk_value})
-
-
-
-
-
-
 
 
 def delete_portfolio(request, portfolio_id):
@@ -402,4 +403,23 @@ def delete_portfolio(request, portfolio_id):
     return redirect('portfolio_list')
 
 
+import json
+from django.shortcuts import render
 
+def std_dev_view(request, portfolio_id):
+    # ✅ Fetch Portfolio Data (Ensure it's always available)
+    portfolio_weights = {'AAPL': 0.2, 'TSLA': 0.2, 'GOOG': 0.2, 'META': 0.2, 'MSFT': 0.2}
+    efficient_frontier_data = [
+        {"x": 0.15, "y": 0.08},
+        {"x": 0.20, "y": 0.10},
+        {"x": 0.25, "y": 0.12}
+    ]  # Example Data
+
+    # ✅ Convert to JSON for JavaScript
+    portfolio_weights_json = json.dumps(portfolio_weights)
+    efficient_frontier_json = json.dumps(efficient_frontier_data)
+
+    return render(request, "portfolio/std_dev.html", {
+        "portfolio_weights_json": portfolio_weights_json,
+        "efficient_frontier_json": efficient_frontier_json,
+    })

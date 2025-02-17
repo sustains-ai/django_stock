@@ -7,4 +7,25 @@
     <h2>Welcome to sustains.ai</h2>
     <p class="lead">Welcome to sandbox, a comprehensive risk analytics platform</p>
 </div>
+
+<!-- ✅ Interactive Portfolio Allocation Pie Chart using Mermaid.js -->
+<div class="mermaid">
+    pie showData
+        title Portfolio Allocation
+        "US equity": 30
+        "Emerging market equity": 10
+        "Bond": 10
+        "Gold": 20
+        "REIT": 20
+        "Crypto": 10
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Load Mermaid.js in the footer for better performance -->
+<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true });
+</script>
 {% endblock %}

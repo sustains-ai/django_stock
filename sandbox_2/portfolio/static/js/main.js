@@ -45,13 +45,6 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 
-
-
-
-
-
-
-
 document.addEventListener("DOMContentLoaded", function () {
     const stockChartElement = document.getElementById("stockChart");
 
@@ -164,3 +157,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const ercData = parseDataAttribute(document.getElementById("ercPieChart"), "erc");
     createPieChart("ercPieChart", ercData, "Equal Risk Contribution (ERC) Allocation");
 });
+
+
+
