@@ -10,6 +10,10 @@
 {% block content %}
 <div class="container mt-4">
     <h1 class="text-center text-primary">Portfolio Risk Analysis: {{ portfolio.name }}</h1>
+
+    <!-- ✅ Store Portfolio ID in a hidden div -->
+    <div id="portfolio-container" data-portfolio-id="{{ portfolio.id }}"></div>
+
     <hr>
 
     <!-- ✅ Risk Measure Selection -->
@@ -50,15 +54,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{% static 'js/portfolio_risk.js' %}"></script>
-
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        let loadRiskButton = document.getElementById("load-risk-btn");
-        if (loadRiskButton) {
-            loadRiskButton.dataset.portfolioId = "{{ portfolio.id }}";
-        }
-    });
-</script>
 {% endblock %}

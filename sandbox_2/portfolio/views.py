@@ -292,6 +292,7 @@ def portfolio_risk(request, portfolio_id):
     context = {
         "portfolio": portfolio,
         "portfolio_risk_measures": portfolio_risk_measures,
+        "portfolio_id": portfolio.id,
     }
 
     return render(request, "portfolio/portfolio_risk.html", context)
