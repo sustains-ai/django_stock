@@ -256,9 +256,15 @@ def analyze_portfolio(request, portfolio_id):
 
 
 
+import pandas as pd
+import json
+from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse
+from .models import Portfolio, HistoricalStockData, Stock
+
 def portfolio_risk(request, portfolio_id):
     """
-    Computes risk measures for the entire portfolio.
+    Computes risk measures for the entire portfolio and tracks portfolio value over time.
     """
 
     portfolio = get_object_or_404(Portfolio, id=portfolio_id)
@@ -274,28 +280,47 @@ def portfolio_risk(request, portfolio_id):
 
     # ✅ Convert to DataFrame
     df = pd.DataFrame.from_records(historical_prices_qs.values("date", "symbol", "adjusted_close"))
-    price_data = df.pivot(index="date", columns="symbol", values="adjusted_close")
+
+    # ✅ Pivot DataFrame to get prices for each stock in columns
+    price_data = df.pivot(index="date", columns="symbol", values="adjusted_close").ffill()
 
     # ✅ Compute daily returns
     X = price_data.pct_change(fill_method=None).dropna()
 
-    # ✅ Get optimal portfolio weights (from previous portfolio analysis)
+    # ✅ Get equal portfolio weights (can be replaced with actual weights)
     portfolio_weights = {
-        stock.symbol: 1 / len(price_data.columns)  # Placeholder: Equal Weights
+        stock.symbol: 1 / len(price_data.columns)  # Equal Weights Placeholder
         for stock in portfolio.stocks.all()
     }
 
     # ✅ Calculate portfolio risk
     portfolio_risk_measures = calculate_portfolio_risk(X, portfolio_weights)
 
-    # ✅ Pass portfolio risk to template
+    # ✅ Fetch the number of shares for each stock in the portfolio
+    stock_quantities = {
+        stock.symbol: stock.quantity for stock in Stock.objects.filter(portfolio=portfolio)
+    }
+
+    # ✅ Compute portfolio value over time
+    portfolio_values = (price_data * pd.Series(stock_quantities)).sum(axis=1)
+
+    # ✅ Convert Portfolio Value data to JSON (Fixing Date Serialization)
+    portfolio_value_json = portfolio_values.reset_index()
+    portfolio_value_json["date"] = portfolio_value_json["date"].astype(str)  # Convert Date to String
+    portfolio_value_json = portfolio_value_json.rename(columns={"date": "x", 0: "y"}).to_dict(orient="records")
+
+    print("DEBUG: Portfolio Value JSON")  # ✅ Print debug info
+    print(json.dumps(portfolio_value_json, indent=4))
+    # ✅ Pass all necessary data to the template
     context = {
         "portfolio": portfolio,
         "portfolio_risk_measures": portfolio_risk_measures,
         "portfolio_id": portfolio.id,
+        "portfolio_value_json": json.dumps(portfolio_value_json),  # ✅ Fixed JSON Serialization
     }
 
     return render(request, "portfolio/portfolio_risk.html", context)
+
 
 
 
