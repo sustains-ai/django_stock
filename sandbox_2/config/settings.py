@@ -144,3 +144,6 @@ LOGOUT_REDIRECT_URL = "/accounts/login/"  # Redirects after logout
 
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+import os
+
+PORT = os.getenv("PORT", "8000")  # Default to 8000 if PORT is not set
