@@ -35,8 +35,6 @@ DEBUG = os.getenv("DEBUG") == "True"
 
 # ALLOWED_HOSTS = ["localhost", "127.0.0.1", "sandbox_2.herokuapp.com"]
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,www.sustains.co,sustains.co").split(",")
-
 # Application definition
 
 INSTALLED_APPS = [
