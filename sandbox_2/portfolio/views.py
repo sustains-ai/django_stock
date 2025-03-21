@@ -50,84 +50,69 @@ def add_portfolio(request):
 
 
 
+@login_required
 def add_stock(request):
     portfolios = Portfolio.objects.filter(fund_manager__user=request.user)
-
     if request.method == "POST":
         form = StockForm(request.POST)
-
         if form.is_valid():
             stock_data = form.save(commit=False)
             portfolio_id = request.POST.get("portfolio_id")
-
             if not portfolio_id:
-                return render(request, "portfolio/add_stock.html", {
-                    "form": form,
-                    "portfolios": portfolios,
-                    "error": "Please select a portfolio!"
-                })
+                messages.error(request, "Please select a portfolio!")
+                return render(request, "portfolio/add_stock.html", {"form": form, "portfolios": portfolios})
 
-            portfolio = get_object_or_404(Portfolio, id=portfolio_id)
+            portfolio = get_object_or_404(Portfolio, id=portfolio_id, fund_manager__user=request.user)
             stock_data.portfolio = portfolio
 
-            # ✅ Check if the stock already exists in the portfolio
             existing_stock = portfolio.stocks.filter(symbol=stock_data.symbol).first()
-
             if existing_stock:
-                # ✅ Weighted Average Price Calculation
                 total_quantity = existing_stock.quantity + stock_data.quantity
                 weighted_price = (
                     (existing_stock.price * existing_stock.quantity) +
                     (stock_data.price * stock_data.quantity)
                 ) / total_quantity
-
-                # ✅ Update existing stock
                 existing_stock.quantity = total_quantity
                 existing_stock.price = weighted_price
                 existing_stock.save()
-
+                messages.success(request, f"Updated {stock_data.symbol} in {portfolio.name}")
             else:
-                # ✅ Add as new stock if it doesn't exist
                 stock_data.save()
-
-                # ✅ Fetch historical data only if not already stored
-                existing_data = HistoricalStockData.objects.filter(
-                    portfolio=portfolio, symbol=stock_data.symbol
-                ).exists()
-
-                if not existing_data:
-                    fetch_and_store_historical_data(portfolio.id, stock_data.symbol)
-
+                if stock_data.fetch_and_store_historical_data():
+                    messages.success(request, f"Added {stock_data.symbol} to {portfolio.name} with Alpha Vantage data")
+                else:
+                    messages.warning(request, f"Added {stock_data.symbol} to {portfolio.name}, but failed to fetch Alpha Vantage data")
             return redirect("portfolio_list")
-
+        else:
+            messages.error(request, "Invalid stock data. Please check the form.")
     else:
         form = StockForm()
-
-    return render(request, "portfolio/add_stock.html", {
-        "form": form,
-        "portfolios": portfolios
-    })
+    return render(request, "portfolio/add_stock.html", {"form": form, "portfolios": portfolios})
 
 
 
 
 
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, get_object_or_404
+from django.contrib import messages
+import json
+import pandas as pd
+from .models import Portfolio, Stock, HistoricalStockData
+from .risk_analysis import perform_risk_analysis, calculate_risk_measures
 
+@login_required
 def analyze_portfolio(request, portfolio_id):
     portfolio = get_object_or_404(Portfolio, id=portfolio_id, fund_manager__user=request.user)
     stocks = portfolio.stocks.all()
 
+    # Calculate stock data and total value
     stock_data = []
     total_value = 0
-    historical_data = {}
-
-    stock_symbols = [stock.symbol for stock in stocks]
-
     for stock in stocks:
         manual_price = stock.price
         live_price = stock.get_live_price()
         price = manual_price if manual_price else live_price
-
         if price is not None:
             stock_total = price * stock.quantity
             total_value += stock_total
@@ -135,24 +120,22 @@ def analyze_portfolio(request, portfolio_id):
                 'name': stock.name,
                 'symbol': stock.symbol,
                 'quantity': stock.quantity,
-                'manual_price': manual_price,
+                'manual_price': float(manual_price) if manual_price else None,
                 'live_price': live_price,
-                'total_value': stock_total,
+                'total_value': float(stock_total),
             })
 
     # Fetch historical prices
-    historical_prices_qs = HistoricalStockData.objects.filter(
-        portfolio=portfolio, symbol__in=stock_symbols).order_by("date")
-
+    historical_prices_qs = HistoricalStockData.objects.filter(portfolio=portfolio).order_by("date")
     if not historical_prices_qs.exists():
+        messages.warning(request, "No historical data available for this portfolio.")
         return render(request, 'portfolio/analyze_portfolio.html', {
             'portfolio': portfolio,
             'stock_data': stock_data,
-            'total_value': total_value,
+            'total_value': float(total_value),
             'historical_data': json.dumps({}),
             'portfolio_analysis': None,
             'risk_measures': {},
-            'error': "No historical data available for this portfolio."
         })
 
     # Convert to DataFrame
@@ -160,99 +143,64 @@ def analyze_portfolio(request, portfolio_id):
         historical_prices_qs.values("date", "symbol", "adjusted_close")
     )
 
+    # Pivot to time series and filter available symbols
+    daily_prices = historical_prices_df.pivot(index='date', columns='symbol', values='adjusted_close').dropna()
+    available_symbols = daily_prices.columns.tolist()
+    stock_symbols = [stock.symbol for stock in stocks if stock.symbol in available_symbols]
+
+    # Build historical data for template
+    historical_data = {}
     for symbol in stock_symbols:
         symbol_data = historical_prices_df[historical_prices_df["symbol"] == symbol]
         historical_data[symbol] = {
-            "dates": list(symbol_data["date"].astype(str)),
-            "prices": list(symbol_data["adjusted_close"])
+            "dates": symbol_data["date"].astype(str).tolist(),
+            "prices": symbol_data["adjusted_close"].tolist()
         }
 
-        if historical_prices_df.empty:
-            return render(request, 'portfolio/analyze_portfolio.html', {
-                'portfolio': portfolio,
-                'stock_data': stock_data,
-                'total_value': total_value,
-                'historical_data': json.dumps({}),  # ✅ Ensure JSON format
-                'portfolio_analysis': None,
-                'risk_measures': {},
-                'error': "No historical data available for this portfolio."
-            })
-
-            # Convert historical prices to JSON
-        for symbol in stock_symbols:
-            symbol_data = historical_prices_df[historical_prices_df["symbol"] == symbol]
-            historical_data[symbol] = {
-                "dates": list(symbol_data["date"].astype(str)),
-                "prices": list(symbol_data["adjusted_close"])
-            }
-
-            # ✅ Convert historical_data to JSON properly
-        historical_data_json = json.dumps(historical_data)
-
-
-
-
-
-
-
-
-            # Pivot the data to get a time series
-    daily_prices = historical_prices_df.pivot(index='date', columns='symbol', values='adjusted_close')
-    daily_prices = daily_prices.dropna().reset_index(drop=True)
-
     # Compute daily returns
-    X = daily_prices.pct_change().dropna().reset_index(drop=True)
-
+    X = daily_prices.pct_change().dropna()
     if X.empty:
+        messages.warning(request, "Not enough historical data to compute returns.")
         return render(request, 'portfolio/analyze_portfolio.html', {
             'portfolio': portfolio,
             'stock_data': stock_data,
-            'total_value': total_value,
-            'historical_data': {},
+            'total_value': float(total_value),
+            'historical_data': json.dumps(historical_data),
             'portfolio_analysis': None,
             'risk_measures': {},
-            'error': "Not enough historical price data to compute returns."
         })
 
-    # ✅ Call risk analysis function
+    # Perform risk analysis
     portfolio_analysis = perform_risk_analysis(X)
     risk_measures = calculate_risk_measures(X, stock_symbols)
 
+    if portfolio_analysis is None:
+        messages.warning(request, "Portfolio optimization failed. Ensure enough price data is available.")
+        return render(request, 'portfolio/analyze_portfolio.html', {
+            'portfolio': portfolio,
+            'stock_data': stock_data,
+            'total_value': float(total_value),
+            'historical_data': json.dumps(historical_data),
+            'portfolio_analysis': None,
+            'risk_measures': risk_measures,
+        })
 
-
-    # ✅ Ensure JSON is formatted correctly
-
+    # Prepare JSON for template
     portfolio_analysis_json = {
-        "mean_variance": json.dumps(portfolio_analysis["mean_variance"]),  # ✅ Correct dictionary access
+        "mean_variance": json.dumps(portfolio_analysis["mean_variance"]),
         "cvar": json.dumps(portfolio_analysis["cvar"]),
         "erc": json.dumps(portfolio_analysis["erc"]),
     }
 
-    if portfolio_analysis is None:
-        return render(request, 'portfolio/analyze_portfolio.html', {
-            'portfolio': portfolio,
-            'stock_data': stock_data,
-            'total_value': total_value,
-            'historical_data': {},
-            'portfolio_analysis': None,
-            'risk_measures': risk_measures,
-            'error': "Portfolio optimization failed. Ensure enough price data is available."
-        })
-
-
-
     return render(request, 'portfolio/analyze_portfolio.html', {
         'portfolio': portfolio,
         'stock_data': stock_data,
-        'total_value': total_value,
+        'total_value': float(total_value),
         'historical_data': json.dumps(historical_data),
         'portfolio_analysis': portfolio_analysis_json,
-        "optimal_table": portfolio_analysis,
+        'optimal_table': portfolio_analysis,
         'risk_measures': risk_measures
     })
-
-
-
 
 
 
@@ -262,68 +210,72 @@ from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from .models import Portfolio, HistoricalStockData, Stock
 
+@login_required
 def portfolio_risk(request, portfolio_id):
     """
     Computes risk measures for the entire portfolio and tracks portfolio value over time.
     """
+    portfolio = get_object_or_404(Portfolio, id=portfolio_id, fund_manager__user=request.user)
+    stocks = portfolio.stocks.all()
 
-    portfolio = get_object_or_404(Portfolio, id=portfolio_id)
-
-    # ✅ Fetch historical stock data
+    # Fetch historical stock data
     historical_prices_qs = HistoricalStockData.objects.filter(portfolio=portfolio).order_by("date")
-
     if not historical_prices_qs.exists():
+        messages.warning(request, "No historical data available to calculate portfolio risk.")
         return render(request, "portfolio/portfolio_risk.html", {
             "portfolio": portfolio,
-            "error": "No historical data available to calculate portfolio risk.",
         })
 
-    # ✅ Convert to DataFrame
+    # Convert to DataFrame
     df = pd.DataFrame.from_records(historical_prices_qs.values("date", "symbol", "adjusted_close"))
-
-    # ✅ Pivot DataFrame to get prices for each stock in columns
     price_data = df.pivot(index="date", columns="symbol", values="adjusted_close").ffill()
 
-    # ✅ Compute daily returns
-    X = price_data.pct_change(fill_method=None).dropna()
+    # Filter stocks with historical data
+    available_symbols = price_data.columns.tolist()
+    valid_stocks = [stock for stock in stocks if stock.symbol in available_symbols]
+    if not valid_stocks:
+        messages.warning(request, "No valid stocks with historical data for risk calculation.")
+        return render(request, "portfolio/portfolio_risk.html", {
+            "portfolio": portfolio,
+        })
 
-    # ✅ Get equal portfolio weights (can be replaced with actual weights)
-    portfolio_weights = {
-        stock.symbol: 1 / len(price_data.columns)  # Equal Weights Placeholder
-        for stock in portfolio.stocks.all()
-    }
+    # Compute daily returns
+    X = price_data[available_symbols].pct_change().dropna()
+    if X.empty:
+        messages.warning(request, "Not enough historical data to compute returns.")
+        return render(request, "portfolio/portfolio_risk.html", {
+            "portfolio": portfolio,
+        })
 
-    # ✅ Calculate portfolio risk
+    # Portfolio weights (equal weights for available stocks)
+    portfolio_weights = {stock.symbol: 1 / len(available_symbols) for stock in valid_stocks}
+
+    # Calculate portfolio risk
     portfolio_risk_measures = calculate_portfolio_risk(X, portfolio_weights)
 
-    # ✅ Fetch the number of shares for each stock in the portfolio
-    stock_quantities = {
-        stock.symbol: stock.quantity for stock in Stock.objects.filter(portfolio=portfolio)
-    }
+    # Fetch stock quantities for valid stocks
+    stock_quantities = {stock.symbol: stock.quantity for stock in valid_stocks}
 
-    # ✅ Compute portfolio value over time
-    portfolio_values = (price_data * pd.Series(stock_quantities)).sum(axis=1)
+    # Compute portfolio value over time
+    portfolio_values = (price_data[available_symbols] * pd.Series(stock_quantities)).sum(axis=1)
 
-    # ✅ Convert Portfolio Value data to JSON (Fixing Date Serialization)
+    # Convert portfolio value to JSON
     portfolio_value_json = portfolio_values.reset_index()
-    portfolio_value_json["date"] = portfolio_value_json["date"].astype(str)  # Convert Date to String
+    portfolio_value_json["date"] = portfolio_value_json["date"].astype(str)
     portfolio_value_json = portfolio_value_json.rename(columns={"date": "x", 0: "y"}).to_dict(orient="records")
 
-    print("DEBUG: Portfolio Value JSON")  # ✅ Print debug info
+    print("DEBUG: Portfolio Value JSON")
     print(json.dumps(portfolio_value_json, indent=4))
-    # ✅ Pass all necessary data to the template
+
+    # Context for template
     context = {
         "portfolio": portfolio,
         "portfolio_risk_measures": portfolio_risk_measures,
         "portfolio_id": portfolio.id,
-        "portfolio_value_json": json.dumps(portfolio_value_json),  # ✅ Fixed JSON Serialization
+        "portfolio_value_json": json.dumps(portfolio_value_json),
     }
 
     return render(request, "portfolio/portfolio_risk.html", context)
-
-
-
-
 
 
 
@@ -449,3 +401,6 @@ def std_dev_view(request, portfolio_id):
         "portfolio_weights_json": portfolio_weights_json,
         "efficient_frontier_json": efficient_frontier_json,
     })
+
+
+

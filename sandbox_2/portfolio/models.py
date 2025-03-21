@@ -1,10 +1,10 @@
 from django.db import models
-
-# Create your models here.
+import requests
+import os
 from django.contrib.auth.models import User
-from django.db import models
-import yfinance as yf
 from django.utils.timezone import now
+from datetime import datetime
+
 
 class Institute(models.Model):
     name = models.CharField(max_length=255)
@@ -13,12 +13,14 @@ class Institute(models.Model):
     def __str__(self):
         return self.name
 
+
 class FundManager(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     institute = models.ForeignKey(Institute, on_delete=models.CASCADE, related_name="fund_managers")
 
     def __str__(self):
         return self.user.username
+
 
 class Portfolio(models.Model):
     name = models.CharField(max_length=255)
@@ -27,8 +29,6 @@ class Portfolio(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.fund_manager.user.username})"
-
-
 
 
 class Stock(models.Model):
@@ -43,13 +43,57 @@ class Stock(models.Model):
         return f"{self.name} ({self.symbol})"
 
     def get_live_price(self):
-        """Fetch the live price from Yahoo Finance."""
+        """Fetch the live price from Alpha Vantage."""
         try:
-            stock_data = yf.Ticker(self.symbol)
-            return stock_data.info.get('regularMarketPrice', None)
+            api_key = os.getenv("ALPHA_VANTAGE_API_KEY")
+            url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={self.symbol}&outputsize=full&apikey={api_key}"
+            response = requests.get(url, headers={"User-Agent": "python-requests"})
+
+            if response.status_code != 200:
+                print(f"Alpha Vantage error: {response.status_code}")
+                return None
+
+            data = response.json()
+            time_series = data.get("Time Series (Daily)")
+
+            if not time_series:
+                print(f"No time series data found for {self.symbol}")
+                return None
+
+            latest_date = sorted(time_series.keys(), reverse=True)[0]
+            stock_data = time_series[latest_date]
+            return float(stock_data["4. close"])
         except Exception as e:
             print(f"Error fetching price for {self.symbol}: {e}")
             return None
+
+    def fetch_and_store_historical_data(self):
+        """Fetch and store historical data from Alpha Vantage."""
+        try:
+            api_key = os.getenv("ALPHA_VANTAGE_API_KEY")
+            url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={self.symbol}&outputsize=full&apikey={api_key}"
+            response = requests.get(url, headers={"User-Agent": "python-requests"})
+            response.raise_for_status()
+            data = response.json().get("Time Series (Daily)", {})
+
+            if not data:
+                print(f"No historical data for {self.symbol}")
+                return False
+
+            for date_str, values in data.items():
+                date = datetime.strptime(date_str, "%Y-%m-%d").date()
+                adjusted_close = float(values["4. close"])
+                HistoricalStockData.objects.update_or_create(
+                    portfolio=self.portfolio,
+                    symbol=self.symbol,
+                    date=date,
+                    defaults={"adjusted_close": adjusted_close}
+                )
+            print(f"Stored historical data for {self.symbol}")
+            return True
+        except Exception as e:
+            print(f"Error fetching historical data for {self.symbol}: {e}")
+            return False
 
     def get_total_value(self):
         """Calculate the total value of the stock."""
@@ -59,6 +103,7 @@ class Stock(models.Model):
         if live_price:
             return live_price * self.quantity
         return 0
+
 
 class HistoricalStockData(models.Model):
     portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name="historical_data")
