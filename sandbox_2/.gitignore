@@ -15,4 +15,5 @@ __pycache__/
 # System Files (Optional)
 .DS_Store
 Thumbs.db
-db.sqlite3
+db.sqlite3__pycache__/
+*.pyc
