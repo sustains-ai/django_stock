@@ -18,16 +18,43 @@ import pandas as pd
 from .models import Portfolio, HistoricalStockData
 from .risk_analysis import perform_risk_analysis  # Import new function
 
+from django.contrib.auth import authenticate, login
+from django.shortcuts import render, redirect
+from django.contrib.auth.forms import AuthenticationForm
+
+from .decorators import fund_manager_required
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect
+from django.contrib.auth.decorators import login_required
+
+def custom_login(request):
+    if request.method == "POST":
+        form = AuthenticationForm(data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            return redirect('/')  # You can change this to wherever you want after login
+    else:
+        form = AuthenticationForm()
+    return render(request, 'login.html', {'form': form})
+
+
 
 
 def index(request):
     return render(request, 'portfolio/index.html')
 
 
-
+@login_required
+@fund_manager_required
 def portfolio_list(request):
     portfolios = Portfolio.objects.filter(fund_manager__user=request.user)
     return render(request, 'portfolio/portfolio_list.html', {'portfolios': portfolios})
+
+
+
+
+
 
 @login_required
 def add_portfolio(request):

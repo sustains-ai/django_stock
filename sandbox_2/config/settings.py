@@ -148,9 +148,10 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 # Authentication redirects
-LOGIN_URL = "/accounts/login/"  # Redirects to the login page if user isn't authenticated
-LOGIN_REDIRECT_URL = "/"  # Redirects after a successful login
-LOGOUT_REDIRECT_URL = "/accounts/login/"  # Redirects after logout
+LOGIN_URL = "/login/"  # URL to redirect users to when login is required
+LOGIN_REDIRECT_URL = "/portfolio_list"  # URL to redirect to after successful login
+LOGOUT_REDIRECT_URL = "/login/"  # URL to redirect to after logout
+
 
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
