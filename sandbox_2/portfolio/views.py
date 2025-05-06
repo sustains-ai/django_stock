@@ -1,6 +1,8 @@
 
 from .models import Portfolio, FundManager,HistoricalStockData
 from .forms import StockForm, PortfolioForm
+from django.contrib.auth import logout
+from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 from django.contrib import messages
@@ -27,16 +29,42 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 
+import os
+import requests
+from django.shortcuts import render, redirect
+from django.contrib.auth import login
+from django.contrib.auth.forms import AuthenticationForm
+from dotenv import load_dotenv
+
+load_dotenv()  # Ensures .env is loaded if not already
+
+import os
+import requests
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth import login
+from django.shortcuts import render, redirect
+
+from .utils import fetch_news_sentiment
+from .models import fetch_news_sentiment
+
+
 def custom_login(request):
-    if request.method == "POST":
-        form = AuthenticationForm(data=request.POST)
-        if form.is_valid():
-            user = form.get_user()
-            login(request, user)
-            return redirect('/')  # You can change this to wherever you want after login
-    else:
-        form = AuthenticationForm()
-    return render(request, 'login.html', {'form': form})
+    form = AuthenticationForm(data=request.POST or None)
+    news_data = fetch_news_sentiment(symbol="", limit=5)
+
+    if request.method == "POST" and form.is_valid():
+        user = form.get_user()
+        login(request, user)
+        return redirect("/portfolio_list/")
+
+    return render(request, 'portfolio/login.html', {'form': form, 'news_data': news_data})
+
+
+
+
+def logout_view(request):
+    logout(request)
+    return redirect('login')  # or redirect('/') if you prefer
 
 
 
