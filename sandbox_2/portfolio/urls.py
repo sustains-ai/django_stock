@@ -14,8 +14,10 @@ urlpatterns = [
     path('portfolio/<int:portfolio_id>/risk/', views.portfolio_risk, name='portfolio_risk'),
 
     #login and logout
-    path('', auth_views.LoginView.as_view(template_name='portfolio/login.html'), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
+    # path('', auth_views.LoginView.as_view(template_name='portfolio/login.html'), name='login'),
+    path('',views.custom_login,name='login'),
+    path('logout/', auth_views.LogoutView.as_view(next_page='custom_login'), name='logout'),
+
 
 ]
 

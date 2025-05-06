@@ -2,6 +2,20 @@
 from .models import Portfolio, FundManager,HistoricalStockData
 from .forms import StockForm, PortfolioForm
 from django.contrib.auth import logout
+import pandas as pd
+import json
+from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse
+from .models import Portfolio, HistoricalStockData, Stock
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, get_object_or_404
+from django.contrib import messages
+import json
+import pandas as pd
+from .models import Portfolio, Stock, HistoricalStockData
+from .risk_analysis import perform_risk_analysis, calculate_risk_measures
+import json
+from django.shortcuts import render
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
@@ -50,14 +64,21 @@ from .utils import fetch_news_sentiment
 
 def custom_login(request):
     form = AuthenticationForm(data=request.POST or None)
-    news_data = fetch_news_sentiment(symbol="", limit=5)
+    news_data = fetch_news_sentiment()
+    news_fetch_success = bool(news_data)  # True if news_data is not empty, False otherwise
+    print("✅ News fetch success:", news_fetch_success)
 
     if request.method == "POST" and form.is_valid():
         user = form.get_user()
         login(request, user)
         return redirect("/portfolio_list/")
+    print("🟡 Login page loaded")
 
-    return render(request, 'portfolio/login.html', {'form': form, 'news_data': news_data})
+    return render(request, 'portfolio/login.html', {
+        'form': form,
+        'news_data': news_data,
+        'news_fetch_success': news_fetch_success
+    })
 
 
 
@@ -148,13 +169,6 @@ def add_stock(request):
 
 
 
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, get_object_or_404
-from django.contrib import messages
-import json
-import pandas as pd
-from .models import Portfolio, Stock, HistoricalStockData
-from .risk_analysis import perform_risk_analysis, calculate_risk_measures
 
 @login_required
 def analyze_portfolio(request, portfolio_id):
@@ -259,11 +273,7 @@ def analyze_portfolio(request, portfolio_id):
 
 
 
-import pandas as pd
-import json
-from django.shortcuts import render, get_object_or_404
-from django.http import JsonResponse
-from .models import Portfolio, HistoricalStockData, Stock
+
 
 @login_required
 def portfolio_risk(request, portfolio_id):
@@ -436,8 +446,7 @@ def delete_portfolio(request, portfolio_id):
     return redirect('portfolio_list')
 
 
-import json
-from django.shortcuts import render
+
 
 def std_dev_view(request, portfolio_id):
     # ✅ Fetch Portfolio Data (Ensure it's always available)
