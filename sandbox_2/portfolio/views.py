@@ -45,7 +45,7 @@ from django.contrib.auth import login
 from django.shortcuts import render, redirect
 
 from .utils import fetch_news_sentiment
-from .models import fetch_news_sentiment
+
 
 
 def custom_login(request):
