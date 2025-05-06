@@ -116,3 +116,27 @@ class HistoricalStockData(models.Model):
 
     def __str__(self):
         return f"{self.portfolio.name} - {self.symbol} - {self.date}: {self.adjusted_close}"
+
+
+import os
+import requests
+
+
+def fetch_news_sentiment(symbol="AAPL", limit=10):
+    """Fetch latest news sentiment data from Alpha Vantage."""
+    try:
+        api_key = os.getenv("ALPHA_VANTAGE_API_KEY")
+        url = (
+            f"https://www.alphavantage.co/query?function=NEWS_SENTIMENT"
+            f"&tickers={symbol}&limit={limit}&sort=LATEST&apikey={api_key}"
+        )
+        response = requests.get(url)
+
+        if response.status_code != 200:
+            print(f"Alpha Vantage News API error: {response.status_code}")
+            return []
+
+        return response.json().get("feed", [])
+    except Exception as e:
+        print(f"Error fetching news sentiment for {symbol}: {e}")
+        return []
