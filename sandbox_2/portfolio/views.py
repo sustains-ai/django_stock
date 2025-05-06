@@ -11,7 +11,7 @@ import riskfolio as rp
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Portfolio, Stock, HistoricalStockData
 from .forms import StockForm
-from .utils import fetch_and_store_historical_data
+
 from .risk_analysis import calculate_portfolio_risk
 from django.shortcuts import render, get_object_or_404
 import pandas as pd
