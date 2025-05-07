@@ -1,0 +1,195 @@
+/* ✅ Root & Typography */
+body, html {
+    height: 100%;
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background: #f8fafc;
+}
+
+/* ✅ Layout Containers */
+.container-fluid {
+    height: 100vh;
+    overflow: hidden;
+}
+
+.split {
+    height: 100%;
+    padding: 40px;
+    transition: all 0.3s ease;
+}
+
+/* ✅ Left Side (Form Section) */
+.left {
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.form-container {
+    max-width: 420px;
+    width: 100%;
+    margin: 0 auto;
+    background: #3C474B;
+    padding: 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(229, 231, 235, 0.5);
+    backdrop-filter: blur(10px);
+}
+
+.logo-container {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.logo {
+    max-width: 150px;
+    height: auto;
+}
+
+.form-container h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    color: #f5f7fa;
+    margin-bottom: 1.5rem;
+}
+
+/* ✅ Input & Form Elements */
+.form-floating {
+    margin-bottom: 1.25rem;
+}
+
+.form-floating label {
+    color: #6B7280;
+}
+
+.form-control {
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    height: 3.25rem;
+    font-size: 1rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #10B981;
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+}
+
+/* ✅ Icons inside Inputs */
+.input-group {
+    position: relative;
+}
+
+.input-icon {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #30343F;
+    z-index: 10;
+}
+
+.input-with-icon {
+    padding-left: 40px;
+}
+
+/* ✅ Buttons */
+.btn-login {
+    background: linear-gradient(to right, #10B981, #059669);
+    border: none;
+    font-weight: 500;
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+}
+
+.btn-login:hover {
+    background: linear-gradient(to right, #059669, #047857);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(16, 185, 129, 0.25);
+}
+
+/* ✅ Alerts */
+.alert {
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid transparent;
+}
+
+.alert-danger {
+    background-color: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.2);
+    color: #DC2626;
+}
+
+/* ✅ Right Side (Optional content or animation area) */
+.right {
+    background: #000000;
+    color: #1F2937;
+    overflow-y: auto;
+    position: relative;
+}
+
+.right::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2310b981' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    opacity: 0.5;
+    z-index: 0;
+}
+
+.right > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* ✅ Animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ✅ Responsive */
+@media (max-width: 992px) {
+    .split {
+        position: static;
+        width: 100% !important;
+        height: auto;
+        padding: 30px 20px;
+    }
+
+    .left, .right {
+        width: 100%;
+    }
+
+    .container-fluid {
+        height: auto;
+    }
+
+    .form-container {
+        padding: 1.8rem;
+        max-width: 100%;
+    }
+
+    .right h3 {
+        font-size: 1.6rem;
+        text-align: center;
+    }
+
+    .right p.tagline {
+        text-align: center;
+        font-size: 1rem;
+        margin-bottom: 2rem;
+    }
+}

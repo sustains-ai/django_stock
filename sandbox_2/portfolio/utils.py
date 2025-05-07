@@ -25,3 +25,4 @@ def fetch_news_sentiment():
     except Exception as e:
         print(f"Error fetching news sentiment: {e}")
         return []
+

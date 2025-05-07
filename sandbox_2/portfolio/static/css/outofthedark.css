@@ -1,0 +1,124 @@
+:root {
+    --card-width: 280px;
+    --card-height: 400px;
+    --card-spacing: 40px;
+    --animation-duration: 20s;
+    --glow-intensity: 0.5;
+    --float-distance: 10px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.cards-container {
+    position: relative;
+    display: flex;
+    gap: var(--card-spacing);
+    padding: 50px;
+    will-change: transform;
+}
+
+.card {
+    position: relative;
+    width: var(--card-width);
+    height: var(--card-height);
+    background: rgba(0, 5, 15, 0.8);
+    border-radius: 15px;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+    will-change: transform, opacity;
+    --glow-color: #0ABF53; /* example color */
+    --glow-duration: 4s;
+    --glow-delay: 0s;
+
+    animation: float 3s ease-in-out infinite,
+               autonomous-glow var(--glow-duration) ease-in-out infinite var(--glow-delay);
+}
+
+.card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 15px;
+    background: linear-gradient(
+        45deg,
+        transparent,
+        rgba(255, 255, 255, 0.05),
+        transparent
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+    will-change: opacity;
+}
+
+@keyframes float {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(var(--float-distance));
+    }
+}
+
+@keyframes autonomous-glow {
+    0%,
+    100% {
+        box-shadow: 0 0 25px rgba(0, 225, 255, 0);
+        filter: brightness(0.1);
+        opacity: 0.1;
+    }
+    50% {
+        box-shadow: 0 0 25px var(--glow-color);
+        filter: brightness(1.3);
+        opacity: 1;
+    }
+}
+
+.card {
+    animation: float 3s ease-in-out infinite,
+        autonomous-glow var(--glow-duration, 4s) ease-in-out infinite var(--glow-delay, 0s);
+}
+
+.card-image {
+    will-change: opacity;
+}
+
+.cursor-light {
+    position: fixed;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(
+        circle,
+        rgba(255, 255, 255, 0.1) 0%,
+        transparent 70%
+    );
+    border-radius: 50%;
+    pointer-events: none;
+    transform: translate(-50%, -50%) translateZ(0);
+    z-index: 1;
+    mix-blend-mode: screen;
+    will-change: transform;
+}
+
+@media (max-width: 768px) {
+    :root {
+        --card-width: 220px;
+        --card-height: 320px;
+        --card-spacing: 20px;
+    }
+
+    .cards-container {
+        padding: 20px;
+    }
+}
