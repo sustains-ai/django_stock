@@ -160,9 +160,9 @@ import os
 PORT = os.getenv("PORT", "8000")  # Default to 8000 if PORT is not set
 
 
-# STORAGES = {
-#     # ...
-#     "staticfiles": {
-#         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-#     },
-# }
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "unique-sustains-market-status-cache",
+    }
+}

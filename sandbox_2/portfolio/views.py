@@ -2,6 +2,7 @@
 from .models import Portfolio, FundManager,HistoricalStockData
 from .forms import StockForm, PortfolioForm
 from django.contrib.auth import logout
+from django.core.cache import cache
 import pandas as pd
 import json
 from django.shortcuts import render, get_object_or_404
@@ -58,7 +59,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login
 from django.shortcuts import render, redirect
 
-from .utils import fetch_news_sentiment
+from .utils import fetch_news_sentiment,global_open_closed_status
 
 
 
@@ -468,3 +469,27 @@ def std_dev_view(request, portfolio_id):
 
 
 
+# def market_status_view(request):
+#     cache_key = "latest_market_status"
+#     fallback_data = cache.get(cache_key)
+#
+#     try:
+#         market_data = global_open_closed_status()
+#         if market_data and "markets" in market_data:
+#             cache.set(cache_key, market_data, timeout=3600)  # 1 hour
+#             return JsonResponse(market_data)
+#         else:
+#             raise ValueError("Invalid structure or empty response")
+#     except Exception as e:
+#         print(f"❌ Serving fallback from cache: {e}")
+#         if fallback_data:
+#             return JsonResponse(fallback_data)
+#         return JsonResponse({"error": "Failed to fetch market status"}, status=500)
+
+from django.http import JsonResponse
+
+def market_status_view(request):
+        market_data = global_open_closed_status()
+        response= JsonResponse(market_data,safe=False)
+        print("Response Content:", response.content.decode('utf-8'))  # Debug output
+        return response
