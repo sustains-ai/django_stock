@@ -1,10 +1,10 @@
 :root {
-    --card-width: 30vw; /* Reduced from 80vw */
-    --card-height: 60vh; /* Reduced from 80vh */
-    --card-spacing: 40px;
+    --card-width: 20vw; /* Reduced from 80vw */
+    --card-height: 40vh; /* Reduced from 80vh */
+    --card-spacing: 50px;
     --animation-duration: 20s;
-    --glow-intensity: 0.5;
-    --float-distance: 10px;
+    --glow-intensity: 0.2;
+    --float-distance: 20px;
 }
 
 * {
@@ -51,7 +51,7 @@
 }
 
 .right {
-    background: #000510; /* dark background for contrast */
+    background: black; /* dark background for contrast */
     position: relative;
     overflow: hidden;
 }
@@ -76,7 +76,7 @@
 @keyframes autonomous-glow {
     0%, 100% {
         box-shadow: 0 0 25px rgba(0, 225, 255, 0);
-        filter: brightness(0.1);
+        filter: brightness(0.05);
         opacity: 0.1;
     }
     50% {
