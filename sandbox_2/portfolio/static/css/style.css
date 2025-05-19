@@ -1,11 +1,12 @@
-/* ✅ General Page Styling */
+/* General Page Styling- Remove all the other from here. Keep NAVBAR here */
 body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
     margin: 0;
     font-family: 'Roboto', sans-serif;
-    background-color: #f5f7fa;
+    background-color: #000000;
+    color: #e0e0e0;
 }
 
 main.container {
@@ -15,8 +16,8 @@ main.container {
 
 /* ✅ Navbar Styling */
 .navbar-custom {
-    background-color: #0ABF53;
-    color: #ffffff;
+    background-color: #A6808C;
+    color: white;
 }
 
 .navbar-custom .nav-link {
@@ -33,145 +34,16 @@ main.container {
     font-size: 1.5rem;
 }
 
-/* ✅ Section Layout */
-.portfolio-section {
-    background: #ffffff;
-    border-radius: 12px;
-    padding: 30px;
-    margin-bottom: 40px;
-    box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.1);
-}
 
-/* ✅ Section Titles */
-.section-title {
-    text-align: center;
-    font-size: 24px;
-    font-weight: 600;
-    color: #0ABF53;
-    margin-bottom: 25px;
-    border-bottom: 3px solid #0ABF53;
-    padding-bottom: 10px;
-}
 
-/* ✅ Section Divider */
-.section-divider {
-    margin: 40px 0;
-    border: 2px solid #ddd;
-    border-radius: 4px;
-}
 
-/* ✅ Flexbox Layout for Sections */
-.section-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 40px;
-}
 
-/* ✅ Left Side (Tables) */
-.section-left {
-    flex: 1;
-    min-width: 48%;
-}
 
-/* ✅ Right Side (Charts) */
-.section-right {
-    flex: 1;
-    min-width: 48%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
 
-/* ✅ Tables Styling */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    background-color: #ffffff;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-}
 
-/* ✅ Table Headers */
-thead {
-    background-color: #0ABF53;
-    color: white;
-    font-weight: bold;
-}
 
-/* ✅ Table Cells */
-th, td {
-    padding: 12px;
-    text-align: center;
-    border-bottom: 1px solid #ddd;
-}
 
-/* ✅ Alternate row color */
-tbody tr:nth-child(even) {
-    background-color: #f9f9f9;
-}
 
-/* ✅ Hover effect */
-tbody tr:hover {
-    background-color: #e0f7e9;
-    transition: background-color 0.3s ease;
-}
-
-/* ✅ Chart Containers */
-.chart-container {
-    width: 100%;
-    max-width: 500px;
-    height: 400px;
-    background-color: #f8f9fa;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* ✅ Pie Charts: Align in Three Columns */
-#portfolio-allocation-charts{
-    width: 100%;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    justify-content: left;
-    margin-top: 50px;
-    margin-bottom: 100px;
-}
-/* ✅ Each Pie Chart of optimal portfolio allocation */
-.allocation-chart {
-    background-color: #ffffff;
-    border-radius: 12px;
-    padding: 0px;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-    text-align: center;
-    width: 100%;
-    max-width: 400px;
-    height: 450px;
-}
-
-/* ✅ AI Explanation Section (Full Width) */
-#ai-explanation-container {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    margin-top: 50px;
-}
-
-#ai-explanation {
-    width: 80%;
-    max-width: 900px;
-    padding: 30px;
-    font-size: 1.1rem;
-    color: #333;
-    background-color: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.15);
-    text-align: center;
-}
 
 /* ✅ Responsive Fixes */
 @media (max-width: 992px) {

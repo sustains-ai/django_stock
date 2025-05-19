@@ -159,7 +159,7 @@ def add_stock(request):
                     messages.success(request, f"Added {stock_data.symbol} to {portfolio.name} with Alpha Vantage data")
                 else:
                     messages.warning(request, f"Added {stock_data.symbol} to {portfolio.name}, but failed to fetch Alpha Vantage data")
-            return redirect("portfolio_list")
+            return redirect("analyze_portfolio")
         else:
             messages.error(request, "Invalid stock data. Please check the form.")
     else:

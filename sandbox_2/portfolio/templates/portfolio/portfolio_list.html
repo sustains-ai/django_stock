@@ -1,6 +1,13 @@
 {% extends 'portfolio/base.html' %}
 
+{% load static %}
+
 {% block title %}Your Portfolios{% endblock %}
+
+{% block extra_styles %}
+<link rel="stylesheet" href="{% static 'css/portfolio_list.css' %}">
+
+{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
@@ -13,43 +20,24 @@
     <div class="row g-4">
         {% for portfolio in portfolios %}
         <div class="col-md-6 col-lg-4">
-            <div class="portfolio-card">
-                <div class="card-glow"></div>
-                <div class="portfolio-header">
-                    <h5>{{ portfolio.name }}</h5>
-                </div>
-                
-                <div class="portfolio-actions">
-                    <!-- Primary Actions -->
-                    <div class="action-group">
-                        <a href="{% url 'analyze_portfolio' portfolio.id %}" class="action-btn analyze">
-                            <i class="fas fa-chart-line"></i>
-                            <span>Analyze</span>
-                        </a>
-
-                        <a href="{% url 'portfolio_risk' portfolio.id %}" class="action-btn advanced">
-                            <i class="fas fa-cogs"></i>
-                            <span>Advanced</span>
-                        </a>
-                    </div>
-
-                    <!-- Secondary Actions -->
-                    <div class="action-group mt-3">
-                        <a href="{% url 'add_stock' %}" class="action-btn add">
-                            <i class="fas fa-plus"></i>
-                            <span>Add Stock</span>
-                        </a>
-
-                        <!-- Delete Portfolio Button -->
-                        <form action="{% url 'delete_portfolio' portfolio.id %}" method="POST" class="d-inline">
-                            {% csrf_token %}
-                            <button type="submit" class="action-btn delete">
-                                <i class="fas fa-trash-alt"></i>
-                                <span>Delete</span>
-                            </button>
-                        </form>
+            <a href="{% url 'analyze_portfolio' portfolio.id %}" class="portfolio-card-link">
+                <div class="portfolio-card">
+                    <div class="card-glow"></div>
+                    <div class="portfolio-header">
+                        <h5>{{ portfolio.name }}</h5>
                     </div>
                 </div>
+            </a>
+
+            <!-- Delete Portfolio Button -->
+            <div class="portfolio-delete-container">
+                <form action="{% url 'delete_portfolio' portfolio.id %}" method="POST">
+                    {% csrf_token %}
+                    <button type="submit" class="action-btn delete">
+                        <i class="fas fa-trash-alt"></i>
+                        <span>Delete</span>
+                    </button>
+                </form>
             </div>
         </div>
         {% endfor %}
@@ -62,208 +50,4 @@
         </a>
     </div>
 </div>
-
-
-
-
-
-<!-- Custom Styling -->
-<style>
-    /* Main section styling */
-    .container {
-        max-width: 1200px;
-    }
-
-    .title-gradient {
-        background: linear-gradient(90deg, #0ABF53, #05a745);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-        font-weight: 700;
-        font-size: 2.5rem;
-        margin-bottom: 0.5rem;
-    }
-
-    .subtitle {
-        color: #6c757d;
-        font-size: 1.1rem;
-        max-width: 600px;
-        margin: 0 auto;
-    }
-
-    /* Portfolio Card Styling */
-    .portfolio-card {
-        position: relative;
-        border-radius: 16px;
-        background: linear-gradient(145deg, #ffffff, #f0f0f0);
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.07);
-        padding: 1.5rem;
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        overflow: hidden;
-        border: 1px solid rgba(0, 0, 0, 0.05);
-    }
-
-    .portfolio-card:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 15px 30px rgba(10, 191, 83, 0.15);
-    }
-
-    .card-glow {
-        position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(10, 191, 83, 0.1) 0%, rgba(255, 255, 255, 0) 70%);
-        opacity: 0;
-        transition: opacity 0.5s ease;
-        pointer-events: none;
-        z-index: 0;
-    }
-
-    .portfolio-card:hover .card-glow {
-        opacity: 1;
-    }
-
-    .portfolio-header {
-        position: relative;
-        text-align: center;
-        margin-bottom: 1.5rem;
-        z-index: 1;
-    }
-
-    .portfolio-header h5 {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: #2c3e50;
-        position: relative;
-        display: inline-block;
-        padding-bottom: 0.75rem;
-    }
-
-    .portfolio-header h5::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 60px;
-        height: 3px;
-        background: linear-gradient(90deg, #0ABF53, #05a745);
-        border-radius: 2px;
-    }
-
-    .portfolio-actions {
-        position: relative;
-        z-index: 1;
-    }
-
-    .action-group {
-        display: flex;
-        justify-content: space-around;
-        gap: 10px;
-    }
-
-    .action-btn {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 0.75rem;
-        border-radius: 12px;
-        font-size: 0.85rem;
-        font-weight: 500;
-        text-decoration: none;
-        color: #fff;
-        transition: all 0.3s ease;
-        border: none;
-        cursor: pointer;
-    }
-
-    .action-btn i {
-        font-size: 1.2rem;
-        margin-bottom: 6px;
-    }
-
-    .action-btn span {
-        font-size: 0.8rem;
-    }
-
-    .action-btn.analyze {
-        background: linear-gradient(135deg, #4481eb, #04befe);
-    }
-
-    .action-btn.advanced {
-        background: linear-gradient(135deg, #f7b733, #fc4a1a);
-    }
-
-    .action-btn.add {
-        background: linear-gradient(135deg, #11998e, #38ef7d);
-    }
-
-    .action-btn.delete {
-        background: linear-gradient(135deg, #f5515f, #9f041b);
-        width: 100%;
-    }
-
-    .action-btn:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 7px 14px rgba(0, 0, 0, 0.15);
-        color: white;
-    }
-
-    /* Add Portfolio Button */
-    .add-portfolio-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 1rem 2rem;
-        background: linear-gradient(45deg, #0ABF53, #05a745);
-        color: white;
-        font-weight: 600;
-        font-size: 1.1rem;
-        border-radius: 50px;
-        text-decoration: none;
-        transition: all 0.3s ease;
-        box-shadow: 0 10px 20px rgba(10, 191, 83, 0.3);
-    }
-
-    .add-portfolio-btn i {
-        margin-right: 8px;
-        font-size: 1.2rem;
-    }
-
-    .add-portfolio-btn:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 30px rgba(10, 191, 83, 0.4);
-        color: white;
-    }
-
-    /* Responsive adjustments */
-    @media (max-width: 991.98px) {
-        .action-group {
-            flex-direction: column;
-        }
-
-        .action-btn {
-            flex-direction: row;
-            justify-content: center;
-        }
-
-        .action-btn i {
-            margin-right: 10px;
-            margin-bottom: 0;
-        }
-    }
-
-    @media (max-width: 767.98px) {
-        .title-gradient {
-            font-size: 2rem;
-        }
-    }
-</style>
-
-<!-- Include FontAwesome for Icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 {% endblock %}

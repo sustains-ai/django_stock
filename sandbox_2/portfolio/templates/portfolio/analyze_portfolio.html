@@ -4,178 +4,155 @@
 {% load custom_filters %}
 {% load static %}
 
-{% block head %}
-    <link rel="stylesheet" href="{% static 'css/showoff.css' %}?v=1.0.1">
+{% block extra_styles %}
+<link rel="stylesheet" href="{% static 'css/analyze_portfolio.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h1 class="text-center text-success">Analysis of Portfolio: {{ portfolio.name }}</h1>
-    <hr>
+<div class="sidebar-layout" style="height: 100vh;">
+    <aside class="sidebar">
+        <ul>
+            <li><a href="#holdings">Holdings</a></li>
+            <li><a href="#distribution">Distribution</a></li>
+            <li><a href="#fluctuations">Fluctuations</a></li>
+            <li><a href="#risk">Risk Measures</a></li>
+            <li><a href="#optimal">Optimal Allocation</a></li>
+        </ul>
+    </aside>
 
-    <!-- SECTION 1: Current Portfolio Overview -->
-    <section class="portfolio-section">
-        <h2 class="section-title">Current Portfolio Holdings</h2>
-        <div class="section-container">
-            <!-- Left: Stocks in Portfolio -->
-            <div class="section-left">
-                <h3>Stocks in Portfolio</h3>
-                <table id="Total-portfolio-table" class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Stock Name</th>
-                            <th>Symbol</th>
-                            <th>Quantity</th>
-                            <th>Manual Price</th>
-                            <th>Live Price</th>
-                            <th>Total Value</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for stock in stock_data %}
-                        <tr>
-                            <td>{{ stock.name }}</td>
-                            <td>{{ stock.symbol }}</td>
-                            <td>{{ stock.quantity }}</td>
-                            <td>{% if stock.manual_price %}${{ stock.manual_price|floatformat:2 }}{% else %}<em>Not Set</em>{% endif %}</td>
-                            <td>{% if stock.live_price %}${{ stock.live_price|floatformat:2 }}{% else %}<em>Unavailable</em>{% endif %}</td>
-                            <td>${{ stock.total_value|floatformat:2 }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    <main class="main-content">
+        <section id="holdings" class="portfolio-section">
+            <h2 class="section-title">Current Portfolio Holdings</h2>
+            <table id="Total-portfolio-table" class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Stock Name</th>
+                        <th>Symbol</th>
+                        <th>Quantity</th>
+                        <th>Manual Price</th>
+                        <th>Live Price</th>
+                        <th>Total Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stock in stock_data %}
+                    <tr>
+                        <td>{{ stock.name }}</td>
+                        <td>{{ stock.symbol }}</td>
+                        <td>{{ stock.quantity }}</td>
+                        <td>{% if stock.manual_price %}${{ stock.manual_price|floatformat:2 }}{% else %}<em>Not Set</em>{% endif %}</td>
+                        <td>{% if stock.live_price %}${{ stock.live_price|floatformat:2 }}{% else %}<em>Unavailable</em>{% endif %}</td>
+                        <td>${{ stock.total_value|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div class="text-end mt-3">
+                <a href="{% url 'add_stock' %}" class="btn btn-outline-light btn-sm">Add Stock</a>
             </div>
+        </section>
 
-            <!-- Right: Portfolio Distribution Chart -->
-            <div class="section-right">
-                <h3>Portfolio Distribution</h3>
-                <div class="chart-container">
-                    <canvas id="portfolioChart"
+        <section id="distribution" class="portfolio-section">
+            <h2 class="section-title">Portfolio Distribution</h2>
+            <div class="chart-container">
+                <canvas id="portfolioChart"
                         data-labels='[{% for stock in stock_data %}"{{ stock.name }}"{% if not forloop.last %}, {% endif %}{% endfor %}]'
                         data-values='[{% for stock in stock_data %}{{ stock.total_value }}{% if not forloop.last %}, {% endif %}{% endfor %}]'>
-                    </canvas>
+                </canvas>
+            </div>
+        </section>
+
+        <section id="fluctuations" class="portfolio-section">
+            <h2 class="section-title">Stock Price Fluctuations</h2>
+            <div class="chart-container">
+                <canvas id="stockChart" data-historical='{{ historical_data|safe }}'></canvas>
+            </div>
+        </section>
+
+        <section id="risk" class="portfolio-section">
+            <h2 class="section-title">Individual Stock Risk Measures</h2>
+            {% if risk_measures %}
+            <table id="stock-wise-risk">
+                <thead>
+                    <tr>
+                        <th>Stock Symbol</th>
+                        <th>MAD</th>
+                        <th>Volatility</th>
+                        <th>VaR (95%)</th>
+                        <th>CVaR (95%)</th>
+                        <th>Max Drawdown</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for symbol, measures in risk_measures.items %}
+                    <tr>
+                        <td>{{ symbol }}</td>
+                        <td>{{ measures.MAD|floatformat:4 }}</td>
+                        <td>{{ measures.Volatility|floatformat:4 }}</td>
+                        <td>{{ measures.VaR_95|floatformat:4 }}</td>
+                        <td>{{ measures.CVaR_95|floatformat:4 }}</td>
+                        <td>{{ measures.Max_Drawdown|floatformat:4 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="text-center">No risk measures available.</p>
+            {% endif %}
+        </section>
+
+        <section id="optimal" class="portfolio-section">
+            {% if optimal_table %}
+            <h2 class="section-title">Optimal Portfolio Allocation</h2>
+            <table id="portfolio-optimization-results" class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Stock Symbol</th>
+                        <th>MV Weight</th>
+                        <th>CVaR Weight</th>
+                        <th>ERC Weight</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for symbol, weight in optimal_table.mean_variance.items %}
+                    <tr>
+                        <td>{{ symbol }}</td>
+                        <td>{{ weight|floatformat:4 }}</td>
+                        <td>{{ optimal_table.cvar|get_item:symbol|floatformat:4 }}</td>
+                        <td>{{ optimal_table.erc|get_item:symbol|floatformat:4 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div id="portfolio-allocation-charts">
+                <div class="allocation-chart">
+                    <h4>Mean-Variance Allocation</h4>
+                    <canvas id="mvPieChart" data-mv='{{ portfolio_analysis.mean_variance|safe }}'></canvas>
+                </div>
+                <div class="allocation-chart">
+                    <h4>CVaR Allocation</h4>
+                    <canvas id="cvarPieChart" data-cvar='{{ portfolio_analysis.cvar|safe }}'></canvas>
+                </div>
+                <div class="allocation-chart">
+                    <h4>ERC Allocation</h4>
+                    <canvas id="ercPieChart" data-erc='{{ portfolio_analysis.erc|safe }}'></canvas>
                 </div>
             </div>
-        </div>
-    </section>
-    <hr class="section-divider">
 
-    <!-- SECTION 2: Price Fluctuations & Individual Stock Risks -->
-    <section class="portfolio-section">
-        <h2 class="section-title">Stock Price & Risk Analysis</h2>
-        <div class="section-container">
-            <!-- Left: Stock Price Fluctuations -->
-            <div class="section-left">
-                <h3>Stock Price Fluctuations</h3>
-                <div class="chart-container">
-                    <canvas id="stockChart" data-historical='{{ historical_data|safe }}'></canvas>
+            <div id="ai-explanation-container">
+                <div id="ai-explanation">
+                    <h4>AI Insights (Coming Soon)</h4>
+                    <p>This section will provide AI-based analysis and explanations of the portfolio allocations.</p>
                 </div>
             </div>
-
-            <!-- Right: Individual Stock Risk Measures -->
-            <div class="section-right">
-                <h3>Individual Stock Risk Measures</h3>
-                {% if risk_measures %}
-                <table id="stock-wise-risk">
-                    <thead>
-                        <tr>
-                            <th>Stock Symbol</th>
-                            <th>MAD</th>
-                            <th>Volatility</th>
-                            <th>VaR (95%)</th>
-                            <th>CVaR (95%)</th>
-                            <th>Max Drawdown</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for symbol, measures in risk_measures.items %}
-                        <tr>
-                            <td>{{ symbol }}</td>
-                            <td>{{ measures.MAD|floatformat:4 }}</td>
-                            <td>{{ measures.Volatility|floatformat:4 }}</td>
-                            <td>{{ measures.VaR_95|floatformat:4 }}</td>
-                            <td>{{ measures.CVaR_95|floatformat:4 }}</td>
-                            <td>{{ measures.Max_Drawdown|floatformat:4 }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                <p class="text-center">No risk measures available.</p>
-                {% endif %}
-            </div>
-        </div>
-    </section>
-    <hr class="section-divider">
-
-    <!-- SECTION 3: Risk Analysis of Current Portfolio (To be added later) -->
-    <section class="portfolio-section">
-        <h2 class="section-title">Portfolio Risk Analysis (Coming Soon)</h2>
-        <p class="text-center">This section will provide insights into the risk characteristics of the current portfolio.</p>
-    </section>
-    <hr class="section-divider">
-
-    <!-- SECTION 4: Optimal Portfolio -->
-    {% if optimal_table %}
-    <section class="portfolio-section">
-        <h2 class="section-title">Optimal Portfolio Allocation</h2>
-        <h3>Optimal Portfolio Weights</h3>
-        <table id="portfolio-optimization-results" class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>Stock Symbol</th>
-                    <th>MV Weight</th>
-                    <th>CVaR Weight</th>
-                    <th>ERC Weight</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for symbol, weight in optimal_table.mean_variance.items %}
-                <tr>
-                    <td>{{ symbol }}</td>
-                    <td>{{ weight|floatformat:4 }}</td>
-                    <td>{{ optimal_table.cvar|get_item:symbol|floatformat:4 }}</td>
-                    <td>{{ optimal_table.erc|get_item:symbol|floatformat:4 }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-       <!-- Portfolio Allocation Pie Charts -->
-<h3>Portfolio Allocation Pie Charts</h3>
-<div class="allocation-chart-container">
-    <div id="portfolio-allocation-charts">
-        <div class="allocation-chart">
-            <h4>Mean-Variance Allocation</h4>
-            <canvas id="mvPieChart" data-mv='{{ portfolio_analysis.mean_variance|safe }}'></canvas>
-        </div>
-        <div class="allocation-chart">
-            <h4>CVaR Allocation</h4>
-            <canvas id="cvarPieChart" data-cvar='{{ portfolio_analysis.cvar|safe }}'></canvas>
-        </div>
-        <div class="allocation-chart">
-            <h4>ERC Allocation</h4>
-            <canvas id="ercPieChart" data-erc='{{ portfolio_analysis.erc|safe }}'></canvas>
-        </div>
-    </div>
+            {% else %}
+            <p class="text-danger text-center">No risk analysis data available.</p>
+            {% endif %}
+        </section>
+    </main>
 </div>
 
-<!-- AI Insights Card Below Charts -->
-<div id="ai-explanation-container">
-    <div id="ai-explanation">
-        <h4>AI Insights (Coming Soon)</h4>
-        <p>This section will provide AI-based analysis and explanations of the portfolio allocations.</p>
-    </div>
-</div>
-
-    </section>
-    {% else %}
-    <p class="text-danger text-center">No risk analysis data available.</p>
-    {% endif %}
-</div>
-
-<!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="{% static 'js/main.js' %}"></script>
-
+<script src="{% static 'js/analyze_portfolio.js' %}"></script>
 {% endblock %}
