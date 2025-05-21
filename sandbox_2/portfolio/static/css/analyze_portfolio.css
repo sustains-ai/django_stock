@@ -1,5 +1,4 @@
 /* ✅ Base Page Styling */
-/* Base Page Styling */
 html, body {
     height: 100%;
     width: 100%;
@@ -10,12 +9,60 @@ html, body {
 body {
     background: linear-gradient(180deg, #0A0E17 0%, #121722 100%);
     color: #E2E8F0;
-    font-family: 'Inter', sans-serif; /* Use Inter for consistency */
+    font-family: 'Inter', sans-serif;
     line-height: 1.6;
     display: flex;
     flex-direction: column;
     min-height: 100vh;
     overflow-x: hidden;
+}
+
+/* ✅ Sidebar Layout */
+.sidebar-layout {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+/* ✅ Sidebar */
+.sidebar {
+    width: 200px;
+    background-color: #111;
+    padding: 10px;
+    border-right: 1px solid #333;
+    min-height: 100vh;
+    box-sizing: border-box;
+    position: sticky;
+    top: 0;
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar li {
+    margin-bottom: 15px;
+}
+
+.sidebar a {
+    color: #A6808C;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.sidebar a:hover {
+    text-decoration: underline;
+    color: #ffffff;
+}
+
+/* ✅ Main Content */
+.main-content {
+    flex-grow: 1;
+    padding: 40px 30px;
+    box-sizing: border-box;
+    width: calc(100% - 200px);
 }
 
 /* ✅ Section Styling */
@@ -37,11 +84,6 @@ body {
     border-bottom: 3px solid white;
     padding-bottom: 10px;
 }
-.main-content{
-    display: block;
-    align-items: center;
-}
-
 
 /* ✅ Section Divider */
 .section-divider {
@@ -149,7 +191,47 @@ tbody tr:hover {
     text-align: center;
 }
 
+/* ✅ Plotly */
+.plotly-wrapper {
+    width: 100%;
+    max-width: 1000px;
+    margin: 2rem auto;
+    padding: 1rem;
+    overflow-x: auto;
+    background-color: #121212;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0, 255, 100, 0.1);
+}
 
+.plotly-container {
+    width: 100%;
+    min-height: 400px;
+}
+
+/* ✅ Advanced Risk Table Section */
+#advanced {
+    width: 100%;
+    padding: 1rem 2rem;
+    box-sizing: border-box;
+    background-color: #1a1a1a;
+    border-radius: 12px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+    margin-bottom: 40px;
+}
+
+#advanced-risk-table {
+    height: 200px;
+    table-layout: fixed;
+}
+
+#advanced-risk-table td,
+#advanced-risk-table th {
+    vertical-align: middle;
+    font-size: 1.2rem;
+    height: 100px;
+}
+
+/* ✅ Dashboard Layout */
 .dashboard-layout {
     display: flex;
     flex-wrap: wrap;
@@ -161,62 +243,9 @@ tbody tr:hover {
     flex: 1 1 48%;
 }
 
-/* ✅ Sidebar Layout */
-.sidebar-layout {
-    display: flex;
-}
-
-/* ✅ Sidebar Style */
-.sidebar {
-    width: 200px;
-    background-color: #111;
-    padding: 10px 10px;
-    border-right: 1px solid #333;
-    min-height: 100vh;
-    position: sticky;
-    top: 0;
-}
-
-.sidebar ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.sidebar li {
-    margin-bottom: 15px;
-}
-
-.sidebar a {
-    color: #A6808C;
-    text-decoration: none;
-    font-weight: 500;
-}
-
-.sidebar a:hover {
-    text-decoration: underline;
-    color: #ffffff;
-}
-
-/* ✅ Main Content Styling */
-.main-content {
-    flex: 1;
-    padding: 40px 30px;
-}
-
-
-
-
-
-@media (max-width: 768px) {
-    .dashboard-left, .dashboard-right {
-        flex: 1 1 100%;
-    }
-}
-
-
 /* ✅ Responsive Fixes */
 @media (max-width: 768px) {
+    .dashboard-left, .dashboard-right,
     .section-left, .section-right {
         flex: 1 1 100%;
     }

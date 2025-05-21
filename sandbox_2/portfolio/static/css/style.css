@@ -1,75 +1,56 @@
-/* General Page Styling- Remove all the other from here. Keep NAVBAR here */
-body {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
+/* Reset and Base Styles */
+html, body {
+    height: 100%;
     margin: 0;
+    padding: 0;
+}
+
+body {
     font-family: 'Roboto', sans-serif;
-    background-color: #000000;
-    color: #e0e0e0;
 }
 
-main.container {
-    flex: 1;
-    padding: 20px;
-}
-
-/* ✅ Navbar Styling */
+/* Navbar */
 .navbar-custom {
-    background-color: #A6808C;
-    color: white;
-}
-
-.navbar-custom .nav-link {
-    color: #ffffff !important;
-}
-
-.navbar-custom .nav-link:hover {
-    text-decoration: underline;
-    color: #d4d4d4 !important;
+    background-color: #1a1a1a;
+    border-bottom: 1px solid #333;
 }
 
 .navbar-brand {
-    font-weight: bold;
-    font-size: 1.5rem;
+    color: #0ABF53 !important;
+    font-weight: 700;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-/* ✅ Responsive Fixes */
-@media (max-width: 992px) {
-    .section-container {
-        flex-direction: column;
-    }
-
-    .allocation-chart-container {
-        grid-template-columns: repeat(1, 1fr); /* Two columns for smaller screens */
-    }
-
-    #ai-explanation {
-        width: 90%;
-    }
+.nav-link {
+    color: #e0e0e0 !important;
 }
 
-@media (max-width: 768px) {
-    .allocation-chart-container {
-        grid-template-columns: repeat(1, 1fr); /* One column for mobile */
-    }
+.nav-link:hover {
+    color: #0ABF53 !important;
+}
 
-    .section-left, .section-right {
-        min-width: 100%;
-    }
+/* Main Content */
+main {
+    padding: 2rem 0 4rem 0; /* Maintain padding for spacing */
+}
 
-    #ai-explanation {
-        width: 100%;
-    }
+/* Footer */
+footer {
+    background-color: #1a1a1a;
+    color: #e0e0e0;
+    border-top: 1px solid #333;
+    padding: 2rem 0;
+    margin-top: 2rem;
+}
+
+footer p {
+    margin: 0;
+}
+
+footer strong {
+    color: #0ABF53;
+}
+
+/* Ensure Last Section Doesn't Collapse Margin with Footer */
+main .portfolio-section:last-child {
+    margin-bottom: 0; /* Prevent margin collapse with footer */
 }
