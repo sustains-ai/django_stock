@@ -78,6 +78,10 @@
                 </div>
             </section>
 
+        
+        
+        
+        
             <!-- Distribution Section -->
             <section id="distribution" class="portfolio-section">
                 <h2 class="section-title">Portfolio Distribution</h2>
@@ -87,8 +91,14 @@
                             data-values='[{% for stock in stock_data %}{{ stock.total_value }}{% if not forloop.last %}, {% endif %}{% endfor %}]'>
                     </canvas>
                 </div>
+        
+            
             </section>
 
+     
+     
+     
+     
             <!-- Fluctuations Section -->
             <section id="fluctuations" class="portfolio-section">
                 <h2 class="section-title">Stock Price Fluctuations</h2>
@@ -130,6 +140,10 @@
                 {% endif %}
             </section>
 
+        
+        
+        
+        
             <!-- Optimal Allocation Section -->
             <section id="optimal" class="portfolio-section">
                 {% if optimal_table %}
@@ -181,6 +195,12 @@
                 {% endif %}
             </section>
 
+        
+        
+        
+        
+        
+        
             <!-- Advanced Risk Analysis Section -->
             <section id="advanced" class="portfolio-section mt-5">
                 <h2 class="section-title">Variance, VaR and CVaR</h2>
@@ -201,6 +221,9 @@
                 </table>
             </section>
 
+        
+        
+        
             <!-- Portfolio Performance Section -->
             <section>
                 <div id="portfolio-container"

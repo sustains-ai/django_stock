@@ -72,6 +72,9 @@ body {
     padding: 30px;
     margin-bottom: 40px;
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 /* ✅ Section Title */
@@ -153,6 +156,7 @@ tbody tr:hover {
     align-items: center;
     justify-content: center;
 }
+
 
 /* ✅ Pie Charts */
 #portfolio-allocation-charts {
