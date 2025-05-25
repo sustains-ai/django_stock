@@ -1,42 +1,63 @@
-function getRandomColor() {
-    return `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`;
-}
+// REMOVE or comment out old color functions and palettes:
+// function getRandomColor() { ... }
+// const gradientPalette = [ ... ];
+// function getRandomColors(length) { ... } // We're replacing this with getChartColors
 
-// 🎨 Gradient color palette (9 colors cycling)
-const gradientPalette = [
-    'rgba(245, 204, 232, 0.8)',  // #F5CCE8
-    'rgba(240, 180, 224, 0.8)',
-    'rgba(236, 157, 237, 0.8)',  // #EC9DED
-    'rgba(215, 135, 223, 0.8)',
-    'rgba(200, 128, 183, 0.8)',  // #C880B7
-    'rgba(171, 112, 164, 0.8)',
-    'rgba(159, 107, 160, 0.8)',  // #9F6BA0
-    'rgba(100, 60, 100, 0.8)',
-    'rgba(74, 32, 64, 0.8)'      // #4A2040
+// New palette for charts, derived from the B2B scheme
+const chartColorPalette = [
+    '#3081F7', // Primary Accent Blue
+    '#2DA44E', // Primary Accent Green
+    '#E0A800', // Highlight Amber/Gold
+    '#39C3B3', // Secondary Accent Teal
+    '#A6808C', // Muted Rose/Plum
+    '#58A6FF', // Lighter Professional Blue
+    '#F778BA', // Professional Pink/Magenta
+    '#79C0FF', // Another shade of Blue
+    // Add more distinct professional colors if needed for many segments/lines
 ];
 
-// ✅ Use colors from palette cyclically
-function getRandomColors(length) {
-    return Array.from({ length }, (_, i) => gradientPalette[i % gradientPalette.length]);
+// ✅ Use colors from the new palette cyclically
+function getChartColors(length) {
+    return Array.from({ length }, (_, i) => chartColorPalette[i % chartColorPalette.length]);
 }
 
-
-
-
+// Function to get a single color from the palette (useful for single lines or specific elements)
+function getSingleChartColor(index = 0) {
+    return chartColorPalette[index % chartColorPalette.length];
+}
 
 
 function parseDataAttribute(element, attribute) {
+    if (!element) { // Added check for element existence
+        console.warn(`Element not found for parsing attribute: ${attribute}`);
+        return {};
+    }
     try {
-        return JSON.parse(element.dataset[attribute]);
+        // Use optional chaining for dataset access
+        const dataString = element.dataset?.[attribute];
+        if (dataString === undefined) {
+            // console.warn(`Data attribute '${attribute}' not found on element.`); // Can be noisy
+            return {};
+        }
+        return JSON.parse(dataString);
     } catch (error) {
-        console.error(`Error parsing ${attribute}:`, error);
+        console.error(`Error parsing attribute '${attribute}' from element:`, element, error);
         return {};
     }
 }
 
 function createPieChart(canvasId, data, label) {
     const chartElement = document.getElementById(canvasId);
-    if (!chartElement || Object.keys(data).length === 0) return;
+    if (!chartElement) {
+        console.warn(`Canvas element with ID '${canvasId}' not found.`);
+        return;
+    }
+    if (Object.keys(data).length === 0) {
+        // console.warn(`No data provided for pie chart: ${label}`); // Can be noisy
+        // Optionally display a message in the canvas
+        // chartElement.getContext("2d").fillText("No data to display.", 10, 50);
+        return;
+    }
 
     new Chart(chartElement.getContext("2d"), {
         type: "pie",
@@ -44,15 +65,36 @@ function createPieChart(canvasId, data, label) {
             labels: Object.keys(data),
             datasets: [{
                 data: Object.values(data),
-                backgroundColor: getRandomColors(Object.keys(data).length)
+                backgroundColor: getChartColors(Object.keys(data).length), // USE NEW PALETTE
+                borderColor: '#161B22', // Secondary Background (or card bg #1F242C) for segment borders
+                borderWidth: 1 // Optional: adds a slight separation
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { position: "bottom" },
-                title: { display: true, text: label }
+                legend: {
+                    position: "bottom",
+                    labels: {
+                        color: '#CDD9E5' // Primary Text for legend labels
+                    }
+                },
+                title: {
+                    display: true,
+                    text: label,
+                    color: '#CDD9E5', // Primary Text for chart title
+                    font: {
+                        size: 16 // Optional: adjust font size
+                    }
+                },
+                tooltip: {
+                    bodyFont: { size: 12 },
+                    titleFont: { size: 14 },
+                    // backgroundColor: 'rgba(0,0,0,0.7)', // Default is usually fine
+                    // titleColor: '#FFFFFF',
+                    // bodyColor: '#FFFFFF'
+                }
             }
         }
     });
@@ -62,38 +104,83 @@ document.addEventListener("DOMContentLoaded", () => {
     const pieCanvas = document.getElementById("portfolioChart");
     if (pieCanvas) {
         const pieCtx = pieCanvas.getContext("2d");
-        const stockLabels = JSON.parse(pieCanvas.dataset.labels);
-        const stockValues = JSON.parse(pieCanvas.dataset.values);
+        let stockLabels = [];
+        let stockValues = [];
+        try {
+            stockLabels = JSON.parse(pieCanvas.dataset.labels || "[]");
+            stockValues = JSON.parse(pieCanvas.dataset.values || "[]");
+        } catch (e) {
+            console.error("Error parsing portfolioChart data attributes:", e);
+        }
 
-        new Chart(pieCtx, {
-            type: "pie",
-            data: {
-                labels: stockLabels,
-                datasets: [{
-                    data: stockValues,
-                    backgroundColor: getRandomColors(stockLabels.length)
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'bottom' }
+
+        if (stockLabels.length > 0 && stockValues.length > 0) {
+            new Chart(pieCtx, {
+                type: "pie",
+                data: {
+                    labels: stockLabels,
+                    datasets: [{
+                        data: stockValues,
+                        backgroundColor: getChartColors(stockLabels.length), // USE NEW PALETTE
+                        borderColor: '#161B22',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#CDD9E5' // Primary Text
+                            }
+                        },
+                        title: { // Added title for consistency
+                            display: true,
+                            text: 'Portfolio Distribution', // Or get from a data attribute if dynamic
+                            color: '#CDD9E5',
+                            font: { size: 16 }
+                        }
+                    }
                 }
-            }
-        });
+            });
+        } else {
+            // console.warn("No data for portfolioChart.");
+        }
     }
 
     const stockChartElement = document.getElementById("stockChart");
     if (stockChartElement) {
         try {
-            const historicalData = JSON.parse(stockChartElement.dataset.historical);
-            const labels = historicalData[Object.keys(historicalData)[0]].dates;
-            const datasets = Object.keys(historicalData).map(symbol => ({
+            const historicalDataString = stockChartElement.dataset.historical;
+            if (!historicalDataString) {
+                // console.warn("Historical data attribute not found for stockChart.");
+                return;
+            }
+            const historicalData = JSON.parse(historicalDataString);
+            if (Object.keys(historicalData).length === 0) {
+                // console.warn("No historical data available for stockChart.");
+                return;
+            }
+
+            // Ensure there's at least one stock's data to get dates from
+            const firstStockSymbol = Object.keys(historicalData)[0];
+            if (!historicalData[firstStockSymbol] || !historicalData[firstStockSymbol].dates) {
+                console.error("Historical data format error: missing dates for the first stock.");
+                return;
+            }
+            const labels = historicalData[firstStockSymbol].dates;
+
+            // Use getChartColors for multiple lines, ensuring distinct colors
+            const lineColors = getChartColors(Object.keys(historicalData).length);
+            const datasets = Object.keys(historicalData).map((symbol, index) => ({
                 label: symbol,
                 data: historicalData[symbol].prices,
-                borderColor: getRandomColor(),
-                fill: false
+                borderColor: lineColors[index], // USE NEW PALETTE (cyclically)
+                backgroundColor: lineColors[index] + '33', // Lighter version with alpha for area fill if desired
+                fill: false, // Set to 'origin' or true for area under line
+                tension: 0.1 // Makes lines a bit smoother
             }));
 
             new Chart(stockChartElement.getContext("2d"), {
@@ -102,19 +189,62 @@ document.addEventListener("DOMContentLoaded", () => {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom' } },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#CDD9E5' // Primary Text
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Stock Price Fluctuations',
+                            color: '#CDD9E5',
+                            font: { size: 16 }
+                        },
+                        tooltip: {
+                            mode: 'index', // Show tooltip for all datasets at that x-index
+                            intersect: false,
+                        }
+                    },
                     scales: {
-                        x: { title: { display: true, text: 'Date' } },
-                        y: { title: { display: true, text: 'Price (Adjusted Close)' } }
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Date',
+                                color: '#8B949E' // Secondary Text
+                            },
+                            ticks: {
+                                color: '#8B949E' // Secondary Text
+                            },
+                            grid: {
+                                color: '#30363D' // Borders/Dividers
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Price', // Removed (Adjusted Close) for brevity unless essential
+                                color: '#8B949E' // Secondary Text
+                            },
+                            ticks: {
+                                color: '#8B949E', // Secondary Text
+                                // beginAtZero: false // Default, adjust if needed
+                            },
+                            grid: {
+                                color: '#30363D' // Borders/Dividers
+                            }
+                        }
                     }
                 }
             });
         } catch (error) {
-            console.error("Error parsing historicalData:", error);
+            console.error("Error processing or rendering stockChart:", error);
         }
     }
 
+    // These calls will now use the updated createPieChart function with the new palette
     createPieChart("mvPieChart", parseDataAttribute(document.getElementById("mvPieChart"), "mv"), "Mean-Variance Allocation");
     createPieChart("cvarPieChart", parseDataAttribute(document.getElementById("cvarPieChart"), "cvar"), "CVaR Allocation");
-    createPieChart("ercPieChart", parseDataAttribute(document.getElementById("ercPieChart"), "erc"), "Equal Risk Contribution (ERC) Allocation");
+    createPieChart("ercPieChart", parseDataAttribute(document.getElementById("ercPieChart"), "erc"), "ERC Allocation");
 });

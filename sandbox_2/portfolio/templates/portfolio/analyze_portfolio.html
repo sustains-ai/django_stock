@@ -12,252 +12,265 @@
 {% endblock %}
 
 {% block content %}
-    <div class="sidebar-layout" style="height: 100vh;">
-        <!-- Sidebar -->
+    <div class="sidebar-layout"> {# This container handles sidebar and main content area layout #}
+        <!-- Sidebar (Keep your existing sidebar HTML here) -->
         <aside class="sidebar">
             <ul>
                 <li><a href="#holdings">Holdings</a></li>
                 <li><a href="#distribution">Distribution</a></li>
                 <li><a href="#fluctuations">Fluctuations</a></li>
-                <li><a href="#risk">Risk Measures</a></li>
-                <li><a href="#optimal">Optimal Allocation</a></li>
-                <li><a href="#advanced">Advanced Risk Analysis</a></li>
+                <li><a href="#key-metrics">Key Metrics</a></li> {# Renamed for dashboard context #}
+                <li><a href="#stock-risks">Stock Risks</a></li> {# Renamed for dashboard context #}
+                <li><a href="#optimal-allocation">Optimal Allocation</a></li>
+                <li><a href="#portfolio-performance">Performance</a></li>
             </ul>
         </aside>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Holdings Section -->
-            <section id="holdings" class="portfolio-section">
-                <h2 class="section-title">Current Portfolio Holdings</h2>
-                <table id="Total-portfolio-table" class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Stock Name</th>
-                            <th>Symbol</th>
-                            <th>Quantity</th>
-                            <th>Manual Price</th>
-                            <th>Live Price</th>
-                            <th>Total Value</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for stock in stock_data %}
+        <!-- Main Content Area - This will be our CSS Grid Container -->
+        <div class="page-content-area dashboard-grid">
+
+            {# CARD 1: Current Portfolio Holdings (Likely a wider card) #}
+            <section id="holdings" class="dashboard-card">
+                <h2 class="card-title">Current Portfolio Holdings</h2>
+                <div class="card-content card-content-scrollable"> {# Added generic .card-content #}
+                    <table id="Total-portfolio-table" class="data-table"> {# Generic table class #}
+                        <thead>
                             <tr>
-                                <td>{{ stock.name }}</td>
-                                <td>{{ stock.symbol }}</td>
-                                <td>{{ stock.quantity }}</td>
-                                <td>
-                                    {% if stock.manual_price %}
-                                        ${{ stock.manual_price|floatformat:2 }}
-                                    {% else %}
-                                        <em>Not Set</em>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if stock.live_price %}
-                                        ${{ stock.live_price|floatformat:2 }}
-                                    {% else %}
-                                        <em>Unavailable</em>
-                                    {% endif %}
-                                </td>
-                                <td>${{ stock.total_value|floatformat:2 }}</td>
-                                <td>
-                                    <form method="POST" action="{% url 'delete_stock' portfolio.id stock.symbol %}" onsubmit="return confirm('Are you sure you want to delete {{ stock.symbol }}?');">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-                                    </form>
-                                </td>
+                                <th>Stock Name</th>
+                                <th>Symbol</th>
+                                <th>Quantity</th>
+                                <th>Manual Price</th>
+                                <th>Live Price</th>
+                                <th>Total Value</th>
+                                <th>Action</th>
                             </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                <div class="text-end mt-3">
-                    <a href="{% url 'add_stock' %}" class="btn btn-outline-light btn-sm">Add Stock</a>
+                        </thead>
+                        <tbody>
+                            {% for stock in stock_data %}
+                                <tr>
+                                    <td>{{ stock.name }}</td>
+                                    <td>{{ stock.symbol }}</td>
+                                    <td>{{ stock.quantity }}</td>
+                                    <td>
+                                        {% if stock.manual_price %}
+                                            ${{ stock.manual_price|floatformat:2 }}
+                                        {% else %}
+                                            <em class="text-muted">Not Set</em> {# Added .text-muted #}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if stock.live_price %}
+                                            ${{ stock.live_price|floatformat:2 }}
+                                        {% else %}
+                                            <em class="text-muted">Unavailable</em> {# Added .text-muted #}
+                                        {% endif %}
+                                    </td>
+                                    <td>${{ stock.total_value|floatformat:2 }}</td>
+                                    <td>
+                                        <form method="POST" action="{% url 'delete_stock' portfolio.id stock.symbol %}" onsubmit="return confirm('Are you sure you want to delete {{ stock.symbol }}?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button> {# Changed to outline #}
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted">No stocks in this portfolio yet.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer text-end"> {# Standardized card footer #}
+                    <a href="{% url 'add_stock' %}" class="btn btn-primary btn-sm">Add Stock</a> {# Primary action color #}
                 </div>
             </section>
 
-        
-        
-        
-        
-            <!-- Distribution Section -->
-            <section id="distribution" class="portfolio-section">
-                <h2 class="section-title">Portfolio Distribution</h2>
-                <div class="chart-container">
+            {# CARD 2: Portfolio Distribution (Pie Chart - Likely a smaller square-ish card) #}
+            <section id="distribution" class="dashboard-card">
+                <h2 class="card-title">Portfolio Distribution</h2>
+                <div class="card-content chart-wrapper"> {# Added generic .card-content & .chart-wrapper #}
                     <canvas id="portfolioChart"
                             data-labels='[{% for stock in stock_data %}"{{ stock.name }}"{% if not forloop.last %}, {% endif %}{% endfor %}]'
                             data-values='[{% for stock in stock_data %}{{ stock.total_value }}{% if not forloop.last %}, {% endif %}{% endfor %}]'>
                     </canvas>
                 </div>
-        
-            
             </section>
 
-     
-     
-     
-     
-            <!-- Fluctuations Section -->
-            <section id="fluctuations" class="portfolio-section">
-                <h2 class="section-title">Stock Price Fluctuations</h2>
-                <div class="chart-container">
+            {# CARD 3: Stock Price Fluctuations (Line Chart - Likely a medium to wide card) #}
+            <section id="fluctuations" class="dashboard-card">
+                <h2 class="card-title">Stock Price Fluctuations</h2>
+                <div class="card-content chart-wrapper">
                     <canvas id="stockChart" data-historical='{{ historical_data|safe }}'></canvas>
                 </div>
             </section>
 
-            <!-- Risk Measures Section -->
-            <section id="risk" class="portfolio-section">
-                <h2 class="section-title">Individual Stock Risk Measures</h2>
-                {% if risk_measures %}
-                    <table id="stock-wise-risk">
-                        <thead>
-                            <tr>
-                                <th>Stock Symbol</th>
-                                <th>MAD</th>
-                                <th>Volatility</th>
-                                <th>VaR (95%)</th>
-                                <th>CVaR (95%)</th>
-                                <th>Max Drawdown</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for symbol, measures in risk_measures.items %}
-                                <tr>
-                                    <td>{{ symbol }}</td>
-                                    <td>{{ measures.MAD|floatformat:4 }}</td>
-                                    <td>{{ measures.Volatility|floatformat:4 }}</td>
-                                    <td>{{ measures.VaR_95|floatformat:4 }}</td>
-                                    <td>{{ measures.CVaR_95|floatformat:4 }}</td>
-                                    <td>{{ measures.Max_Drawdown|floatformat:4 }}</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                {% else %}
-                    <p class="text-center">No risk measures available.</p>
-                {% endif %}
+            {# CARD 4: Key Portfolio Metrics (Was "Advanced Risk Analysis" - Small stats display) #}
+            <section id="key-metrics" class="dashboard-card">
+                <h2 class="card-title">Key Portfolio Metrics</h2>
+                <div class="card-content stats-display"> {# Wrapper for stats #}
+                    <div class="stat-item">
+                        <span class="stat-label">Portfolio Variance</span>
+                        <span class="stat-value" id="variance-value">--</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Value at Risk (VaR 95%)</span>
+                        <span class="stat-value" id="var-value">--</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Cond. VaR (CVaR 95%)</span>
+                        <span class="stat-value" id="cvar-value">--</span>
+                    </div>
+                </div>
+                {# Button to load these metrics, can be placed in footer or content #}
+                <div class="card-footer text-center">
+                     <button id="load-all-risks-btn" class="btn btn-secondary btn-sm">Refresh Metrics</button>
+                </div>
             </section>
 
-        
-        
-        
-        
-            <!-- Optimal Allocation Section -->
-            <section id="optimal" class="portfolio-section">
-                {% if optimal_table %}
-                    <h2 class="section-title">Optimal Portfolio Allocation</h2>
-                    <table id="portfolio-optimization-results" class="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th>Stock Symbol</th>
-                                <th>MV Weight</th>
-                                <th>CVaR Weight</th>
-                                <th>ERC Weight</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for symbol, weight in optimal_table.mean_variance.items %}
+            {# CARD 5: Individual Stock Risk Measures (Table - Likely wider) #}
+            <section id="stock-risks" class="dashboard-card">
+                <h2 class="card-title">Individual Stock Risks</h2>
+                <div class="card-content card-content-scrollable">
+                    {% if risk_measures %}
+                        <table id="stock-wise-risk" class="data-table">
+                            <thead>
                                 <tr>
-                                    <td>{{ symbol }}</td>
-                                    <td>{{ weight|floatformat:4 }}</td>
-                                    <td>{{ optimal_table.cvar|get_item:symbol|floatformat:4 }}</td>
-                                    <td>{{ optimal_table.erc|get_item:symbol|floatformat:4 }}</td>
+                                    <th>Symbol</th>
+                                    <th>MAD</th>
+                                    <th>Volatility</th>
+                                    <th>VaR (95%)</th>
+                                    <th>CVaR (95%)</th>
+                                    <th>Max Drawdown</th>
                                 </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {% for symbol, measures in risk_measures.items %}
+                                    <tr>
+                                        <td>{{ symbol }}</td>
+                                        <td>{{ measures.MAD|floatformat:4 }}</td>
+                                        <td>{{ measures.Volatility|floatformat:4 }}</td>
+                                        <td>{{ measures.VaR_95|floatformat:4 }}</td>
+                                        <td>{{ measures.CVaR_95|floatformat:4 }}</td>
+                                        <td>{{ measures.Max_Drawdown|floatformat:4 }}</td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted">No individual stock risk measures available.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p class="text-center text-muted card-placeholder">Risk measures are being calculated or are unavailable.</p> {# Generic placeholder text #}
+                    {% endif %}
+                </div>
+            </section>
 
-                    <div id="portfolio-allocation-charts">
-                        <div class="allocation-chart">
-                            <h4>Mean-Variance Allocation</h4>
-                            <canvas id="mvPieChart" data-mv='{{ portfolio_analysis.mean_variance|safe }}'></canvas>
+            {# CARD 6: Optimal Portfolio Allocation (Table & 3 Pie Charts - Large, complex card) #}
+            <section id="optimal-allocation" class="dashboard-card">
+                <h2 class="card-title">Optimal Portfolio Allocations</h2>
+                <div class="card-content"> {# Main content wrapper for this complex card #}
+                    {% if optimal_table %}
+                        <div class="optimal-allocation-container">
+                            <div class="optimal-table-wrapper card-content-scrollable">
+                                <table id="portfolio-optimization-results" class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Stock Symbol</th>
+                                            <th>MV Weight</th>
+                                            <th>CVaR Weight</th>
+                                            <th>ERC Weight</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for symbol, weight in optimal_table.mean_variance.items %}
+                                            <tr>
+                                                <td>{{ symbol }}</td>
+                                                <td>{{ weight|floatformat:4 }}</td>
+                                                <td>{{ optimal_table.cvar|get_item:symbol|floatformat:4 }}</td>
+                                                <td>{{ optimal_table.erc|get_item:symbol|floatformat:4 }}</td>
+                                            </tr>
+                                        {% empty %}
+                                            <tr>
+                                                <td colspan="4" class="text-center text-muted">No optimization data calculated.</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div id="allocation-pie-charts-grid" class="pie-charts-grid">
+                                <div class="pie-chart-item">
+                                    <h4 class="pie-chart-title">Mean-Variance</h4>
+                                    <div class="chart-wrapper-small">
+                                        <canvas id="mvPieChart" data-mv='{{ portfolio_analysis.mean_variance|safe }}'></canvas>
+                                    </div>
+                                </div>
+                                <div class="pie-chart-item">
+                                    <h4 class="pie-chart-title">CVaR</h4>
+                                    <div class="chart-wrapper-small">
+                                        <canvas id="cvarPieChart" data-cvar='{{ portfolio_analysis.cvar|safe }}'></canvas>
+                                    </div>
+                                </div>
+                                <div class="pie-chart-item">
+                                    <h4 class="pie-chart-title">ERC</h4>
+                                    <div class="chart-wrapper-small">
+                                        <canvas id="ercPieChart" data-erc='{{ portfolio_analysis.erc|safe }}'></canvas>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="allocation-chart">
-                            <h4>CVaR Allocation</h4>
-                            <canvas id="cvarPieChart" data-cvar='{{ portfolio_analysis.cvar|safe }}'></canvas>
+
+                        <div id="ai-explanation-container" class="ai-insights-box">
+                            <div id="ai-explanation">
+                                <h4 class="ai-title">AI Insights (Coming Soon)</h4>
+                                <p class="text-muted">Automated analysis of portfolio allocations will appear here.</p>
+                            </div>
                         </div>
-                        <div class="allocation-chart">
-                            <h4>ERC Allocation</h4>
-                            <canvas id="ercPieChart" data-erc='{{ portfolio_analysis.erc|safe }}'></canvas>
+                    {% else %}
+                        <p class="text-center text-danger card-placeholder">Optimal allocation analysis is unavailable for this portfolio.</p>
+                    {% endif %}
+                </div>
+            </section>
+
+            {# CARD 7: Portfolio Performance (2 Plotly Charts - Value Over Time & Efficient Frontier) #}
+            {# This will likely be a wider card, potentially spanning full width or a large portion #}
+            <section id="portfolio-performance" class="dashboard-card">
+                <h2 class="card-title">Portfolio Performance</h2>
+                <div class="card-content">
+                    <div class="performance-charts-container"> {# Container for the two Plotly charts #}
+                        <div class="plotly-chart-item">
+                            <h3 class="plotly-chart-title">Value Over Time</h3>
+                            <div class="plotly-wrapper"> {# Plotly needs a specific wrapper sometimes #}
+                                <div id="portfolio-valueoveryears-chart" class="plotly-chart"></div>
+                            </div>
+                        </div>
+                        <div class="plotly-chart-item">
+                            <h3 class="plotly-chart-title">Efficient Frontier</h3>
+                            <div class="plotly-wrapper">
+                                <div id="portfolio-performance-chart" class="plotly-chart"></div>
+                            </div>
                         </div>
                     </div>
-
-                    <div id="ai-explanation-container">
-                        <div id="ai-explanation">
-                            <h4>AI Insights (Coming Soon)</h4>
-                            <p>This section will provide AI-based analysis and explanations of the portfolio allocations.</p>
-                        </div>
-                    </div>
-                {% else %}
-                    <p class="text-danger text-center">No risk analysis data available.</p>
-                {% endif %}
-            </section>
-
-        
-        
-        
-        
-        
-        
-            <!-- Advanced Risk Analysis Section -->
-            <section id="advanced" class="portfolio-section mt-5">
-                <h2 class="section-title">Variance, VaR and CVaR</h2>
-                <table id="advanced-risk-table" class="table table-bordered equal-height-table" >
-                    <thead>
-                        <tr>
-                            <th>Variance</th>
-                            <th>VaR</th>
-                            <th>CVaR</th>
-                        </tr>
-                        <tr>
-                            <td id="variance-value"></td>
-                            <td id="var-value"></td>
-                            <td id="cvar-value"></td>
-                        </tr>
-                 
-                    </thead>
-                </table>
-            </section>
-
-        
-        
-        
-            <!-- Portfolio Performance Section -->
-            <section>
+                </div>
+                <!-- Hidden data container for Plotly, essential for passing data -->
                 <div id="portfolio-container"
                      data-portfolio-id="{{ portfolio.id }}"
-                     data-portfolio-value='{{ portfolio_value_json|safe }}'>
+                     data-portfolio-value='{{ portfolio_value_json|safe }}' style="display:none;">
                 </div>
-
-                <hr class="section-divider">
-
-                <h3 class="section-title">Portfolio Value Over Time</h3>
-                <div class="plotly-wrapper">
-                    <div id="portfolio-valueoveryears-chart" class="plotly-container"></div>
-                </div>
-
-                <hr class="section-divider">
-
-                <h3 class="section-title">Efficient Frontier</h3>
-                <div id="portfolio-performance-chart" class="plotly-container"></div>
             </section>
-        </main>
-    </div>
 
-    <!-- Scripts -->
+        </div> <!-- End .page-content-area.dashboard-grid -->
+    </div> <!-- End .sidebar-layout -->
+
+    <!-- Scripts (Keep your existing script includes here) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="{% static 'js/analyze_portfolio.js' %}"></script>
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    {# It's good practice to bundle your JS or have fewer, more organized files #}
+{#    <script src="{% static 'js/analyze_portfolio_dashboard.js' %}"></script> {# A single file for this page's JS #}
+    <script src="{% static 'js/portfolio_risks.js' %}"></script> 
+    <script src="{% static 'js/portfolio_plotly.js' %}"></script> 
     <script src="{% static 'js/portfolio_charts.js' %}"></script>
-    <script src="{% static 'js/portfolio_plotly.js' %}"></script>
-    <script src="{% static 'js/portfolio_risks.js' %}"></script>
-{#    <script src="{% static 'js/portfolio_risk.js' %}"></script>#}
-{#    <script src="{% static 'js/Variance_Var_CVaR.js' %}"></script>#}
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            initializeGraphs();
-        });
-    </script>
+
 {% endblock %}

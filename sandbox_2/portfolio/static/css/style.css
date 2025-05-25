@@ -1,6 +1,8 @@
 /* Reset and Base Styles */
 html, body {
     height: 100%;
+    display:flex;
+    flex-direction: column;
     margin: 0;
     padding: 0;
 }
@@ -30,7 +32,8 @@ body {
 
 /* Main Content */
 main {
-    padding: 2rem 0 4rem 0; /* Maintain padding for spacing */
+    /*padding: 2rem 0 4rem 0; !* Maintain padding for spacing *!*/
+    flex:1;
 }
 
 /* Footer */
