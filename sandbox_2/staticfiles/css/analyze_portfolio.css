@@ -1,0 +1,365 @@
+/* analyze_portfolio.css */
+
+/* --- CSS Variables (Color Palette & Common Properties) --- */
+:root {
+    --font-main: 'Inter', sans-serif;
+
+    /* Dark Theme Palette (B2B Professional) */
+    --bg-gradient-start: #0D1117;
+    --bg-gradient-end: #161B22;
+    --bg-sidebar: #0A0E17; /* Slightly darker for depth */
+    --bg-card: #1F242C;
+    --bg-card-subtle-accent: #252B33; /* For internal elements like nested chart cards */
+    --bg-table-row-even: rgba(48, 54, 61, 0.15);
+    --bg-table-row-hover: rgba(48, 54, 61, 0.3);
+    --bg-button-primary: #3081F7;
+    --bg-button-primary-hover: #1C67D6;
+    --bg-button-secondary: #444C56;
+    --bg-button-secondary-hover: #586069;
+    --bg-button-danger: #DA3633;
+    --bg-button-danger-hover: #B91C1C;
+
+    --text-primary: #CDD9E5;
+    --text-secondary: #8B949E;
+    --text-muted: #6A737D; /* For placeholders, less important info */
+    --text-on-primary-button: #FFFFFF;
+    --text-on-secondary-button: #FFFFFF;
+    --text-on-danger-button: #FFFFFF;
+    --text-link: #58A6FF; /* Lighter blue for links */
+    --text-link-hover: #79C0FF;
+
+    --border-primary: #30363D; /* Main borders, dividers */
+    --border-light: #444C56;   /* Lighter borders, internal card dividers */
+    --border-card: var(--border-primary);
+
+    --accent-blue: #3081F7;
+    --accent-green: #2DA44E;
+    --accent-amber: #E0A800;
+    --accent-teal: #39C3B3;
+    --accent-rose: #A6808C;
+
+    --shadow-card: 0 5px 15px rgba(0, 0, 0, 0.3);
+    --shadow-card-hover: 0 8px 25px rgba(0, 0, 0, 0.35);
+
+    --card-border-radius: 10px;
+    --dashboard-gap: 20px; /* Gap between dashboard cards */
+    --card-padding: 20px;
+}
+
+/* --- Base & Body (from previous, ensuring consistency) --- */
+html, body {
+    height: 100%; width: 100%; margin: 0; padding: 0;
+    overflow-x: hidden; /* Prevent horizontal scroll on body if possible */
+}
+body {
+    background: linear-gradient(180deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+    color: var(--text-primary);
+    font-family: var(--font-main);
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* --- Sidebar Layout & Sidebar (Assuming these are mostly from your working version) --- */
+.sidebar-layout { display: flex; width: 100%; height: 100%; overflow: hidden; }
+.sidebar {
+    width: 250px;
+    background-color: var(--bg-sidebar);
+    padding: 20px 10px;
+    border-right: 1px solid var(--border-primary);
+    box-sizing: border-box;
+    position: fixed; /* For click-to-open behavior */
+    left: calc(-250px + 30px); /* Handle visible, adjust 30px as needed */
+    top: 0; /* Adjust if your navbar isn't fixed/sticky covering top */
+    height: 100vh; /* Adjust if navbar isn't fixed */
+    overflow-y: auto;
+    transition: left 0.3s ease-in-out;
+    z-index: 1050; /* High z-index for sidebar */
+    cursor: pointer;
+}
+.sidebar.sidebar-is-open { left: 0; cursor: default; }
+.sidebar::after { /* The '>' handle */
+    content: ">"; position: absolute; right: 7px; top: 50%;
+    transform: translateY(-50%); color: var(--accent-amber);
+    font-size: 1.5em; font-weight: bold; transition: transform 0.3s ease;
+}
+.sidebar.sidebar-is-open::after { content: "<"; transform: translateY(-50%) rotate(180deg); }
+.sidebar ul { list-style: none; padding: 0; margin: 0; }
+.sidebar li { margin-bottom: 8px; }
+.sidebar a {
+    color: var(--text-secondary); text-decoration: none; font-weight: 500;
+    display: block; padding: 10px 15px; border-radius: 6px; transition: all 0.2s ease;
+    font-size: 0.95em;
+}
+.sidebar a:hover, .sidebar a.active { /* JS should add/remove .active class */
+    color: var(--accent-blue);
+    background-color: rgba(48, 129, 247, 0.1);
+    text-decoration: none;
+}
+
+/* --- Dashboard Grid Layout --- */
+.page-content-area.dashboard-grid {
+    flex-grow: 1;
+    padding: var(--dashboard-gap);
+    box-sizing: border-box;
+    overflow-y: auto; /* Scroll main content area, not whole page */
+    height: 100%;     /* Fill available height from .sidebar-layout */
+    margin-left: 30px; /* Initial margin for sidebar handle */
+    width: calc(100% - 30px); /* Adjust width */
+    transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
+
+    display: grid;
+    /* Define your grid columns. Example: 12-column system for flexibility */
+    grid-template-columns: repeat(12, 1fr);
+    /* Define a base height for rows. Cards can span multiple rows. */
+    /* Setting a fixed height can help with alignment, but content might overflow. */
+    /* Let's try a flexible approach first, min-height on cards will be important. */
+    grid-auto-rows: minmax(180px, auto); /* Min height for any auto-placed row item. */
+    gap: var(--dashboard-gap);
+}
+.sidebar.sidebar-is-open + .page-content-area.dashboard-grid {
+    margin-left: 250px; /* Full sidebar width */
+    width: calc(100% - 250px);
+}
+
+/* --- Dashboard Card Styling --- */
+.dashboard-card {
+    background-color: var(--bg-card);
+    border-radius: var(--card-border-radius);
+    padding: var(--card-padding);
+    box-shadow: var(--shadow-card);
+    border: 1px solid var(--border-card);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Crucial for managing internal scrolling and content */
+    transition: transform 0.25s ease-out, box-shadow 0.25s ease-out;
+}
+/* Optional hover effect for cards */
+/* .dashboard-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-card-hover);
+} */
+
+.card-title {
+    font-size: 1.15em; /* Slightly smaller for card context */
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 15px 0; /* Remove top margin */
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-light);
+    flex-shrink: 0; /* Prevent title from shrinking if card content is large */
+    text-align: left;
+}
+
+.card-content {
+    flex-grow: 1; /* Allows content to fill available space in card */
+    display: flex; /* If content itself needs flex, e.g. chart centered */
+    flex-direction: column;
+    overflow: hidden; /* If not scrollable, ensures content clips */
+    position: relative; /* For potential absolute positioning of internal elements */
+}
+
+.card-content-scrollable {
+    overflow-y: auto;
+    overflow-x: hidden;
+    /* Custom scrollbar for webkit browsers */
+}
+.card-content-scrollable::-webkit-scrollbar { width: 6px; }
+.card-content-scrollable::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 10px; }
+.card-content-scrollable::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 10px; }
+.card-content-scrollable::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+.card-footer {
+    margin-top: auto; /* Pushes footer to the bottom of the card */
+    padding-top: 15px;
+    border-top: 1px solid var(--border-light);
+    flex-shrink: 0;
+    background-color: var(--bg-card); /* Ensure footer matches card bg */
+    border-bottom-left-radius: var(--card-border-radius); /* Match card radius */
+    border-bottom-right-radius: var(--card-border-radius);
+    margin-left: calc(-1 * var(--card-padding)); /* Counteract card padding */
+    margin-right: calc(-1 * var(--card-padding));
+    margin-bottom: calc(-1 * var(--card-padding));
+    padding-left: var(--card-padding); /* Re-apply padding */
+    padding-right: var(--card-padding);
+    padding-bottom: var(--card-padding);
+}
+
+.text-muted { color: var(--text-muted) !important; } /* For placeholders */
+.card-placeholder { font-style: italic; color: var(--text-muted); text-align: center; padding: 20px; }
+.text-danger { color: var(--risk-high) !important; }
+
+/* --- Grid Spanning Classes (based on a 12-column grid) --- */
+/* You will apply these classes to your <section class="dashboard-card ..."> in HTML */
+/* Example Spans: */
+#holdings.dashboard-card           { grid-column: span 12; grid-row: span 2; min-height: 380px;} /* Full width, 2 rows tall */
+#distribution.dashboard-card       { grid-column: span 4;  grid-row: span 2; min-height: 380px;} /* 1/3 width, 2 rows */
+#fluctuations.dashboard-card       { grid-column: span 8;  grid-row: span 2; min-height: 380px;} /* 2/3 width, 2 rows */
+#key-metrics.dashboard-card        { grid-column: span 4;  grid-row: span 1; min-height: 180px;} /* 1/3 width, 1 row */
+#stock-risks.dashboard-card        { grid-column: span 8;  grid-row: span 2; min-height: 380px;} /* 2/3 width, 2 rows (could be beside key-metrics if it takes more rows) */
+#optimal-allocation.dashboard-card { grid-column: span 12; grid-row: span 3; min-height: 580px;} /* Full width, very tall */
+#portfolio-performance.dashboard-card { grid-column: span 12; grid-row: span 2; min-height: 450px;} /* Full width, tall */
+
+/* --- Table Styling within Cards (.data-table) --- */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+}
+.data-table thead {
+    background-color: var(--bg-card-subtle-accent);
+    color: var(--text-primary);
+    position: sticky; top: 0; z-index: 10; /* Sticky header within scrollable card */
+}
+.data-table th, .data-table td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-primary);
+    white-space: nowrap; /* Prevent wrapping unless really necessary */
+}
+.data-table th:nth-child(n+3), .data-table td:nth-child(n+3) { text-align: right; } /* Align numeric columns */
+.data-table td em { font-style: normal; color: var(--text-muted); }
+.data-table tbody tr:nth-child(even) { background-color: var(--bg-table-row-even); }
+.data-table tbody tr:hover { background-color: var(--bg-table-row-hover); }
+
+/* --- Button Styling (General, can be refined for specific contexts) --- */
+.btn { transition: all 0.2s ease; }
+.btn-primary { background-color: var(--bg-button-primary); border-color: var(--bg-button-primary); color: var(--text-on-primary-button); }
+.btn-primary:hover { background-color: var(--bg-button-primary-hover); border-color: var(--bg-button-primary-hover); }
+.btn-secondary { background-color: var(--bg-button-secondary); border-color: var(--bg-button-secondary); color: var(--text-on-secondary-button); }
+.btn-secondary:hover { background-color: var(--bg-button-secondary-hover); border-color: var(--bg-button-secondary-hover); }
+.btn-outline-danger { color: var(--bg-button-danger); border-color: var(--bg-button-danger); }
+.btn-outline-danger:hover { background-color: var(--bg-button-danger); color: var(--text-on-danger-button); }
+
+/* --- Chart Wrappers & Chart Item Styling --- */
+.chart-wrapper, .chart-wrapper-small, .plotly-wrapper {
+    flex-grow: 1; display: flex; align-items: center; justify-content: center;
+    width: 100%; position: relative; /* For canvas sizing */
+}
+.chart-wrapper canvas, .plotly-chart { /* .plotly-chart is the div Plotly creates */
+    max-width: 100%; max-height: 100%;
+}
+.chart-wrapper-small { min-height: 200px; /* For smaller pie charts */ }
+
+/* --- Stats Display (#key-metrics card) --- */
+.stats-display {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around; /* Distribute items vertically */
+    align-items: stretch; /* Stretch items to fill width */
+    height: 100%; /* Fill card content area */
+    flex-grow: 1;
+}
+.stat-item {
+    text-align: center;
+    padding: 8px 0;
+    /* border-bottom: 1px solid var(--border-light); */ /* Optional separator */
+}
+/* .stat-item:last-child { border-bottom: none; } */
+.stat-label { display: block; font-size: 0.85em; color: var(--text-secondary); margin-bottom: 4px; }
+.stat-value { display: block; font-size: 1.6em; font-weight: 600; color: var(--text-primary); line-height: 1.2; }
+
+/* --- Optimal Allocation Card Specifics --- */
+.optimal-allocation-container {
+    display: flex;
+    flex-direction: column; /* Default stack table and chart grid */
+    gap: var(--dashboard-gap);
+    flex-grow: 1; overflow: hidden;
+}
+.optimal-table-wrapper { max-height: 280px; /* Scrollable table part */ }
+.pie-charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Responsive pie charts */
+    gap: 15px;
+    flex-grow: 1;
+}
+.pie-chart-item {
+    background-color: var(--bg-card-subtle-accent);
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border-light);
+}
+.pie-chart-title { font-size: 0.9em; color: var(--text-primary); margin-bottom: 10px; font-weight: 500; }
+.ai-insights-box { margin-top: 20px; }
+.ai-insights-box #ai-explanation {
+    padding: 15px; font-size: 0.9em; background-color: var(--bg-card-subtle-accent);
+    border-radius: 8px; text-align: left; border: 1px solid var(--border-light);
+}
+.ai-insights-box #ai-explanation .ai-title { color: var(--accent-amber); text-align: center; margin-bottom: 8px; font-size: 1em;}
+
+/* --- Portfolio Performance Card Specifics --- */
+.performance-charts-container {
+    display: grid;
+    grid-template-columns: 1fr; /* Default to stacked */
+    gap: var(--dashboard-gap);
+    flex-grow: 1; overflow: hidden;
+}
+/* On wider viewports for this card, make them side-by-side */
+@media (min-width: 768px) { /* Or a specific breakpoint for this card */
+    .performance-charts-container {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+.plotly-chart-item { display: flex; flex-direction: column; min-height: 320px; }
+.plotly-chart-title { font-size: 1em; color: var(--text-secondary); text-align: center; margin-bottom: 10px; font-weight: 500; }
+
+
+/* --- Responsive Adjustments for Dashboard Grid --- */
+@media (max-width: 1200px) { /* Example: Medium screens */
+    .page-content-area.dashboard-grid {
+        grid-template-columns: repeat(8, 1fr); /* Adjust to an 8-column system */
+        grid-auto-rows: minmax(170px, auto);
+    }
+    /* Re-evaluate spans for 8 columns. E.g., full width is now span 8 */
+    #holdings.dashboard-card           { grid-column: span 8; grid-row: span 2; }
+    #distribution.dashboard-card       { grid-column: span 4; grid-row: span 2; } /* Was 4, now 4/8 = half */
+    #fluctuations.dashboard-card       { grid-column: span 8; grid-row: span 2; } /* Was 8, now 8/8 = full or make it span 4 */
+    #key-metrics.dashboard-card        { grid-column: span 4; grid-row: span 1; }
+    #stock-risks.dashboard-card        { grid-column: span 8; grid-row: span 2; }
+    #optimal-allocation.dashboard-card { grid-column: span 8; grid-row: span 3; }
+    #portfolio-performance.dashboard-card { grid-column: span 8; grid-row: span 2; }
+}
+
+@media (max-width: 992px) { /* Tablets */
+    .page-content-area.dashboard-grid {
+        grid-template-columns: repeat(4, 1fr); /* 4-column system */
+        grid-auto-rows: minmax(160px, auto);
+        gap: 15px; padding: 15px;
+    }
+    /* Adjust spans for 4 columns */
+    #holdings.dashboard-card           { grid-column: span 4; grid-row: span 2; }
+    #distribution.dashboard-card       { grid-column: span 2; grid-row: span 2; }
+    #fluctuations.dashboard-card       { grid-column: span 4; grid-row: span 2; }
+    #key-metrics.dashboard-card        { grid-column: span 2; grid-row: span 1; }
+    #stock-risks.dashboard-card        { grid-column: span 4; grid-row: span 2; }
+    #optimal-allocation.dashboard-card { grid-column: span 4; grid-row: span 3; }
+    #portfolio-performance.dashboard-card { grid-column: span 4; grid-row: span 3; } /* Might need more rows */
+
+    .pie-charts-grid { grid-template-columns: 1fr 1fr; } /* Two pie charts per row */
+}
+
+@media (max-width: 767px) { /* Mobile */
+    .sidebar { left: -250px; /* Fully hidden when closed on mobile */ }
+    .page-content-area.dashboard-grid {
+        margin-left: 0 !important; /* Sidebar overlays, no push */
+        width: 100% !important;
+        grid-template-columns: 1fr; /* Single column */
+        grid-auto-rows: auto; /* Let rows be determined by content height */
+        padding: 10px; gap: 10px;
+    }
+    /* All cards take full width in single column */
+    .dashboard-card { grid-column: span 1 !important; grid-row: auto !important; min-height: auto !important; }
+
+    .card-title { font-size: 1.1em; }
+    .data-table { font-size: 0.8em; }
+    .data-table th, .data-table td { padding: 8px 6px; white-space: normal; } /* Allow wrapping on mobile */
+    .stats-display { flex-direction: row; flex-wrap: wrap; justify-content: space-between; } /* Stats side-by-side if they fit */
+    .stat-item { flex-basis: 48%; text-align: left; padding: 5px; }
+    .stat-value { font-size: 1.4em; }
+    .pie-charts-grid { grid-template-columns: 1fr; } /* Stack all pie charts */
+    .performance-charts-container { grid-template-columns: 1fr; } /* Stack Plotly charts */
+}
