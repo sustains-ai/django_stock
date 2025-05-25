@@ -159,12 +159,34 @@ def add_stock(request):
                     messages.success(request, f"Added {stock_data.symbol} to {portfolio.name} with Alpha Vantage data")
                 else:
                     messages.warning(request, f"Added {stock_data.symbol} to {portfolio.name}, but failed to fetch Alpha Vantage data")
-            return redirect("portfolio_list")
+            return redirect("analyze_portfolio",portfolio_id=portfolio.id)
         else:
             messages.error(request, "Invalid stock data. Please check the form.")
     else:
         form = StockForm()
     return render(request, "portfolio/add_stock.html", {"form": form, "portfolios": portfolios})
+
+
+
+from django.views.decorators.http import require_POST
+
+@login_required
+@require_POST
+def delete_stock(request, portfolio_id, symbol):
+    portfolio = get_object_or_404(Portfolio, id=portfolio_id, fund_manager__user=request.user)
+    stock = portfolio.stocks.filter(symbol=symbol).first()
+
+    if stock:
+        stock.delete()
+        messages.success(request, f'Stock {symbol} has been removed from {portfolio.name}.')
+    else:
+        messages.warning(request, f'Stock {symbol} not found in this portfolio.')
+
+    return redirect('analyze_portfolio', portfolio_id=portfolio.id)
+
+
+
+
 
 
 
@@ -262,14 +284,26 @@ def analyze_portfolio(request, portfolio_id):
         "erc": json.dumps(portfolio_analysis["erc"]),
     }
 
+    # ✅ Compute portfolio value over time for Plotly chart
+    portfolio_values = (daily_prices[stock_symbols] * pd.Series(
+        {stock.symbol: stock.quantity for stock in stocks if stock.symbol in stock_symbols}
+    )).sum(axis=1)
+
+    portfolio_value_json = portfolio_values.reset_index()
+    portfolio_value_json["date"] = portfolio_value_json["date"].astype(str)
+    portfolio_value_json.columns = ["x", "y"]  # Required for Plotly
+    portfolio_value_json = portfolio_value_json.to_dict(orient="records")
+
     return render(request, 'portfolio/analyze_portfolio.html', {
         'portfolio': portfolio,
         'stock_data': stock_data,
         'total_value': float(total_value),
-        'historical_data': json.dumps(historical_data),
+        'historical_data': json.dumps(historical_data or []),
         'portfolio_analysis': portfolio_analysis_json,
         'optimal_table': portfolio_analysis,
-        'risk_measures': risk_measures
+        'risk_measures': risk_measures,
+        'portfolio_value_json': json.dumps(portfolio_value_json or []),
+
     })
 
 
@@ -288,7 +322,7 @@ def portfolio_risk(request, portfolio_id):
     historical_prices_qs = HistoricalStockData.objects.filter(portfolio=portfolio).order_by("date")
     if not historical_prices_qs.exists():
         messages.warning(request, "No historical data available to calculate portfolio risk.")
-        return render(request, "portfolio/portfolio_risk.html", {
+        return render(request, "portfolio/analyze_portfolio.html", {
             "portfolio": portfolio,
         })
 
@@ -301,7 +335,7 @@ def portfolio_risk(request, portfolio_id):
     valid_stocks = [stock for stock in stocks if stock.symbol in available_symbols]
     if not valid_stocks:
         messages.warning(request, "No valid stocks with historical data for risk calculation.")
-        return render(request, "portfolio/portfolio_risk.html", {
+        return render(request, "portfolio/analyze_portfolio.html", {
             "portfolio": portfolio,
         })
 
@@ -309,7 +343,7 @@ def portfolio_risk(request, portfolio_id):
     X = price_data[available_symbols].pct_change().dropna()
     if X.empty:
         messages.warning(request, "Not enough historical data to compute returns.")
-        return render(request, "portfolio/portfolio_risk.html", {
+        return render(request, "portfolio/analyze_portfolio.html", {
             "portfolio": portfolio,
         })
 
@@ -328,7 +362,11 @@ def portfolio_risk(request, portfolio_id):
     # Convert portfolio value to JSON
     portfolio_value_json = portfolio_values.reset_index()
     portfolio_value_json["date"] = portfolio_value_json["date"].astype(str)
-    portfolio_value_json = portfolio_value_json.rename(columns={"date": "x", 0: "y"}).to_dict(orient="records")
+    # portfolio_value_json = portfolio_value_json.rename(columns={"date": "x", 0: "y"}).to_dict(orient="records")
+    portfolio_value_json.columns = ["x", "y"]  # ✅ Important fix
+    portfolio_value_json = portfolio_value_json.to_dict(orient="records")
+
+
 
     print("DEBUG: Portfolio Value JSON")
     print(json.dumps(portfolio_value_json, indent=4))
@@ -341,7 +379,7 @@ def portfolio_risk(request, portfolio_id):
         "portfolio_value_json": json.dumps(portfolio_value_json),
     }
 
-    return render(request, "portfolio/portfolio_risk.html", context)
+    return render(request, "portfolio/analyze_portfolio.html", context)
 
 
 
