@@ -210,6 +210,7 @@ body {
 #latest-insights.dashboard-card     { grid-column: span 12; grid-row: span 2; min-height: 450px;} /* --- Table Styling within Cards (.data-table) --- */
 #exchange-rate-card.dashboard-card  { grid-column: span 12; grid-row: span 2; min-height: 450px;}
 #treasury-yield.dashboard-card      { grid-column: span 12; grid-row: span 2; min-height: 450px;}
+#monte-carlo-risk-section.dashboard-card { grid-column: span 12; grid-row: span 2; min-height: 450px;}
 
 .data-table {
     width: 100%;
@@ -428,7 +429,65 @@ body {
 */
 
 
+/* --- Monte Carlo Risk Card Specifics --- */
 
+/* IMPORTANT: Update the grid placement for the card to be large enough for a chart.
+   The old size (span 4, 200px) is too small. A full-width card works best. */
+#monte-carlo-risk-section.dashboard-card {
+    grid-column: span 12;
+    grid-row: span 2;
+    min-height: 450px;
+}
+
+/* Styles the container holding the canvas for proper sizing */
+.monte-carlo-chart-container {
+    position: relative;
+    height: 280px; /* Adjust height as needed */
+    width: 100%;
+}
+
+/* Styles the new horizontal container for the stats below the chart */
+.stats-display-horizontal {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 15px; /* Space between stat items */
+    padding-top: 15px; /* Space above the stats */
+    margin-top: 15px; /* Space between chart and stats separator line */
+    border-top: 1px solid var(--border-light); /* Separator line */
+}
+
+/* Styles individual stat items within the horizontal display */
+.stats-display-horizontal .stat-item {
+    flex-basis: calc(25% - 15px); /* Aim for 4 items per row */
+    min-width: 120px; /* Minimum width before wrapping */
+    text-align: center;
+}
+
+.stats-display-horizontal .stat-label {
+    display: block;
+    font-size: 0.8em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.stats-display-horizontal .stat-value {
+    display: block;
+    font-size: 1.2em;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Use your accent colors for emphasis */
+#monte-carlo-var,
+#monte-carlo-cvar {
+    color: var(--accent-red);
+}
+
+#monte-carlo-mean {
+    color: var(--accent-green);
+}
 
 
 
