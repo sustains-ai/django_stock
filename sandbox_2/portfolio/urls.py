@@ -15,6 +15,10 @@ urlpatterns = [
     path("load-risk-measure/<int:portfolio_id>/<str:measure>/", views.load_risk_measure, name="load_risk_measure"),
     path('portfolio/<int:portfolio_id>/risk/', views.portfolio_risk, name='portfolio_risk'),
     path('api/market-status/', views.market_status_view, name='market_status'),
+    path("ask-ai/<int:portfolio_id>/", views.ask_ai_view, name="ask_ai"),
+    path('analyze/<int:portfolio_id>/fetch-news/', views.fetch_news_view, name='fetch_news'),
+
+
 
 
 

@@ -1,0 +1,12 @@
+<form method="POST">
+  {% csrf_token %}
+  <input type="text" name="question" placeholder="Ask a portfolio risk question..." style="width: 80%;" />
+  <button type="submit">Ask</button>
+</form>
+
+{% if answer %}
+  <div style="margin-top: 20px;">
+    <strong>AI Response:</strong>
+    <p>{{ answer }}</p>
+  </div>
+{% endif %}

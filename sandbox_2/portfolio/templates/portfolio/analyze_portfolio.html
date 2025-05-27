@@ -23,6 +23,8 @@
                 <li><a href="#stock-risks">Stock Risks</a></li> {# Renamed for dashboard context #}
                 <li><a href="#optimal-allocation">Optimal Allocation</a></li>
                 <li><a href="#portfolio-performance">Performance</a></li>
+                <li><a href="#ai-agent">AI Agent</a></li>
+                <li><a href="#latest-insights">Latest Insights</a></li>
             </ul>
         </aside>
 
@@ -84,9 +86,11 @@
                 <div class="card-footer text-end"> {# Standardized card footer #}
                     <a href="{% url 'add_stock' %}" class="btn btn-primary btn-sm">Add Stock</a> {# Primary action color #}
                 </div>
+            
+            
             </section>
 
-            {# CARD 2: Portfolio Distribution (Pie Chart - Likely a smaller square-ish card) #}
+            {# CARD 2: Portfolio Distribution #}
             <section id="distribution" class="dashboard-card">
                 <h2 class="card-title">Portfolio Distribution</h2>
                 <div class="card-content chart-wrapper"> {# Added generic .card-content & .chart-wrapper #}
@@ -97,6 +101,8 @@
                 </div>
             </section>
 
+        
+        
             {# CARD 3: Stock Price Fluctuations (Line Chart - Likely a medium to wide card) #}
             <section id="fluctuations" class="dashboard-card">
                 <h2 class="card-title">Stock Price Fluctuations</h2>
@@ -105,6 +111,9 @@
                 </div>
             </section>
 
+        
+        
+        
             {# CARD 4: Key Portfolio Metrics (Was "Advanced Risk Analysis" - Small stats display) #}
             <section id="key-metrics" class="dashboard-card">
                 <h2 class="card-title">Key Portfolio Metrics</h2>
@@ -128,6 +137,9 @@
                 </div>
             </section>
 
+        
+        
+        
             {# CARD 5: Individual Stock Risk Measures (Table - Likely wider) #}
             <section id="stock-risks" class="dashboard-card">
                 <h2 class="card-title">Individual Stock Risks</h2>
@@ -167,6 +179,9 @@
                 </div>
             </section>
 
+        
+        
+        
             {# CARD 6: Optimal Portfolio Allocation (Table & 3 Pie Charts - Large, complex card) #}
             <section id="optimal-allocation" class="dashboard-card">
                 <h2 class="card-title">Optimal Portfolio Allocations</h2>
@@ -234,6 +249,10 @@
                 </div>
             </section>
 
+        
+        
+        
+        
             {# CARD 7: Portfolio Performance (2 Plotly Charts - Value Over Time & Efficient Frontier) #}
             {# This will likely be a wider card, potentially spanning full width or a large portion #}
             <section id="portfolio-performance" class="dashboard-card">
@@ -260,15 +279,53 @@
                      data-portfolio-value='{{ portfolio_value_json|safe }}' style="display:none;">
                 </div>
             </section>
+        
+        <!-- CARD 8: Ask AI Agent -->
+            <section id="ai-agent" class="dashboard-card">
+                <h2 class="card-title">Ask the Portfolio AI Agent</h2>
+                <div class="card-content">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <input type="text" name="ai_question" placeholder="Ask a question about your portfolio..." class="form-control" style="width: 100%; padding: 10px;" required>
+                        </div>
+                        <div class="text-end mt-2">
+                            <button type="submit" class="btn btn-primary btn-sm">Ask</button>
+                        </div>
+                    </form>
+            
+                    {% if ai_answer %}
+                        <div class="ai-response-box mt-3">
+                            <h4 class="ai-title">AI Response</h4>
+                            <p>{{ ai_answer }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </section>
+
+                            <!-- CARD 9: Latest News -->
+                <!-- CARD 9: Latest Market News -->
+            <section id="latest-insights" class="dashboard-card">
+                <h2 class="card-title">Latest News</h2>
+                <div class="card-content card-content-scrollable" id="news-container" data-url="{% url 'fetch_news' portfolio.id %}">
+                    <p class="text-muted">Loading news...</p>
+                </div>
+            </section>
+
 
         </div> <!-- End .page-content-area.dashboard-grid -->
     </div> <!-- End .sidebar-layout -->
 
+    
+    
+    
+    
+    
     <!-- Scripts (Keep your existing script includes here) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     {# It's good practice to bundle your JS or have fewer, more organized files #}
-{#    <script src="{% static 'js/analyze_portfolio_dashboard.js' %}"></script> {# A single file for this page's JS #}
+
     <script src="{% static 'js/portfolio_risks.js' %}"></script> 
     <script src="{% static 'js/portfolio_plotly.js' %}"></script> 
     <script src="{% static 'js/portfolio_charts.js' %}"></script>
