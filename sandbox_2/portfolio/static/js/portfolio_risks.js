@@ -168,3 +168,161 @@ function fetchAndDisplayRiskMeasures(portfolioId) {
             if (cell) cell.textContent = "Error";
         });
 }
+
+
+
+
+// document.addEventListener("DOMContentLoaded", () => {
+//     const varElem = document.getElementById("monte-carlo-var");
+//     const cvarElem = document.getElementById("monte-carlo-cvar");
+//
+//     const monteCarloContainer = document.querySelector("[data-montecarlo-id]");
+//     const portfolioId = monteCarloContainer?.dataset?.montecarloId;
+//
+//     if (!portfolioId || !varElem || !cvarElem) return;
+//
+//     fetch(`/monte-carlo-risk/${portfolioId}/`)
+//         .then(res => res.ok ? res.json() : Promise.reject("Network response was not ok"))
+//         .then(data => {
+//             varElem.textContent = data?.VaR ?? "N/A";
+//             cvarElem.textContent = data?.CVaR ?? "N/A";
+//         })
+//         .catch(err => {
+//             console.error("Error fetching Monte Carlo risk data:", err);
+//             varElem.textContent = "Error";
+//             cvarElem.textContent = "Error";
+//         });
+// });
+document.addEventListener("DOMContentLoaded", () => {
+    // Get all the new elements
+    const varElem = document.getElementById("monte-carlo-var");
+    const cvarElem = document.getElementById("monte-carlo-cvar");
+    const meanElem = document.getElementById("monte-carlo-mean");
+    const stddevElem = document.getElementById("monte-carlo-stddev");
+    const chartCanvas = document.getElementById("monteCarloChart");
+
+    const monteCarloContainer = document.querySelector("[data-montecarlo-id]");
+    const portfolioId = monteCarloContainer?.dataset?.montecarloId;
+
+    if (!portfolioId || !varElem || !cvarElem || !meanElem || !stddevElem || !chartCanvas) {
+        console.error("One or more Monte Carlo elements are missing from the page.");
+        return;
+    }
+
+    // Function to calculate Gaussian PDF
+    function gaussianPDF(x, mean, stdDev) {
+        if (stdDev === 0) return x === mean ? Infinity : 0;
+        return (1 / (stdDev * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * Math.pow((x - mean) / stdDev, 2));
+    }
+
+    let monteCarloChartInstance = null; // To hold the chart instance
+
+    fetch(`/monte-carlo-risk/${portfolioId}/`)
+        .then(res => res.ok ? res.json() : res.json().then(errData => Promise.reject(errData)))
+        .then(data => {
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            const backendVaRPct = data.VaR_pct;
+            const backendCVaRPct = data.CVaR_pct;
+            const meanReturnPct = data.mean_return_pct;
+            const stdDevReturnPct = data.std_dev_return_pct;
+
+            // Display values, using Math.abs for loss figures
+            varElem.textContent = backendVaRPct !== null ? `${Math.abs(backendVaRPct).toFixed(2)}%` : "N/A";
+            cvarElem.textContent = backendCVaRPct !== null ? `${Math.abs(backendCVaRPct).toFixed(2)}%` : "N/A";
+            meanElem.textContent = meanReturnPct !== null ? `${meanReturnPct.toFixed(2)}%` : "N/A";
+            stddevElem.textContent = stdDevReturnPct !== null ? `${stdDevReturnPct.toFixed(2)}%` : "N/A";
+
+            if (meanReturnPct === null || stdDevReturnPct === null || stdDevReturnPct === 0) {
+                 const ctx = chartCanvas.getContext('2d');
+                 ctx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
+                 ctx.font = "16px Inter, sans-serif";
+                 ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-muted');
+                 ctx.textAlign = "center";
+                 ctx.fillText("Not enough data for distribution.", chartCanvas.width / 2, 50);
+                 return;
+            }
+
+            const xValues = [];
+            const yValues = [];
+            const rangeMultiplier = 4;
+            const numPoints = 200;
+            const minX = meanReturnPct - rangeMultiplier * stdDevReturnPct;
+            const maxX = meanReturnPct + rangeMultiplier * stdDevReturnPct;
+
+            for (let i = 0; i <= numPoints; i++) {
+                const x = minX + (i / numPoints) * (maxX - minX);
+                xValues.push(x);
+                yValues.push(gaussianPDF(x, meanReturnPct, stdDevReturnPct));
+            }
+
+            const actualVaRPoint = backendVaRPct;
+            const actualCVaRPoint = backendCVaRPct;
+
+            if (monteCarloChartInstance) {
+                monteCarloChartInstance.destroy();
+            }
+
+            const chartContext = chartCanvas.getContext('2d');
+            monteCarloChartInstance = new Chart(chartContext, {
+                type: 'line',
+                data: {
+                    labels: xValues.map(x => x.toFixed(2)),
+                    datasets: [{
+                        data: yValues,
+                        borderColor: getComputedStyle(document.documentElement).getPropertyValue('--text-link').trim(),
+                        borderWidth: 2,
+                        fill: {
+                            target: 'origin',
+                            above: 'rgba(88, 166, 255, 0.1)',
+                        },
+                        pointRadius: 0,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Portfolio Daily Return (%)', color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() },
+                            ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() },
+                            grid: { color: getComputedStyle(document.documentElement).getPropertyValue('--border-light').trim(), drawOnChartArea: false }
+                        },
+                        y: {
+                            title: { display: true, text: 'Probability Density', color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() },
+                            ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim(), precision: 0 },
+                            grid: { color: getComputedStyle(document.documentElement).getPropertyValue('--border-light').trim() }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: true, mode: 'index', intersect: false },
+                        annotation: {
+                            annotations: {
+                                varLine: { type: 'line', xMin: actualVaRPoint, xMax: actualVaRPoint, borderColor: getComputedStyle(document.documentElement).getPropertyValue('--accent-red').trim(), borderWidth: 2, borderDash: [6, 6], label: { content: `VaR: ${Math.abs(actualVaRPoint).toFixed(2)}%`, enabled: true, position: 'start', backgroundColor: 'rgba(0,0,0,0.7)', yAdjust: -15 }},
+                                cvarLine: { type: 'line', xMin: actualCVaRPoint, xMax: actualCVaRPoint, borderColor: getComputedStyle(document.documentElement).getPropertyValue('--accent-red').trim(), borderWidth: 2, label: { content: `CVaR: ${Math.abs(actualCVaRPoint).toFixed(2)}%`, enabled: true, position: 'end', backgroundColor: 'rgba(0,0,0,0.7)', yAdjust: 15 }},
+                                meanLine: { type: 'line', xMin: meanReturnPct, xMax: meanReturnPct, borderColor: getComputedStyle(document.documentElement).getPropertyValue('--accent-green').trim(), borderWidth: 1.5, borderDash: [3, 3], label: { content: `Mean`, enabled: true, position: 'center', backgroundColor: 'rgba(0,0,0,0.7)', yAdjust: -30 }},
+                                varTailArea: { type: 'box', xMin: minX, xMax: actualVaRPoint, backgroundColor: 'rgba(255, 146, 146, 0.15)', borderColor: 'transparent' }
+                            }
+                        }
+                    }
+                }
+            });
+        })
+        .catch(err => {
+            console.error("Error fetching/processing Monte Carlo risk data:", err);
+            varElem.textContent = "Error";
+            cvarElem.textContent = "Error";
+            meanElem.textContent = "Error";
+            stddevElem.textContent = "Error";
+            const ctx = chartCanvas.getContext('2d');
+            ctx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
+            ctx.font = "16px Inter, sans-serif";
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-muted');
+            ctx.textAlign = "center";
+            ctx.fillText(err.message || "Error loading chart data.", chartCanvas.width / 2, 50);
+        });
+});

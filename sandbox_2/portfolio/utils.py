@@ -4,6 +4,7 @@ from .models import HistoricalStockData, Portfolio
 import os
 import requests
 from dotenv import load_dotenv
+import numpy as np
 
 load_dotenv()
 
@@ -136,3 +137,47 @@ def fetch_treasury_yield():
     except Exception as e:
         print(f"Error fetching full Treasury Yield history: {e}")
         return None
+
+
+def monte_carlo_var_cvar(yields, num_simulations=10000, confidence_level=0.95):
+    """
+    Perform Monte Carlo simulation to compute VaR and CVaR.
+
+    :param yields: List of historical yield values (float).
+    :param num_simulations: Number of Monte Carlo simulations to run.
+    :param confidence_level: Confidence level for VaR/CVaR (e.g., 0.95).
+    :return: Tuple (VaR, CVaR).
+    """
+    log_returns = np.diff(np.log(yields))
+    mu = np.mean(log_returns)
+    sigma = np.std(log_returns)
+
+    simulated_returns = np.random.normal(mu, sigma, num_simulations)
+    sorted_returns = np.sort(simulated_returns)
+
+    var_index = int((1 - confidence_level) * num_simulations)
+    var = sorted_returns[var_index]
+    cvar = sorted_returns[:var_index].mean()
+
+    return round(var, 5), round(cvar, 5)
+
+def monte_carlo_portfolio_var_cvar(log_returns, num_simulations=10000, confidence_level=0.95):
+    """
+    Perform Monte Carlo simulation based on portfolio log returns.
+
+    :param log_returns: List of aggregated portfolio log returns.
+    :param num_simulations: Number of simulations.
+    :param confidence_level: Confidence level for VaR and CVaR.
+    :return: Tuple (VaR, CVaR).
+    """
+    mu = np.mean(log_returns)
+    sigma = np.std(log_returns)
+
+    simulated_returns = np.random.normal(mu, sigma, num_simulations)
+    sorted_returns = np.sort(simulated_returns)
+
+    var_index = int((1 - confidence_level) * num_simulations)
+    var = sorted_returns[var_index]
+    cvar = sorted_returns[:var_index].mean()
+
+    return round(var, 5), round(cvar, 5)

@@ -332,8 +332,52 @@
                 <h2 class="card-title">10-Year US Treasury Yield (Last 3 Years)</h2>
                 <canvas id="treasuryYieldChart" style="max-height: 300px;"></canvas>
             </section>
+        
+        <span style="display:none;" data-montecarlo-id="{{ portfolio.id }}"></span>
+
+{#            <!-- CARD: Monte Carlo Simulation (Portfolio-Level Risk) -->#}
+{#            <section id="monte-carlo-risk-section" class="dashboard-card" style="grid-column: span 4; grid-row: span 1; min-height: 200px; overflow-y: auto;">#}
+{#                <h2 class="card-title">Monte Carlo Simulation (Portfolio)</h2>#}
+{#                <div class="card-content stats-display">#}
+{#                    <div class="stat-item">#}
+{#                        <span class="stat-label">VaR (95%)</span>#}
+{#                        <span class="stat-value" id="monte-carlo-var">Loading...</span>#}
+{#                    </div>#}
+{#                    <div class="stat-item">#}
+{#                        <span class="stat-label">CVaR (95%)</span>#}
+{#                        <span class="stat-value" id="monte-carlo-cvar">Loading...</span>#}
+{#                    </div>#}
+{#                </div>#}
+{#            </section>#}
 
 
+                           <!-- CARD: Monte Carlo Simulation (Portfolio-Level Risk) -->
+                <section id="monte-carlo-risk-section" class="dashboard-card">
+                    <h2 class="card-title">Portfolio Risk Distribution (Monte Carlo)</h2>
+                    <div class="card-content">
+                        <div class="monte-carlo-chart-container">
+                            <canvas id="monteCarloChart"></canvas>  <!-- <<<< THIS MUST EXIST -->
+                        </div>
+                        <div class="stats-display-horizontal">
+                            <div class="stat-item">
+                                <span class="stat-label">VaR (95%)</span>
+                                <span class="stat-value" id="monte-carlo-var">Loading...</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">CVaR (95%)</span>
+                                <span class="stat-value" id="monte-carlo-cvar">Loading...</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Mean Daily Return</span>
+                                <span class="stat-value" id="monte-carlo-mean">Loading...</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Daily Volatility</span>
+                                <span class="stat-value" id="monte-carlo-stddev">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
         </div> <!-- End .page-content-area.dashboard-grid -->
     </div> <!-- End .sidebar-layout -->
 
@@ -342,13 +386,21 @@
     
     
     
-    <!-- Scripts (Keep your existing script includes here) -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Scripts -->
+    <!-- Load Plotly first if it's used independently -->
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
-    {# It's good practice to bundle your JS or have fewer, more organized files #}
 
-    <script src="{% static 'js/portfolio_risks.js' %}"></script> 
-    <script src="{% static 'js/portfolio_plotly.js' %}"></script> 
+    <!-- 1. Load the specific Chart.js version you intend to use -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
+    <!-- 2. Load the Chart.js Annotation Plugin (depends on Chart.js) -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0/dist/chartjs-plugin-annotation.min.js"></script>
+
+    <!-- 3. Now load your custom scripts that use these libraries -->
+    <script src="{% static 'js/portfolio_risks.js' %}"></script>
+    <script src="{% static 'js/portfolio_plotly.js' %}"></script>
     <script src="{% static 'js/portfolio_charts.js' %}"></script>
 
+    {# REMOVE THE DUPLICATE Chart.js from here if it was at the end #}
+    {# <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> #}
 {% endblock %}

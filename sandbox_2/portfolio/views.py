@@ -592,3 +592,113 @@ def fetch_treasury_yield_view(request, portfolio_id):
         return JsonResponse({"labels": labels, "values": values})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
+
+from django.http import JsonResponse
+from .models import Portfolio, HistoricalStockData
+from .utils import monte_carlo_portfolio_var_cvar
+import pandas as pd
+import numpy as np
+
+import numpy as np
+import pandas as pd
+from django.http import JsonResponse
+from .models import Portfolio, HistoricalStockData # Assuming these are correct
+from .utils import monte_carlo_portfolio_var_cvar # Assuming this is correct
+
+def monte_carlo_risk_view(request, portfolio_id):
+    try:
+        print(f"🔍 Starting Monte Carlo risk view for portfolio {portfolio_id}")
+        portfolio = Portfolio.objects.get(id=portfolio_id)
+        stocks = portfolio.stocks.all()
+
+        price_data = []
+
+        for stock in stocks:
+            # Your existing logic for fetching and preparing price data
+            records = HistoricalStockData.objects.filter(portfolio=portfolio, symbol=stock.symbol).order_by("date")
+            if records.exists():
+                df = pd.DataFrame(
+                    [(r.date, r.adjusted_close) for r in records],
+                    columns=["date", stock.symbol]
+                ).set_index("date")
+                price_data.append(df)
+            else:
+                print(f"⚠️ Skipping {stock.symbol} due to no data in portfolio {portfolio_id}") # Added portfolio_id for clarity
+
+        if not price_data:
+            print(f"❌ No price data found for any stock in portfolio {portfolio_id}") # Added portfolio_id
+            # Consider status 400 for client-side correctable errors if appropriate,
+            # or if no data means an issue with the portfolio setup.
+            # For now, keeping 500 as per your original code.
+            return JsonResponse({"error": "No price data found for any stock"}, status=500)
+
+        combined_df = pd.concat(price_data, axis=1, join="inner").dropna()
+
+        # Add a check for empty combined_df after join and dropna
+        if combined_df.empty or len(combined_df) < 2: # Need at least 2 rows for shift(1)
+            print(f"❌ Combined price data is insufficient after join/dropna for portfolio {portfolio_id}")
+            return JsonResponse({"error": "Not enough overlapping/valid price data for analysis"}, status=500) # Or 400
+
+        print(f"📊 Price Data (portfolio {portfolio_id}):\n", combined_df.head()) # Added portfolio_id
+
+        log_returns = np.log(combined_df / combined_df.shift(1)).dropna()
+
+        # Add a check for empty log_returns
+        if log_returns.empty:
+            print(f"❌ Log returns are empty for portfolio {portfolio_id}")
+            return JsonResponse({"error": "Could not calculate log returns from available price data"}, status=500) # Or 400
+
+        print(f"📈 Returns Data (portfolio {portfolio_id}):\n", log_returns.tail()) # Added portfolio_id
+
+        # Ensure there's at least one column of returns for weighting
+        if log_returns.shape[1] == 0:
+            print(f"❌ No valid asset returns columns for portfolio {portfolio_id}")
+            return JsonResponse({"error": "No valid asset returns to process"}, status=500) # Or 400
+
+        weights = np.array([1.0 / log_returns.shape[1]] * log_returns.shape[1])
+        portfolio_log_returns = log_returns.dot(weights)
+
+        # Ensure portfolio_log_returns is not empty (e.g., if weights was empty, though unlikely with above check)
+        if portfolio_log_returns.empty:
+            print(f"❌ Portfolio log returns series is empty for portfolio {portfolio_id}")
+            return JsonResponse({"error": "Could not calculate portfolio log returns"}, status=500) # Or 400
+
+
+        # === ADDITIONS START HERE ===
+        # Calculate mean and standard deviation of the portfolio log returns
+        mean_return_raw = float(portfolio_log_returns.mean())
+        std_dev_return_raw = float(portfolio_log_returns.std())
+
+        # Get VaR and CVaR from your utils function (these are raw, e.g., -0.031)
+        # Your function monte_carlo_portfolio_var_cvar already returns these
+        var_raw, cvar_raw = monte_carlo_portfolio_var_cvar(portfolio_log_returns)
+
+        # Convert all four values to percentages
+        var_pct = var_raw * 100
+        cvar_pct = cvar_raw * 100
+        mean_return_pct = mean_return_raw * 100
+        std_dev_return_pct = std_dev_return_raw * 100
+
+        # Construct the JSON response with the keys JavaScript expects
+        response_data = {
+            "VaR_pct": round(var_pct, 4) if not np.isnan(var_pct) else None,
+            "CVaR_pct": round(cvar_pct, 4) if not np.isnan(cvar_pct) else None,
+            "mean_return_pct": round(mean_return_pct, 2) if not np.isnan(mean_return_pct) else None,
+            "std_dev_return_pct": round(std_dev_return_pct, 2) if not np.isnan(std_dev_return_pct) else None,
+        }
+        # === ADDITIONS END HERE ===
+
+        # Print the data being sent for debugging
+        print(f"✅ monte_carlo_risk_view for portfolio {portfolio_id} sending data: {response_data}")
+        return JsonResponse(response_data) # Return the new response_data
+
+    # Your existing exception handling
+    except Portfolio.DoesNotExist: # Specific exception first
+        print(f"❌ Portfolio with ID {portfolio_id} not found.")
+        return JsonResponse({"error": "Portfolio not found"}, status=404)
+    except Exception as e:
+        print(f"❌ Exception occurred in monte_carlo_risk_view for portfolio {portfolio_id}: {e}")
+        import traceback # Import traceback here for more detailed error logging
+        traceback.print_exc() # This will print the full Python traceback to your console
+        return JsonResponse({"error": str(e)}, status=500)

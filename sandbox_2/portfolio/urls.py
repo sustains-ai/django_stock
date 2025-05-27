@@ -20,6 +20,7 @@ urlpatterns = [
     path('analyze/<int:portfolio_id>/fetch-news/', views.fetch_news_view, name='fetch_news'),
     path('fetch-currency-rates/<int:portfolio_id>/', views.fetch_currency_rates, name='fetch_currency_rates'),
     path('fetch-treasury-yield/<int:portfolio_id>/', views.fetch_treasury_yield_view, name='fetch_treasury_yield'),
+    path('monte-carlo-risk/<int:portfolio_id>/', views.monte_carlo_risk_view, name='monte_carlo_risk'),
 
 
 
