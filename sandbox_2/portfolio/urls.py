@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from django.contrib.auth import views as auth_views
+from .views import fetch_currency_rates
 
 urlpatterns = [
 
@@ -17,6 +18,8 @@ urlpatterns = [
     path('api/market-status/', views.market_status_view, name='market_status'),
     path("ask-ai/<int:portfolio_id>/", views.ask_ai_view, name="ask_ai"),
     path('analyze/<int:portfolio_id>/fetch-news/', views.fetch_news_view, name='fetch_news'),
+    path('fetch-currency-rates/<int:portfolio_id>/', views.fetch_currency_rates, name='fetch_currency_rates'),
+
 
 
 

@@ -120,3 +120,39 @@ function fetchAndDisplayRiskMeasures(portfolioId) {
             });
     });
 }
+
+
+document.addEventListener("DOMContentLoaded", function () {
+    const exchangeContainer = document.getElementById("exchange-rate-container");
+    const url = exchangeContainer?.getAttribute("data-url");
+
+    if (!exchangeContainer || !url) {
+        console.warn("Exchange rate container or data-url not found.");
+        return;
+    }
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            exchangeContainer.innerHTML = ""; // Clear placeholder
+
+            if (!data.exchange_rates || data.exchange_rates.length === 0) {
+                exchangeContainer.innerHTML = "<p class='text-muted'>No exchange rate data available.</p>";
+                return;
+            }
+
+            data.exchange_rates.forEach(rate => {
+                const div = document.createElement("div");
+                div.classList.add("exchange-rate-item");
+                div.innerHTML = `
+                    <p style="margin-bottom: 2px;">${rate.from} → ${rate.to}</p>
+                    <p style="font-size: 1.2em;">${rate.rate ? parseFloat(rate.rate).toFixed(4) : 'N/A'}</p>
+                    <hr style="border: 0.5px solid var(--border-light);">
+                `;
+                exchangeContainer.appendChild(div);
+            });
+        })
+        .catch(() => {
+            exchangeContainer.innerHTML = "<p class='text-muted'>Failed to load exchange rate data.</p>";
+        });
+});

@@ -563,3 +563,15 @@ from .utils import fetch_news_sentiment
 def fetch_news_view(request, portfolio_id):
     news = fetch_news_sentiment()
     return JsonResponse({"news": news[:5]})  # Send only top 5
+
+
+# views.py
+from django.http import JsonResponse
+from .utils import fetch_currency_exchange_rates
+
+def fetch_currency_rates(request,portfolio_id):
+    try:
+        rates = fetch_currency_exchange_rates()
+        return JsonResponse({"exchange_rates": rates})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

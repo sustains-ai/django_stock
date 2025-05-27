@@ -206,8 +206,8 @@ body {
 #optimal-allocation.dashboard-card { grid-column: span 12; grid-row: span 3; min-height: 580px;} /* Full width, very tall */
 #portfolio-performance.dashboard-card { grid-column: span 12; grid-row: span 2; min-height: 450px;} /* Full width, tall */
 #ai-agent.dashboard-card            { grid-column: span 12; grid-row: span 2; min-height: 450px;} /* Full width, tall */
-#latest-insights.dashboard-card         { grid-column: span 12; grid-row: span 2; min-height: 450px;} /* --- Table Styling within Cards (.data-table) --- */
-
+#latest-insights.dashboard-card     { grid-column: span 12; grid-row: span 2; min-height: 450px;} /* --- Table Styling within Cards (.data-table) --- */
+#exchange-rate-card.dashboard-card { grid-column: span 12; grid-row: span 2; min-height: 450px;}
 
 
 .data-table {

@@ -312,6 +312,18 @@
                 </div>
             </section>
 
+        
+        
+                    <!-- CARD 10: Currency Exchange Rates -->
+            <section id="exchange-rate-card" class="dashboard-card">
+                <h2 class="card-title">Currency Exchange Rates</h2>
+                <div id="exchange-rate-container"
+                     class="card-content card-content-scrollable"
+                     data-url="{% url 'fetch_currency_rates' portfolio.id %}">
+                    <p class="text-muted">Loading exchange rates...</p>
+                </div>
+            </section>
+
 
         </div> <!-- End .page-content-area.dashboard-grid -->
     </div> <!-- End .sidebar-layout -->
