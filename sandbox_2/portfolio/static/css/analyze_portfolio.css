@@ -32,11 +32,18 @@
     --border-light: #444C56;   /* Lighter borders, internal card dividers */
     --border-card: var(--border-primary);
 
-    --accent-blue: #3081F7;
-    --accent-green: #2DA44E;
-    --accent-amber: #E0A800;
-    --accent-teal: #39C3B3;
-    --accent-rose: #A6808C;
+    /*--accent-blue: #3081F7;*/
+    /*--accent-green: #2DA44E;*/
+    /*--accent-amber: #E0A800;*/
+    /*--accent-teal: #39C3B3;*/
+    /*--accent-rose: #A6808C;*/
+
+
+    --accent-red: #FF9292;
+    --accent-green: #1DE9B6;
+    --accent-grey: #D3D3D3;
+    --accent-grey2: #B0B0B0;
+    --accent-black: #3E3E3E;
 
     --shadow-card: 0 5px 15px rgba(0, 0, 0, 0.3);
     --shadow-card-hover: 0 8px 25px rgba(0, 0, 0, 0.35);
@@ -136,10 +143,10 @@ body {
     transition: transform 0.25s ease-out, box-shadow 0.25s ease-out;
 }
 /* Optional hover effect for cards */
-/* .dashboard-card:hover {
+.dashboard-card:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-card-hover);
-} */
+}
 
 .card-title {
     font-size: 1.15em; /* Slightly smaller for card context */
@@ -191,17 +198,18 @@ body {
 .text-danger { color: var(--risk-high) !important; }
 
 /* --- Grid Spanning Classes (based on a 12-column grid) --- */
-/* You will apply these classes to your <section class="dashboard-card ..."> in HTML */
-/* Example Spans: */
-#holdings.dashboard-card           { grid-column: span 12; grid-row: span 2; min-height: 380px;} /* Full width, 2 rows tall */
+#holdings.dashboard-card           { grid-column: span 8; grid-row: span 2; min-height: 380px;} /* Full width, 2 rows tall */
 #distribution.dashboard-card       { grid-column: span 4;  grid-row: span 2; min-height: 380px;} /* 1/3 width, 2 rows */
 #fluctuations.dashboard-card       { grid-column: span 8;  grid-row: span 2; min-height: 380px;} /* 2/3 width, 2 rows */
-#key-metrics.dashboard-card        { grid-column: span 4;  grid-row: span 1; min-height: 180px;} /* 1/3 width, 1 row */
+#key-metrics.dashboard-card        { grid-column: span 4;  grid-row: span 4; min-height: 500px;} /* 1/3 width, 1 row */
 #stock-risks.dashboard-card        { grid-column: span 8;  grid-row: span 2; min-height: 380px;} /* 2/3 width, 2 rows (could be beside key-metrics if it takes more rows) */
 #optimal-allocation.dashboard-card { grid-column: span 12; grid-row: span 3; min-height: 580px;} /* Full width, very tall */
 #portfolio-performance.dashboard-card { grid-column: span 12; grid-row: span 2; min-height: 450px;} /* Full width, tall */
+#ai-agent.dashboard-card            { grid-column: span 12; grid-row: span 2; min-height: 450px;} /* Full width, tall */
+#latest-insights.dashboard-card         { grid-column: span 12; grid-row: span 2; min-height: 450px;} /* --- Table Styling within Cards (.data-table) --- */
 
-/* --- Table Styling within Cards (.data-table) --- */
+
+
 .data-table {
     width: 100%;
     border-collapse: collapse;
@@ -322,6 +330,7 @@ body {
     #stock-risks.dashboard-card        { grid-column: span 8; grid-row: span 2; }
     #optimal-allocation.dashboard-card { grid-column: span 8; grid-row: span 3; }
     #portfolio-performance.dashboard-card { grid-column: span 8; grid-row: span 2; }
+    #ai-agent.dashboard-card {grid-column: span 8; grid-row: span 2;}
 }
 
 @media (max-width: 992px) { /* Tablets */

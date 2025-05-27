@@ -1,72 +1,95 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // initializeGraphs(); // This was already moved into the other DOMContentLoaded listener
-    // fetchAndDisplayRiskMeasures(); // This will be called below
-
-    const loadAllRisksButton = document.getElementById("load-all-risks-btn"); // Renamed for clarity
-    const portfolioContainer = document.getElementById("portfolio-container"); // Renamed for clarity
+    const loadAllRisksButton = document.getElementById("load-all-risks-btn");
+    const portfolioContainer = document.getElementById("portfolio-container");
     const portfolioId = portfolioContainer?.dataset?.portfolioId;
 
+    // Load risk metrics on button click
     if (loadAllRisksButton && portfolioId) {
         loadAllRisksButton.addEventListener("click", () => {
-            // Disable button to prevent multiple clicks while fetching
             loadAllRisksButton.disabled = true;
-            loadAllRisksButton.textContent = "Loading..."; // Provide user feedback
+            loadAllRisksButton.textContent = "Loading...";
 
             const measures = ["std_dev", "var", "cvar"];
             const riskValues = {};
 
             Promise.all(measures.map(measure =>
                 fetch(`/load-risk-measure/${portfolioId}/${measure}/`)
-                    .then(response => { // Renamed for clarity
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status} for ${measure}`);
-                        }
+                    .then(response => {
+                        if (!response.ok) throw new Error(`HTTP error! status: ${response.status} for ${measure}`);
                         return response.json();
                     })
                     .then(data => {
-                        riskValues[measure] = data[measure]; // Assuming the backend returns { "measure_name": value }
+                        riskValues[measure] = data[measure];
                     })
                     .catch(error => {
                         console.error(`Error fetching ${measure}:`, error);
-                        riskValues[measure] = null; // Or some default error indicator
-                        // Optionally update the specific cell with an error message here
+                        riskValues[measure] = null;
                     })
             ))
             .then(() => {
-                // Update text content
                 document.getElementById("variance-value").textContent = typeof riskValues.std_dev === 'number' ? riskValues.std_dev.toFixed(5) : "N/A";
                 document.getElementById("var-value").textContent = typeof riskValues.var === 'number' ? riskValues.var.toFixed(5) : "N/A";
                 document.getElementById("cvar-value").textContent = typeof riskValues.cvar === 'number' ? riskValues.cvar.toFixed(5) : "N/A";
 
-                // The renderRiskBarChart function already uses the new color palette
-                renderRiskBarChart(riskValues);
+                if (typeof renderRiskBarChart === "function") {
+                    renderRiskBarChart(riskValues);
+                }
             })
             .finally(() => {
-                // Re-enable button and reset text
                 loadAllRisksButton.disabled = false;
-                loadAllRisksButton.textContent = "Load All Risk Measures"; // Or original text
+                loadAllRisksButton.textContent = "Load All Risk Measures";
             });
-        });
+    });
+
     } else {
         if (!loadAllRisksButton) console.warn("Button with ID 'load-all-risks-btn' not found.");
         if (!portfolioId) console.warn("Portfolio ID not found in 'portfolio-container' dataset.");
     }
 
-    // Initial fetch of risk measures when the page loads
-    fetchAndDisplayRiskMeasures();
+    // Auto-load risk measures on page load
+    fetchAndDisplayRiskMeasures(portfolioId);
+
+    // Load news sentiment on page load
+    const newsContainer = document.getElementById("news-container");
+    const newsUrl = newsContainer?.getAttribute("data-url");
+
+    if (newsUrl && newsContainer) {
+        fetch(newsUrl)
+            .then(response => response.json())
+            .then(data => {
+                newsContainer.innerHTML = "";
+                if (!data.news || data.news.length === 0) {
+                    newsContainer.innerHTML = "<p class='text-muted'>No news available.</p>";
+                    return;
+                }
+
+                data.news.forEach(article => {
+                    const div = document.createElement("div");
+                    div.classList.add("news-item");
+                    div.innerHTML = `
+                        <p style="margin-bottom: 4px;">
+                            <a href="${article.url}" target="_blank" style="color: var(--text-link); text-decoration: none;">
+                                ${article.title}
+                            </a>
+                        </p>
+                        <p class="text-muted" style="font-size: 0.85em;">${article.source}</p>
+                        <hr style="border: 0.5px solid var(--border-light);">
+                    `;
+                    newsContainer.appendChild(div);
+                });
+            })
+            .catch(() => {
+                newsContainer.innerHTML = "<p class='text-muted'>Failed to load news.</p>";
+            });
+    }
 });
 
-function fetchAndDisplayRiskMeasures() {
-    const portfolioContainer = document.getElementById("portfolio-container"); // Renamed for clarity
-    const portfolioId = portfolioContainer?.dataset?.portfolioId;
-
+function fetchAndDisplayRiskMeasures(portfolioId) {
     if (!portfolioId) {
-        // console.warn("Portfolio ID not found for initial risk measure fetch."); // Already logged by button logic if applicable
-        // Set default text for cells if no portfolioId
-        const defaultText = "N/A";
-        document.getElementById("variance-value").textContent = defaultText;
-        document.getElementById("var-value").textContent = defaultText;
-        document.getElementById("cvar-value").textContent = defaultText;
+        ["variance-value", "var-value", "cvar-value"].forEach(id => {
+            const cell = document.getElementById(id);
+            if (cell) cell.textContent = "N/A";
+        });
         return;
     }
 
@@ -79,43 +102,21 @@ function fetchAndDisplayRiskMeasures() {
 
     measures.forEach(measure => {
         const cell = document.getElementById(cellMap[measure]);
-        if (cell) cell.textContent = "Loading..."; // Initial loading state
+        if (cell) cell.textContent = "Loading...";
 
         fetch(`/load-risk-measure/${portfolioId}/${measure}/`)
-            .then(response => { // Renamed for clarity
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status} for ${measure}`);
-                }
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status} for ${measure}`);
                 return response.json();
             })
             .then(data => {
                 if (cell) {
-                    if (data && typeof data[measure] === 'number') { // Check if data and data[measure] exist and is a number
-                        cell.textContent = parseFloat(data[measure]).toFixed(4);
-                        // **Potential for dynamic coloring based on value here**
-                        // Example:
-                        // if (measure === 'var' && data[measure] > SOME_THRESHOLD) {
-                        //    cell.style.color = '#DA3633'; // High Risk Red
-                        // } else {
-                        //    cell.style.color = ''; // Reset to default CSS color
-                        // }
-                    } else {
-                        cell.textContent = "N/A"; // Data not available or not a number
-                        console.warn(`Data for ${measure} not found or invalid in response:`, data);
-                    }
+                    cell.textContent = typeof data[measure] === 'number' ? parseFloat(data[measure]).toFixed(4) : "N/A";
                 }
             })
             .catch(error => {
                 console.error(`Error fetching initial ${measure}:`, error);
-                if (cell) cell.textContent = "Error"; // Display error in the cell
+                if (cell) cell.textContent = "Error";
             });
     });
 }
-
-// In your main JS file or the script tag in analyze_portfolio.html
-
-function initializeSidebar() {
-    // ... (sidebar open/close logic) ...
-    // ... (sidebar link active state logic) ...
-}
-

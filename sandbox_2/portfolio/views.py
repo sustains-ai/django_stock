@@ -60,6 +60,8 @@ from django.contrib.auth import login
 from django.shortcuts import render, redirect
 
 from .utils import fetch_news_sentiment,global_open_closed_status
+from .ai_agent import portfolio_risk_agent
+
 
 
 
@@ -294,6 +296,12 @@ def analyze_portfolio(request, portfolio_id):
     portfolio_value_json.columns = ["x", "y"]  # Required for Plotly
     portfolio_value_json = portfolio_value_json.to_dict(orient="records")
 
+    ai_answer = None
+    if request.method == "POST" and "ai_question" in request.POST:
+        question = request.POST.get("ai_question")
+        ai_answer = portfolio_risk_agent(portfolio_id, question)
+
+
     return render(request, 'portfolio/analyze_portfolio.html', {
         'portfolio': portfolio,
         'stock_data': stock_data,
@@ -303,6 +311,7 @@ def analyze_portfolio(request, portfolio_id):
         'optimal_table': portfolio_analysis,
         'risk_measures': risk_measures,
         'portfolio_value_json': json.dumps(portfolio_value_json or []),
+        'ai_answer': ai_answer,
 
     })
 
@@ -531,3 +540,26 @@ def market_status_view(request):
         response= JsonResponse(market_data,safe=False)
         print("Response Content:", response.content.decode('utf-8'))  # Debug output
         return response
+
+
+# views.py
+
+from django.shortcuts import render
+from .ai_agent import portfolio_risk_agent
+
+def ask_ai_view(request, portfolio_id):
+    answer = ""
+    if request.method == "POST":
+        question = request.POST.get("question")
+        answer = portfolio_risk_agent(portfolio_id, question)
+    return render(request, "portfolio/ask_ai.html", {"answer": answer})
+
+
+# views.py
+from django.http import JsonResponse
+from .utils import fetch_news_sentiment
+
+
+def fetch_news_view(request, portfolio_id):
+    news = fetch_news_sentiment()
+    return JsonResponse({"news": news[:5]})  # Send only top 5
