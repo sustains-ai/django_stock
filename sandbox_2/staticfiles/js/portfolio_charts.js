@@ -5,15 +5,15 @@
 
 // New palette for charts, derived from the B2B scheme
 const chartColorPalette = [
-    '#3081F7', // Primary Accent Blue
-    '#2DA44E', // Primary Accent Green
-    '#E0A800', // Highlight Amber/Gold
-    '#39C3B3', // Secondary Accent Teal
-    '#A6808C', // Muted Rose/Plum
-    '#58A6FF', // Lighter Professional Blue
-    '#F778BA', // Professional Pink/Magenta
-    '#79C0FF', // Another shade of Blue
-    // Add more distinct professional colors if needed for many segments/lines
+    '#D3D3D3', // Primary Accent Grey (From Manu)
+    '#1DE9B6', // Primary Accent Green (From Manu)
+    '#FF9292', // Highlight soft red (From Manu)
+    '#B0B0B0', // Secondary Accent grey (From Manu)
+    '#A4A4A4', // Secondary grey (From Manu)
+    '#3E3E3E', // Professional black (From Manu)
+    '#AAC0AF', // Secondary green (From Coolors)
+    '#3D5467', // Charcoal (From Coolers)
+    // Ask Manu for more colors
 ];
 
 // ✅ Use colors from the new palette cyclically
