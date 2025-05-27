@@ -248,3 +248,63 @@ document.addEventListener("DOMContentLoaded", () => {
     createPieChart("cvarPieChart", parseDataAttribute(document.getElementById("cvarPieChart"), "cvar"), "CVaR Allocation");
     createPieChart("ercPieChart", parseDataAttribute(document.getElementById("ercPieChart"), "erc"), "ERC Allocation");
 });
+
+
+document.addEventListener("DOMContentLoaded", function () {
+    const chartCanvas = document.getElementById("treasuryYieldChart");
+    const portfolioContainer = document.getElementById("portfolio-container");
+    const portfolioId = portfolioContainer?.dataset?.portfolioId;
+
+    if (chartCanvas && portfolioId) {
+        fetch(`/fetch-treasury-yield/${portfolioId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (!data.labels || !data.values) {
+                    chartCanvas.parentElement.innerHTML += "<p class='text-muted'>No yield data available.</p>";
+                    return;
+                }
+
+                new Chart(chartCanvas, {
+                    type: "line",
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: "10-Year US Treasury Yield (%)",
+                            data: data.values,
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                title: {
+                                    display: true,
+                                    text: "Yield (%)"
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: "Date"
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: "top"
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(() => {
+                chartCanvas.parentElement.innerHTML += "<p class='text-muted'>Failed to load chart data.</p>";
+            });
+    }
+});

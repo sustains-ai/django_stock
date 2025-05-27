@@ -575,3 +575,20 @@ def fetch_currency_rates(request,portfolio_id):
         return JsonResponse({"exchange_rates": rates})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
+from .utils import fetch_treasury_yield
+
+
+def fetch_treasury_yield_view(request, portfolio_id):
+    try:
+        raw = fetch_treasury_yield()  # This returns the full history
+        if not raw or "data" not in raw:
+            return JsonResponse({"error": "Data unavailable"}, status=500)
+
+        entries = raw["data"][:36]  # Last 36 monthly yields
+        labels = [e["date"] for e in reversed(entries)]
+        values = [float(e["value"]) for e in reversed(entries)]
+
+        return JsonResponse({"labels": labels, "values": values})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

@@ -26,6 +26,7 @@
                 <li><a href="#ai-agent">AI Agent</a></li>
                 <li><a href="#latest-insights">Latest Insights</a></li>
                 <li><a href="#exchange-rate-card">Exchange Rates</a></li>
+                <li><a href="#treasury-yield-chart-card">Treasury Yield</a></li>
             </ul>
         </aside>
 
@@ -323,6 +324,13 @@
                      data-url="{% url 'fetch_currency_rates' portfolio.id %}">
                     <p class="text-muted">Loading exchange rates...</p>
                 </div>
+            </section>
+        
+        
+                           <!-- CARD: 10-Year Treasury Yield Line Chart -->
+            <section id="treasury-yield-chart-card" class="dashboard-card" style="grid-column: span 12; max-height: 450px; overflow-y: auto;">
+                <h2 class="card-title">10-Year US Treasury Yield (Last 3 Years)</h2>
+                <canvas id="treasuryYieldChart" style="max-height: 300px;"></canvas>
             </section>
 
 

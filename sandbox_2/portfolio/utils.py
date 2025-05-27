@@ -118,9 +118,21 @@ def fetch_currency_exchange_rates():
 
     return results
 
+def fetch_treasury_yield():
+    """
+        Fetch full historical 10-year US Treasury Yield data.
+        """
+    try:
+        api_key = os.getenv("ALPHA_VANTAGE_API_KEY")
+        url = f"https://www.alphavantage.co/query?function=TREASURY_YIELD&interval=monthly&maturity=10year&apikey={api_key}"
+        response = requests.get(url)
 
+        if response.status_code != 200:
+            print(f"Alpha Vantage Treasury Yield API error: {response.status_code}")
+            return None
 
-
-
-
-
+        data = response.json()
+        return data  # Full JSON structure with "data" key
+    except Exception as e:
+        print(f"Error fetching full Treasury Yield history: {e}")
+        return None
