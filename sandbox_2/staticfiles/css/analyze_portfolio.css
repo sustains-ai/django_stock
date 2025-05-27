@@ -44,6 +44,7 @@
     --accent-grey: #D3D3D3;
     --accent-grey2: #B0B0B0;
     --accent-black: #3E3E3E;
+    --accent-green-rgb: 29, 233, 182;
 
     --shadow-card: 0 5px 15px rgba(0, 0, 0, 0.3);
     --shadow-card-hover: 0 8px 25px rgba(0, 0, 0, 0.35);
@@ -206,9 +207,9 @@ body {
 #optimal-allocation.dashboard-card { grid-column: span 12; grid-row: span 3; min-height: 580px;} /* Full width, very tall */
 #portfolio-performance.dashboard-card { grid-column: span 12; grid-row: span 2; min-height: 450px;} /* Full width, tall */
 #ai-agent.dashboard-card            { grid-column: span 12; grid-row: span 2; min-height: 450px;} /* Full width, tall */
-#latest-insights.dashboard-card         { grid-column: span 12; grid-row: span 2; min-height: 450px;} /* --- Table Styling within Cards (.data-table) --- */
-
-
+#latest-insights.dashboard-card     { grid-column: span 12; grid-row: span 2; min-height: 450px;} /* --- Table Styling within Cards (.data-table) --- */
+#exchange-rate-card.dashboard-card  { grid-column: span 12; grid-row: span 2; min-height: 450px;}
+#treasury-yield.dashboard-card      { grid-column: span 12; grid-row: span 2; min-height: 450px;}
 
 .data-table {
     width: 100%;
@@ -306,6 +307,131 @@ body {
     gap: var(--dashboard-gap);
     flex-grow: 1; overflow: hidden;
 }
+
+/* --- Currency Exchange Rates Card Specifics (Refined) --- */
+
+/* Adjust the card-content for this specific card to allow full-width items */
+/* This removes horizontal padding from the direct container, items will add it back for their content. */
+#exchange-rate-card > #exchange-rate-container.card-content-scrollable {
+    padding-left: 0;
+    padding-right: 0;
+    /* Vertical padding can be inherited from .dashboard-card's --card-padding for top/bottom,
+       or you can set specific padding-top/padding-bottom here if items don't provide enough.
+       Example: padding-top: 10px; padding-bottom: 10px; */
+}
+
+/* Style for the loading message (ensure it's centered within the new padding scheme) */
+#exchange-rate-container p.text-muted {
+    text-align: center;
+    /* Add horizontal padding to align text with card title, if container has no horizontal padding */
+    padding: 50px var(--card-padding);
+    font-size: 1.0em; /* Slightly more subtle */
+    color: var(--text-muted);
+}
+
+/* Individual Exchange Rate Item Styling */
+.exchange-rate-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    /* Vertical padding for the item, horizontal padding to align content with card title */
+    padding: 20px var(--card-padding); /* Adjusted vertical padding */
+    border-bottom: 1px solid var(--border-primary);
+    transition: background-color 0.25s ease-out,
+                border-left-color 0.25s ease-out,
+                transform 0.2s ease-out;
+    border-left: 4px solid transparent; /* Slightly thicker accent border on hover */
+    position: relative; /* For potential future pseudo-elements */
+}
+
+/* No border for the last item */
+.exchange-rate-item:last-child {
+    border-bottom: none;
+}
+
+.exchange-rate-item:hover {
+    background-color: var(--bg-card-subtle-accent);
+    border-left-color: var(--accent-green); /* Your defined accent green */
+    transform: translateX(4px); /* Subtle push effect on hover */
+}
+
+/* Styling for the Currency Pair (BTC -> USD) */
+.currency-pair {
+    display: flex;
+    align-items: center;
+    font-size: 1.1em; /* Clear and readable */
+}
+
+.currency-code {
+    font-weight: 500; /* Good emphasis */
+    letter-spacing: 0.25px; /* Slight spacing for readability */
+}
+
+.base-currency {
+    color: var(--text-primary); /* Main text color for base currency */
+}
+
+.quote-currency {
+    color: var(--text-secondary); /* Slightly less emphasis for quote currency */
+}
+
+.arrow-icon {
+    font-size: 1.1em; /* Relative to surrounding text */
+    color: var(--text-secondary); /* More visible than text-muted */
+    margin: 0 12px; /* Spacing around the arrow */
+    font-weight: 400; /* Standard weight */
+}
+
+/* Styling for the Rate Value */
+.rate-value {
+    font-size: 1.35em; /* Prominent but not oversized */
+    font-weight: 600;
+    color: var(--accent-green); /* Your defined accent green */
+    font-feature-settings: "tnum", "zero"; /* Tabular numbers, slashed zero (if font supports) */
+    letter-spacing: 0.5px;
+    /* Enhance glow: requires --accent-green-rgb variable or direct RGB values */
+    text-shadow: 0 0 10px rgba(var(--accent-green-rgb, 29, 233, 182), 0.35);
+    /* Fallback if --accent-green-rgb is not set (adjust RGB to match your --accent-green): */
+    /* text-shadow: 0 0 8px rgba(29, 233, 182, 0.3); */
+}
+
+/* --- Optional Currency Flags (Refined) --- */
+.currency-flag {
+    width: 22px; /* Slightly smaller for better balance */
+    height: 16px; /* Maintain aspect ratio */
+    margin-right: 8px;
+    background-color: var(--border-light); /* Placeholder background */
+    background-size: cover;
+    background-position: center;
+    border-radius: 3px; /* Softer corners */
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); /* Subtle shadow */
+    display: inline-block;
+    vertical-align: middle; /* Align with text */
+    flex-shrink: 0; /* Prevent shrinking if space is tight */
+}
+
+/* To use the enhanced text-shadow for .rate-value, you might need to define
+   an RGB version of your --accent-green in your :root.
+   For example, if your --accent-green is #1DE9B6, its RGB is 29, 233, 182.
+   Add to :root:
+   --accent-green-rgb: 29, 233, 182;
+*/
+
+/* If you decide not to use flags, you can hide them to reclaim space: */
+/*
+.currency-flag {
+    display: none;
+}
+.currency-pair .currency-code:first-of-type {
+    margin-left: 0; // If flags were providing left margin
+}
+*/
+
+
+
+
+
+
 /* On wider viewports for this card, make them side-by-side */
 @media (min-width: 768px) { /* Or a specific breakpoint for this card */
     .performance-charts-container {
