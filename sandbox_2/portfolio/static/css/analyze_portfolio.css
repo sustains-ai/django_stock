@@ -13,8 +13,8 @@
 
     /* Enhanced Glassmorphism Card */
     --bg-card-base: rgba(30, 38, 53, 0.65); /* Base for glass effect */
-    --bg-card-highlight: rgba(45, 55, 72, 0.85); /* Slightly lighter for hover/focus */
-    --border-card-outer: rgba(100, 116, 139, 0.3); /* Subtle outer stroke */
+    --bg-card-highlight: rgba(32, 42, 54, 0.70); /* Slightly lighter for hover/focus */
+    --border-card-outer: rgba(100, 210, 139, 0.3); /* Subtle outer stroke */
     --border-card-inner-glow: rgba(148, 163, 184, 0.1); /* Faint inner bevel */
 
     --bg-table-header: #2c3e50; /* Cooler, more distinct table header */
@@ -232,6 +232,7 @@ body {
 /* --- Dashboard Card Styling (Enhanced Glassmorphism) --- */
 .dashboard-card {
     margin-top: 20px;
+    margin-bottom: 20px;
     background: var(--bg-card-base);
     border-radius: var(--card-border-radius);
     padding: var(--card-padding);
@@ -248,9 +249,9 @@ body {
     position: relative; /* For pseudo-elements if needed */
 }
 .dashboard-card:hover {
-    transform: translateY(-6px) scale(1.01);
-    box-shadow: var(--shadow-card-hover),
-                inset 0 0 0 1.5px var(--border-card-inner-glow);
+    transform: translateY(-2px) scale(1.005);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.005);
     background: var(--bg-card-highlight);
 }
 .card-title {
@@ -274,7 +275,7 @@ body {
 }
 .card-content-scrollable {
     overflow-y: auto;
-    overflow-x: hidden;
+    overflow-x: auto;
     padding-right: 5px; /* Space for scrollbar, avoid content overlap */
 }
 .card-footer {
@@ -327,6 +328,7 @@ body {
     border-collapse: separate; /* For border-spacing */
     border-spacing: 0; /* Reset */
     font-size: 0.9rem;
+    min-width: 1000px;
 }
 .data-table thead {
     background: var(--bg-table-header);
@@ -654,10 +656,11 @@ body {
     font-size: 1rem; color: var(--text-muted);
 }
 .performance-charts-container {
-    display: grid; grid-template-columns: 1fr; /* Default to 1 column */
-    gap: var(--dashboard-gap); flex-grow: 1; overflow: hidden;
+    display: block;
+    overflow: hidden;
+    width:100%;
 }
-.plotly-chart-item { display: flex; flex-direction: column; min-height: 350px; }
+.plotly-chart-item { display: flex; flex-direction: column; min-height: 200px; }
 .plotly-chart-title {
     font-size: 1rem; color: var(--text-secondary);
     text-align: center; margin-bottom: 15px; font-weight: 500;
@@ -672,6 +675,212 @@ body {
     grid-auto-rows: minmax(240px, auto); /* Increase the minimum row height */
     /* ... existing styles ... */
 }
+
+/* --- Enhanced Analysis & Tools Hub Card --- */
+#analysis-tools-hub.dashboard-card {
+    grid-column: span 12; /* Default to full width, can be adjusted */
+    grid-row: span 2;    /* Adjust to fit content, typically 2-3 rows */
+    min-height: 500px;   /* Ensure enough space for tabs and content */
+    display: flex;       /* Ensure card children can flex correctly */
+    flex-direction: column;
+}
+
+#analysis-tools-hub .card-content {
+    flex-grow: 1; /* Allow card-content to fill available space */
+    display: flex;    /* For tabs-container to fill */
+    padding: 0; /* Remove card-content padding if tabs-container handles it */
+}
+
+#analysis-tools-hub .tabs-container {
+    display: flex;
+    /* flex-direction: row; /* Tabs on left, content on right - ALTERNATIVE LAYOUT */
+    flex-direction: column; /* Tabs on top, content below - STANDARD LAYOUT */
+    width: 100%;
+    height: 100%; /* Fill the card-content area */
+    flex-grow: 1;
+    border-radius: 0 0 var(--card-border-radius) var(--card-border-radius); /* Match card bottom radius */
+    overflow: hidden; /* Clip content if necessary */
+}
+
+/* --- Tabs Navigation Styling (Vertical or Horizontal) --- */
+#analysis-tools-hub .tabs-nav {
+    display: flex;
+    /* For Vertical Tabs (on the left) */
+    /* flex-direction: column;
+    width: 220px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border-primary);
+    padding: var(--card-padding) 0;
+    background: rgba(var(--bg-primary-light), 0.2); */
+
+    /* For Horizontal Tabs (on top) */
+    flex-direction: row;
+    flex-wrap: wrap; /* Allow tabs to wrap if too many */
+    border-bottom: 1px solid var(--border-primary);
+    padding: 0 var(--card-padding); /* Add padding to match card */
+    background: rgba(var(--bg-primary-light),0.1); /* Subtle bg for tab bar */
+    align-items: stretch; /* Make tab buttons same height */
+}
+
+#analysis-tools-hub .tab-link {
+    padding: 16px 22px; /* Generous padding for clickable area */
+    cursor: pointer;
+    border: none;
+    background-color: transparent;
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 0.95rem;
+    text-align: left; /* For vertical tabs */
+    transition: all var(--transition-duration-fast) ease;
+    position: relative;
+    display: flex; /* For icon alignment */
+    align-items: center;
+
+    /* For Vertical Tabs */
+    /* border-right: 3px solid transparent;
+    margin-right: -1px; */
+
+    /* For Horizontal Tabs */
+    border-bottom: 3px solid transparent;
+    margin-bottom: -1px; /* Overlap container border */
+}
+
+#analysis-tools-hub .tab-link .icon {
+    margin-right: 12px; /* Space between icon and text */
+    font-size: 1.1em;   /* Icon size */
+    width: 1.5em;       /* Fixed width for alignment */
+    text-align: center;
+    opacity: 0.7;
+}
+
+#analysis-tools-hub .tab-link:hover {
+    color: var(--text-primary);
+    background-color: rgba(var(--accent-primary-glow-rgb), 0.05);
+}
+#analysis-tools-hub .tab-link.active {
+    color: var(--accent-primary-glow);
+    background-color: rgba(var(--accent-primary-glow-rgb), 0.1);
+    font-weight: 600;
+}
+#analysis-tools-hub .tab-link.active .icon {
+    opacity: 1;
+}
+
+/* For Vertical Tabs Active State */
+/* #analysis-tools-hub .tab-link.active {
+    border-right-color: var(--accent-primary-glow);
+} */
+
+/* For Horizontal Tabs Active State */
+#analysis-tools-hub .tab-link.active {
+    border-bottom-color: var(--accent-primary-glow);
+}
+
+
+/* --- Tabs Content Styling --- */
+#analysis-tools-hub .tabs-content {
+    flex-grow: 1;
+    padding: var(--card-padding); /* Padding for the content area of tabs */
+    overflow-y: auto; /* Scroll if content is too tall for the card */
+    position: relative; /* For positioning tab-pane content */
+}
+
+#analysis-tools-hub .tab-pane {
+    display: none; /* Hidden by default */
+    animation: fadeInToolPane 0.4s ease-in-out forwards;
+    width: 100%;
+    height: 100%; /* Try to fill available space */
+}
+#analysis-tools-hub .tab-pane.active {
+    display: block; /* Show active tab */
+}
+
+/* Content within each tool tab pane */
+.tool-pane-intro {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center content */
+    justify-content: center; /* Center content */
+    text-align: center;
+    height: 100%; /* Make it take full height of the tab pane */
+    padding: 20px 0; /* Some vertical padding */
+}
+
+.tool-showcase-icon { /* Large icon for visual appeal */
+    font-size: 3.5rem; /* Make icon prominent */
+    color: var(--accent-primary-solid);
+    margin-bottom: 25px;
+    opacity: 0.6;
+}
+
+.tool-pane-intro h3 {
+    font-size: 1.75rem; /* Larger title for the tool */
+    color: var(--text-primary);
+    margin: 0 0 15px 0;
+    font-weight: 600;
+}
+
+.tool-pane-intro p {
+    font-size: 1.05rem; /* Readable description */
+    color: var(--text-secondary);
+    line-height: 1.7;
+    max-width: 550px; /* Constrain width for better readability */
+    margin-bottom: 30px;
+}
+
+.btn-launch-tool {
+    /* Using existing .btn-primary styles, but can be customized */
+    padding: 12px 30px;
+    font-size: 1rem;
+    min-width: 200px; /* Ensure buttons have a good width */
+}
+
+
+
+#portfolio-performance.dashboard-card {
+    grid-row: span 3; /* or more */
+    min-height: 400px; /* or any value */
+}
+
+#ai-agent.dashboard-card{
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
+
+@keyframes fadeInToolPane {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive adjustments for tabs within the card if needed */
+@media (max-width: 767px) {
+    #analysis-tools-hub .tabs-nav {
+        /* If using horizontal tabs, allow them to scroll on mobile */
+        overflow-x: auto;
+        white-space: nowrap; /* Keep tabs in one line for scrolling */
+        padding: 0 calc(var(--card-padding) / 2); /* Reduce padding */
+    }
+    #analysis-tools-hub .tab-link {
+        padding: 14px 16px; /* Adjust padding for smaller screens */
+        font-size: 0.9rem;
+    }
+    .tool-pane-intro h3 {
+        font-size: 1.5rem;
+    }
+    .tool-pane-intro p {
+        font-size: 0.95rem;
+    }
+    .tool-showcase-icon {
+        font-size: 3rem;
+        margin-bottom: 20px;
+    }
+}
+
+
+
+
+
+
 /* --- Responsive Adjustments --- */
 @media (min-width: 992px) { /* Medium devices (tablets, small desktops) */
     .performance-charts-container {

@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "whitenoise.runserver_nostatic",
     "portfolio",
+    "advanced_analytics",
 ]
 
 MIDDLEWARE = [
