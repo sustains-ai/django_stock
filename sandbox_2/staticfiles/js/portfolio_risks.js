@@ -326,3 +326,43 @@ document.addEventListener("DOMContentLoaded", () => {
             ctx.fillText(err.message || "Error loading chart data.", chartCanvas.width / 2, 50);
         });
 });
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Tab functionality for Analysis & Tools Hub card
+    const analysisHub = document.getElementById('analysis-tools-hub');
+    if (analysisHub) {
+        const tabLinks = analysisHub.querySelectorAll('.tabs-nav .tab-link');
+        const tabPanes = analysisHub.querySelectorAll('.tabs-content .tab-pane');
+
+        tabLinks.forEach(link => {
+            link.addEventListener('click', function () {
+                const targetTabId = 'tab-' + this.dataset.tab;
+
+                tabLinks.forEach(l => l.classList.remove('active'));
+                tabPanes.forEach(p => p.classList.remove('active'));
+
+                this.classList.add('active');
+                const targetPane = analysisHub.querySelector('#' + targetTabId);
+                if (targetPane) {
+                    targetPane.classList.add('active');
+                }
+            });
+        });
+    }
+
+    // ... your other existing JavaScript ...
+});
+
+
+// Store scroll position before unloading the page
+window.addEventListener("beforeunload", () => {
+    sessionStorage.setItem("scrollPos", window.scrollY);
+});
+
+// Restore scroll position after full load
+window.addEventListener("load", () => {
+    const scrollPos = sessionStorage.getItem("scrollPos");
+    if (scrollPos !== null) {
+        window.scrollTo(0, parseInt(scrollPos));
+    }
+});
