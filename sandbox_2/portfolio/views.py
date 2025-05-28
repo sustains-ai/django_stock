@@ -702,3 +702,4 @@ def monte_carlo_risk_view(request, portfolio_id):
         import traceback # Import traceback here for more detailed error logging
         traceback.print_exc() # This will print the full Python traceback to your console
         return JsonResponse({"error": str(e)}, status=500)
+
