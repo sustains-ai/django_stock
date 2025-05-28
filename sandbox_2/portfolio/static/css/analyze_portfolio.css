@@ -1,559 +1,959 @@
-/* analyze_portfolio.css */
+/* analyze_portfolio_enhanced.css */
 
-/* --- CSS Variables (Color Palette & Common Properties) --- */
+/* --- Foundational CSS Variables (Ultra-Premium Dark Theme) --- */
 :root {
-    --font-main: 'Inter', sans-serif;
+    --font-main: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
 
-    /* Dark Theme Palette (B2B Professional) */
-    --bg-gradient-start: #0D1117;
-    --bg-gradient-end: #161B22;
-    --bg-sidebar: #0A0E17; /* Slightly darker for depth */
-    --bg-card: #1F242C;
-    --bg-card-subtle-accent: #252B33; /* For internal elements like nested chart cards */
-    --bg-table-row-even: rgba(48, 54, 61, 0.15);
-    --bg-table-row-hover: rgba(48, 54, 61, 0.3);
-    --bg-button-primary: #3081F7;
-    --bg-button-primary-hover: #1C67D6;
-    --bg-button-secondary: #444C56;
-    --bg-button-secondary-hover: #586069;
-    --bg-button-danger: #DA3633;
-    --bg-button-danger-hover: #B91C1C;
+    /* Deep Space & Aurora Borealis Inspired Palette */
+    --bg-primary-deep: #030617;         /* Near black for deepest background */
+    --bg-primary-medium: #0f172a;      /* Rich navy for main surfaces */
+    --bg-primary-light: #1e293b;       /* Slate blue for elevation */
 
-    --text-primary: #CDD9E5;
-    --text-secondary: #8B949E;
-    --text-muted: #6A737D; /* For placeholders, less important info */
-    --text-on-primary-button: #FFFFFF;
-    --text-on-secondary-button: #FFFFFF;
-    --text-on-danger-button: #FFFFFF;
-    --text-link: #58A6FF; /* Lighter blue for links */
-    --text-link-hover: #79C0FF;
+    --bg-sidebar: linear-gradient(180deg, #0d1119 0%, #07090f 100%); /* Even deeper sidebar */
 
-    --border-primary: #30363D; /* Main borders, dividers */
-    --border-light: #444C56;   /* Lighter borders, internal card dividers */
-    --border-card: var(--border-primary);
+    /* Enhanced Glassmorphism Card */
+    --bg-card-base: rgba(30, 38, 53, 0.65); /* Base for glass effect */
+    --bg-card-highlight: rgba(32, 42, 54, 0.70); /* Slightly lighter for hover/focus */
+    --border-card-outer: rgba(100, 210, 139, 0.3); /* Subtle outer stroke */
+    --border-card-inner-glow: rgba(148, 163, 184, 0.1); /* Faint inner bevel */
 
-    /*--accent-blue: #3081F7;*/
-    /*--accent-green: #2DA44E;*/
-    /*--accent-amber: #E0A800;*/
-    /*--accent-teal: #39C3B3;*/
-    /*--accent-rose: #A6808C;*/
+    --bg-table-header: #2c3e50; /* Cooler, more distinct table header */
+    --bg-table-row-even: rgba(45, 55, 72, 0.2);
+    --bg-table-row-hover: rgba(52, 64, 81, 0.4);
 
+    /* Accents - Vibrant & Professional */
+    --accent-primary-glow: #5EEAD4;  /* Electric Teal - Primary Action & Highlights */
+    --accent-primary-glow-rgb: 94, 234, 212;
+    --accent-primary-solid: #2DD4BF;
+    --accent-primary-dark: #0D9488;
 
-    --accent-red: #FF9292;
-    --accent-green: #1DE9B6;
-    --accent-grey: #D3D3D3;
-    --accent-grey2: #B0B0B0;
-    --accent-black: #3E3E3E;
-    --accent-green-rgb: 29, 233, 182;
+    --accent-secondary-glow: #A78BFA; /* Luminous Lavender - Secondary Info/Links */
+    --accent-secondary-glow-rgb: 167, 139, 250;
+    --accent-secondary-solid: #8B5CF6;
 
-    --shadow-card: 0 5px 15px rgba(0, 0, 0, 0.3);
-    --shadow-card-hover: 0 8px 25px rgba(0, 0, 0, 0.35);
+    --accent-positive-glow: #4ADE80;  /* Bright Green - Success */
+    --accent-positive-glow-rgb: 74, 222, 128;
+    --accent-positive-solid: #22C55E;
 
-    --card-border-radius: 10px;
-    --dashboard-gap: 20px; /* Gap between dashboard cards */
-    --card-padding: 20px;
+    --accent-negative-glow: #F87171;  /* Soft Red - Warning/Danger */
+    --accent-negative-glow-rgb: 248, 113, 113;
+    --accent-negative-solid: #EF4444;
+
+    /* Text Colors */
+    --text-primary: #E2E8F0;          /* Off-white for main text */
+    --text-secondary: #94A3B8;        /* Light slate for secondary text */
+    --text-muted: #64748B;            /* Muted slate for placeholders */
+    --text-disabled: #475569;
+    --text-on-accent: #030617;        /* For text on bright accent backgrounds */
+    --text-inverted: #0f172a;         /* For very light backgrounds if any */
+
+    /* Borders & Dividers */
+    --border-primary: #334155;       /* Standard border color */
+    --border-light: #475569;         /* Lighter for internal dividers */
+    --border-interactive: var(--accent-primary-solid);
+
+    /* Shadows - More Sophisticated */
+    --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0,0,0,0.3);
+    --shadow-card-hover: 0 12px 32px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0,0,0,0.35);
+    --shadow-inner-soft: inset 0 1px 2px rgba(0,0,0,0.2);
+    --shadow-text-glow-primary: 0 0 12px rgba(var(--accent-primary-glow-rgb), 0.5);
+    --shadow-text-glow-positive: 0 0 10px rgba(var(--accent-positive-glow-rgb), 0.4);
+    --shadow-text-glow-negative: 0 0 10px rgba(var(--accent-negative-glow-rgb), 0.4);
+
+    /* Specific Element Styling */
+    --treasury-yield-line: var(--accent-primary-glow);
+    --treasury-yield-fill: rgba(var(--accent-primary-glow-rgb), 0.15);
+    --treasury-yield-point: var(--accent-primary-solid);
+    --treasury-yield-point-hover: #fff;
+    --treasury-yield-grid: rgba(var(--accent-primary-glow-rgb), 0.1);
+
+    /* Layout & Sizing */
+    --card-border-radius: 16px;       /* Softer, more modern radius */
+    --control-border-radius: 8px;
+    --dashboard-gap: 28px;
+    --card-padding: 28px;
+    --transition-duration-fast: 0.2s;
+    --transition-duration-medium: 0.3s;
+    --transition-timing-function: cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-/* --- Base & Body (from previous, ensuring consistency) --- */
-html, body {
-    height: 100%; width: 100%; margin: 0; padding: 0;
-    overflow-x: hidden; /* Prevent horizontal scroll on body if possible */
+/* --- Global Resets & Base Styles --- */
+*, *::before, *::after {
+    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+html {
+    font-size: 16px; /* Base font size */
+    scroll-behavior: smooth;
 }
 body {
-    background: linear-gradient(180deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+    background: linear-gradient(170deg, var(--bg-primary-deep) 0%, var(--bg-primary-medium) 100%);
     color: var(--text-primary);
     font-family: var(--font-main);
-    line-height: 1.6;
+    line-height: 1.65;
+    margin: 0;
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    overflow-x: hidden; /* Prevent horizontal scroll */
 }
 
-/* --- Sidebar Layout & Sidebar (Assuming these are mostly from your working version) --- */
-.sidebar-layout { display: flex; width: 100%; height: 100%; overflow: hidden; }
+/* --- Scrollbar Styling (Subtle & Themed) --- */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.2);
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+    background-color: var(--border-light);
+    border-radius: 10px;
+    border: 2px solid transparent; /* Creates padding around thumb */
+    background-clip: content-box; /* Important for border to act as padding */
+}
+::-webkit-scrollbar-thumb:hover {
+    background-color: var(--text-secondary);
+}
+
+/* --- Sidebar Layout & Enhanced Sidebar --- */
+.sidebar-layout {
+    display: flex;
+    width: 100%;
+    height: 100vh; /* Full viewport height */
+    overflow: hidden; /* Important for fixed sidebar and scrollable content */
+}
 .sidebar {
-    width: 250px;
-    background-color: var(--bg-sidebar);
-    padding: 20px 10px;
+    width: 260px; /* Slightly wider for more presence */
+    background: var(--bg-sidebar);
+    padding: 24px 12px;
     border-right: 1px solid var(--border-primary);
     box-sizing: border-box;
-    position: fixed; /* For click-to-open behavior */
-    left: calc(-250px + 30px); /* Handle visible, adjust 30px as needed */
-    top: 0; /* Adjust if your navbar isn't fixed/sticky covering top */
-    height: 100vh; /* Adjust if navbar isn't fixed */
+    position: fixed;
+    left: calc(-260px + 40px); /* Initial collapsed state, showing a handle */
+    top: 0;
+    height: 100%; /* Changed from 100vh to 100% to respect parent if needed */
     overflow-y: auto;
-    transition: left 0.3s ease-in-out;
-    z-index: 1050; /* High z-index for sidebar */
-    cursor: pointer;
+    transition: left var(--transition-duration-medium) var(--transition-timing-function);
+    z-index: 1050;
+    cursor: pointer; /* For the collapsed state */
+    box-shadow: 5px 0 15px rgba(0,0,0,0.3);
 }
-.sidebar.sidebar-is-open { left: 0; cursor: default; }
-.sidebar::after { /* The '>' handle */
-    content: ">"; position: absolute; right: 7px; top: 50%;
-    transform: translateY(-50%); color: var(--accent-amber);
-    font-size: 1.5em; font-weight: bold; transition: transform 0.3s ease;
+.sidebar.sidebar-is-open {
+    left: 0;
+    cursor: default;
 }
-.sidebar.sidebar-is-open::after { content: "<"; transform: translateY(-50%) rotate(180deg); }
-.sidebar ul { list-style: none; padding: 0; margin: 0; }
-.sidebar li { margin-bottom: 8px; }
-.sidebar a {
-    color: var(--text-secondary); text-decoration: none; font-weight: 500;
-    display: block; padding: 10px 15px; border-radius: 6px; transition: all 0.2s ease;
-    font-size: 0.95em;
+.sidebar::after { /* Toggle indicator */
+    content: "›"; /* Using a chevron, can be replaced with SVG icon */
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%) scaleX(1.5);
+    color: var(--accent-primary-solid);
+    font-size: 1.8em;
+    font-weight: 300;
+    line-height: 1;
+    transition: transform var(--transition-duration-medium) ease, right var(--transition-duration-medium) ease;
 }
-.sidebar a:hover, .sidebar a.active { /* JS should add/remove .active class */
-    color: var(--accent-blue);
-    background-color: rgba(48, 129, 247, 0.1);
+.sidebar.sidebar-is-open::after {
+    content: "‹";
+    right: 15px; /* Adjust position when open */
+}
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.sidebar li a {
+    color: var(--text-secondary);
     text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    display: flex; /* For icon alignment if added */
+    align-items: center;
+    padding: 12px 18px;
+    border-radius: var(--control-border-radius);
+    transition: all var(--transition-duration-fast) ease-in-out;
+    position: relative;
+    overflow: hidden; /* For ::before animation */
 }
+.sidebar li a::before { /* Interactive highlight */
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
+    background-color: var(--accent-primary-glow);
+    transform: scaleY(0);
+    transform-origin: center;
+    transition: transform var(--transition-duration-fast) ease;
+}
+.sidebar li a:hover,
+.sidebar li a.active {
+    color: var(--text-primary);
+    background: rgba(var(--accent-primary-glow-rgb), 0.1);
+    transform: translateX(3px);
+}
+.sidebar li a:hover::before,
+.sidebar li a.active::before {
+    transform: scaleY(1);
+}
+/* Add space for potential icons */
+/* .sidebar li a .icon { margin-right: 12px; font-size: 1.2em; } */
+
 
 /* --- Dashboard Grid Layout --- */
 .page-content-area.dashboard-grid {
     flex-grow: 1;
     padding: var(--dashboard-gap);
     box-sizing: border-box;
-    overflow-y: auto; /* Scroll main content area, not whole page */
-    height: 100%;     /* Fill available height from .sidebar-layout */
-    margin-left: 30px; /* Initial margin for sidebar handle */
-    width: calc(100% - 30px); /* Adjust width */
-    transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
-
+    overflow-y: auto;
+    height: 100%; /* Changed from 100% to 100vh for main content scrolling */
+    margin-left: 40px; /* Space for collapsed sidebar handle */
+    width: calc(100% - 40px);
+    transition: margin-left var(--transition-duration-medium) var(--transition-timing-function),
+                width var(--transition-duration-medium) var(--transition-timing-function);
     display: grid;
-    /* Define your grid columns. Example: 12-column system for flexibility */
     grid-template-columns: repeat(12, 1fr);
-    /* Define a base height for rows. Cards can span multiple rows. */
-    /* Setting a fixed height can help with alignment, but content might overflow. */
-    /* Let's try a flexible approach first, min-height on cards will be important. */
-    grid-auto-rows: minmax(180px, auto); /* Min height for any auto-placed row item. */
+    grid-auto-rows: minmax(200px, auto); /* Slightly taller base row */
     gap: var(--dashboard-gap);
+    /* Subtle background pattern */
+    background-image: radial-gradient(var(--border-light) 0.5px, transparent 0.5px);
+    background-size: 15px 15px;
 }
 .sidebar.sidebar-is-open + .page-content-area.dashboard-grid {
-    margin-left: 250px; /* Full sidebar width */
-    width: calc(100% - 250px);
+    margin-left: 260px;
+    width: calc(100% - 260px);
 }
 
-/* --- Dashboard Card Styling --- */
+/* --- Dashboard Card Styling (Enhanced Glassmorphism) --- */
 .dashboard-card {
-    background-color: var(--bg-card);
+    margin-top: 20px;
+    margin-bottom: 20px;
+    background: var(--bg-card-base);
     border-radius: var(--card-border-radius);
     padding: var(--card-padding);
-    box-shadow: var(--shadow-card);
-    border: 1px solid var(--border-card);
+    box-shadow: var(--shadow-card),
+                inset 0 0 0 1px var(--border-card-inner-glow); /* Inner bevel effect */
+    border: 1px solid var(--border-card-outer);
     display: flex;
     flex-direction: column;
-    overflow: hidden; /* Crucial for managing internal scrolling and content */
-    transition: transform 0.25s ease-out, box-shadow 0.25s ease-out;
+    overflow: hidden; /* Important for children like card-footer */
+    transition: transform var(--transition-duration-medium) var(--transition-timing-function),
+                box-shadow var(--transition-duration-medium) var(--transition-timing-function),
+                background var(--transition-duration-medium) var(--transition-timing-function);
+    backdrop-filter: blur(12px) saturate(150%); /* Enhance glass effect */
+    position: relative; /* For pseudo-elements if needed */
 }
-/* Optional hover effect for cards */
 .dashboard-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-2px) scale(1.005);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.005);
+    background: var(--bg-card-highlight);
 }
-
 .card-title {
-    font-size: 1.15em; /* Slightly smaller for card context */
+    font-size: 1.3rem; /* Slightly larger */
     font-weight: 600;
     color: var(--text-primary);
-    margin: 0 0 15px 0; /* Remove top margin */
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--border-light);
-    flex-shrink: 0; /* Prevent title from shrinking if card content is large */
-    text-align: left;
+    margin: 0 0 20px 0; /* More space below title */
+    padding-bottom: 12px;
+    border-bottom: 2px solid;
+    border-image-slice: 1;
+    border-image-source: linear-gradient(to right, var(--accent-primary-glow), transparent);
+    flex-shrink: 0;
+    text-shadow: var(--shadow-text-glow-primary);
 }
-
 .card-content {
-    flex-grow: 1; /* Allows content to fill available space in card */
-    display: flex; /* If content itself needs flex, e.g. chart centered */
+    flex-grow: 1;
+    display: flex;
     flex-direction: column;
-    overflow: hidden; /* If not scrollable, ensures content clips */
-    position: relative; /* For potential absolute positioning of internal elements */
+    overflow: hidden;
+    position: relative; /* For absolutely positioned elements inside */
 }
-
 .card-content-scrollable {
     overflow-y: auto;
-    overflow-x: hidden;
-    /* Custom scrollbar for webkit browsers */
+    overflow-x: auto;
+    padding-right: 5px; /* Space for scrollbar, avoid content overlap */
 }
-.card-content-scrollable::-webkit-scrollbar { width: 6px; }
-.card-content-scrollable::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 10px; }
-.card-content-scrollable::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 10px; }
-.card-content-scrollable::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
-
 .card-footer {
-    margin-top: auto; /* Pushes footer to the bottom of the card */
-    padding-top: 15px;
-    border-top: 1px solid var(--border-light);
+    margin-top: auto; /* Pushes to bottom */
+    padding-top: 20px;
+    border-top: 1px solid var(--border-primary);
     flex-shrink: 0;
-    background-color: var(--bg-card); /* Ensure footer matches card bg */
-    border-bottom-left-radius: var(--card-border-radius); /* Match card radius */
-    border-bottom-right-radius: var(--card-border-radius);
-    margin-left: calc(-1 * var(--card-padding)); /* Counteract card padding */
+    /* Removed gradient for a cleaner look, card itself has backdrop */
+    /* Adjust margins to align with card padding exactly */
+    margin-left: calc(-1 * var(--card-padding));
     margin-right: calc(-1 * var(--card-padding));
     margin-bottom: calc(-1 * var(--card-padding));
-    padding-left: var(--card-padding); /* Re-apply padding */
-    padding-right: var(--card-padding);
-    padding-bottom: var(--card-padding);
+    padding: 20px var(--card-padding) var(--card-padding); /* Consistent padding */
+    border-bottom-left-radius: var(--card-border-radius); /* Ensure footer corners match card */
+    border-bottom-right-radius: var(--card-border-radius);
 }
+.text-muted { color: var(--text-muted) !important; }
+.text-danger { color: var(--accent-negative-solid) !important; }
+.card-placeholder {
+    font-style: normal;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 30px 20px;
+    font-size: 0.95rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-grow: 1;
+}
+/* Example: .card-placeholder::before { content: '📊'; font-size: 2rem; margin-bottom: 10px; opacity: 0.5; } */
 
-.text-muted { color: var(--text-muted) !important; } /* For placeholders */
-.card-placeholder { font-style: italic; color: var(--text-muted); text-align: center; padding: 20px; }
-.text-danger { color: var(--risk-high) !important; }
+/* --- Grid Spanning Classes (Adjusted min-height for new padding/gap) --- */
+#holdings.dashboard-card                 { grid-column: span 8; grid-row: span 2; min-height: 400px; }
+#distribution.dashboard-card             { grid-column: span 4; grid-row: span 2; min-height: 400px; }
+#fluctuations.dashboard-card             { grid-column: span 8; grid-row: span 2; min-height: 400px; }
+#key-metrics.dashboard-card              { grid-column: span 4; grid-row: span 4; min-height: 520px; } /* Taller to fit content */
+#stock-risks.dashboard-card              { grid-column: span 8; grid-row: span 2; min-height: 400px; }
+#optimal-allocation.dashboard-card       { grid-column: span 12; grid-row: span 3; min-height: 600px; }
+#portfolio-performance.dashboard-card    { grid-column: span 12; grid-row: span 2; min-height: 480px; }
+#ai-agent.dashboard-card                 { grid-column: span 12; grid-row: span 2; min-height: 300px; } /* Reduced if mostly text */
+#latest-insights.dashboard-card          { grid-column: span 6; grid-row: span 2; min-height: 450px; } /* Made span 6 */
+#exchange-rate-card.dashboard-card       { grid-column: span 6; grid-row: span 2; min-height: 450px; } /* Made span 6 */
+#treasury-yield-chart-card.dashboard-card{ grid-column: span 12; grid-row: span 2; min-height: 480px; }
+#monte-carlo-risk-section.dashboard-card { grid-column: span 12; grid-row: span 2; min-height: 480px; }
 
-/* --- Grid Spanning Classes (based on a 12-column grid) --- */
-#holdings.dashboard-card           { grid-column: span 8; grid-row: span 2; min-height: 380px;} /* Full width, 2 rows tall */
-#distribution.dashboard-card       { grid-column: span 4;  grid-row: span 2; min-height: 380px;} /* 1/3 width, 2 rows */
-#fluctuations.dashboard-card       { grid-column: span 8;  grid-row: span 2; min-height: 380px;} /* 2/3 width, 2 rows */
-#key-metrics.dashboard-card        { grid-column: span 4;  grid-row: span 4; min-height: 500px;} /* 1/3 width, 1 row */
-#stock-risks.dashboard-card        { grid-column: span 8;  grid-row: span 2; min-height: 380px;} /* 2/3 width, 2 rows (could be beside key-metrics if it takes more rows) */
-#optimal-allocation.dashboard-card { grid-column: span 12; grid-row: span 3; min-height: 580px;} /* Full width, very tall */
-#portfolio-performance.dashboard-card { grid-column: span 12; grid-row: span 2; min-height: 450px;} /* Full width, tall */
-#ai-agent.dashboard-card            { grid-column: span 12; grid-row: span 2; min-height: 450px;} /* Full width, tall */
-#latest-insights.dashboard-card     { grid-column: span 12; grid-row: span 2; min-height: 450px;} /* --- Table Styling within Cards (.data-table) --- */
-#exchange-rate-card.dashboard-card  { grid-column: span 12; grid-row: span 2; min-height: 450px;}
-#treasury-yield.dashboard-card      { grid-column: span 12; grid-row: span 2; min-height: 450px;}
-#monte-carlo-risk-section.dashboard-card { grid-column: span 12; grid-row: span 2; min-height: 450px;}
-
+/* --- Table Styling --- */
 .data-table {
     width: 100%;
-    border-collapse: collapse;
-    font-size: 0.9em;
+    border-collapse: separate; /* For border-spacing */
+    border-spacing: 0; /* Reset */
+    font-size: 0.9rem;
+    min-width: 1000px;
 }
 .data-table thead {
-    background-color: var(--bg-card-subtle-accent);
+    background: var(--bg-table-header);
     color: var(--text-primary);
-    position: sticky; top: 0; z-index: 10; /* Sticky header within scrollable card */
+    position: sticky;
+    top: -1px; /* Ensure it sticks properly with card padding */
+    z-index: 10;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
-.data-table th, .data-table td {
-    padding: 10px 12px;
+.data-table th {
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.8rem;
+}
+.data-table th,
+.data-table td {
+    padding: 14px 16px; /* Increased padding */
     text-align: left;
     border-bottom: 1px solid var(--border-primary);
-    white-space: nowrap; /* Prevent wrapping unless really necessary */
+    white-space: nowrap;
 }
-.data-table th:nth-child(n+3), .data-table td:nth-child(n+3) { text-align: right; } /* Align numeric columns */
+.data-table td {
+    color: var(--text-secondary);
+}
+.data-table tbody tr td:first-child {
+    color: var(--text-primary); /* Stock name more prominent */
+    font-weight: 500;
+}
+.data-table th:nth-child(n+3), /* Align numeric columns to the right */
+.data-table td:nth-child(n+3) {
+    text-align: right;
+    font-feature-settings: "tnum"; /* Tabular numbers */
+}
 .data-table td em { font-style: normal; color: var(--text-muted); }
 .data-table tbody tr:nth-child(even) { background-color: var(--bg-table-row-even); }
-.data-table tbody tr:hover { background-color: var(--bg-table-row-hover); }
-
-/* --- Button Styling (General, can be refined for specific contexts) --- */
-.btn { transition: all 0.2s ease; }
-.btn-primary { background-color: var(--bg-button-primary); border-color: var(--bg-button-primary); color: var(--text-on-primary-button); }
-.btn-primary:hover { background-color: var(--bg-button-primary-hover); border-color: var(--bg-button-primary-hover); }
-.btn-secondary { background-color: var(--bg-button-secondary); border-color: var(--bg-button-secondary); color: var(--text-on-secondary-button); }
-.btn-secondary:hover { background-color: var(--bg-button-secondary-hover); border-color: var(--bg-button-secondary-hover); }
-.btn-outline-danger { color: var(--bg-button-danger); border-color: var(--bg-button-danger); }
-.btn-outline-danger:hover { background-color: var(--bg-button-danger); color: var(--text-on-danger-button); }
-
-/* --- Chart Wrappers & Chart Item Styling --- */
-.chart-wrapper, .chart-wrapper-small, .plotly-wrapper {
-    flex-grow: 1; display: flex; align-items: center; justify-content: center;
-    width: 100%; position: relative; /* For canvas sizing */
+.data-table tbody tr:hover {
+    background-color: var(--bg-table-row-hover);
+    box-shadow: inset 3px 0 0 var(--accent-primary-solid); /* Hover indicator */
 }
-.chart-wrapper canvas, .plotly-chart { /* .plotly-chart is the div Plotly creates */
-    max-width: 100%; max-height: 100%;
+.data-table tbody tr:hover td {
+    color: var(--text-primary); /* Text brightens on hover */
 }
-.chart-wrapper-small { min-height: 200px; /* For smaller pie charts */ }
+
+/* --- Button Styling (Modernized) --- */
+.btn {
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: var(--control-border-radius);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all var(--transition-duration-fast) var(--transition-timing-function);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.5;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+.btn:focus-visible { /* Modern focus outline */
+    outline: 2px solid var(--accent-primary-glow);
+    outline-offset: 2px;
+}
+.btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+
+.btn-primary {
+    background: var(--accent-primary-solid);
+    color: var(--text-on-accent);
+    box-shadow: 0 2px 5px rgba(var(--accent-primary-glow-rgb), 0.2);
+}
+.btn-primary:hover {
+    background: var(--accent-primary-dark);
+    box-shadow: 0 4px 8px rgba(var(--accent-primary-glow-rgb), 0.3);
+    transform: translateY(-1px);
+}
+.btn-primary:active { transform: translateY(0px); box-shadow: 0 1px 2px rgba(var(--accent-primary-glow-rgb), 0.2); }
+
+.btn-secondary {
+    background: var(--border-light);
+    color: var(--text-primary);
+}
+.btn-secondary:hover { background: var(--text-muted); transform: translateY(-1px); }
+.btn-secondary:active { transform: translateY(0px); }
+
+.btn-outline-danger {
+    background: transparent;
+    color: var(--accent-negative-solid);
+    border-color: var(--accent-negative-solid);
+}
+.btn-outline-danger:hover {
+    background: var(--accent-negative-solid);
+    color: var(--text-primary); /* Use primary text for better contrast */
+    border-color: var(--accent-negative-solid);
+    box-shadow: 0 2px 5px rgba(var(--accent-negative-glow-rgb), 0.2);
+}
+
+/* --- Chart Wrappers & Treasury Yield Specific Styling --- */
+.chart-wrapper,
+.chart-wrapper-small,
+.plotly-wrapper,
+.monte-carlo-chart-container {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    position: relative;
+    background: rgba(var(--bg-primary-medium), 0.3); /* Darker, subtle chart background */
+    border-radius: var(--control-border-radius);
+    padding: 15px;
+    box-shadow: var(--shadow-inner-soft);
+    min-height: 150px; /* Ensure even small charts have space */
+}
+.chart-wrapper canvas,
+.plotly-chart {
+    max-width: 100%;
+    max-height: 100%;
+}
+/* Treasury Yield Card Specifics (JavaScript will need to use these vars) */
+#treasury-yield-chart-card {
+    /* You might want a specific background or border for this prominent chart */
+}
+/* If you can pass CSS vars to Chart.js options (some wrappers allow this):
+   Chart.js line color: var(--treasury-yield-line)
+   Chart.js fill color: var(--treasury-yield-fill)
+   Chart.js point color: var(--treasury-yield-point)
+   Chart.js grid line color: var(--treasury-yield-grid)
+*/
+#treasuryYieldChart { /* The canvas itself */
+    /* Example: If you want to add a very subtle glow to the canvas itself */
+    /* box-shadow: 0 0 20px rgba(var(--accent-primary-glow-rgb), 0.1); */
+}
+
 
 /* --- Stats Display (#key-metrics card) --- */
 .stats-display {
     display: flex;
     flex-direction: column;
-    justify-content: space-around; /* Distribute items vertically */
-    align-items: stretch; /* Stretch items to fill width */
-    height: 100%; /* Fill card content area */
+    justify-content: space-around; /* Distribute space evenly */
+    align-items: stretch;
+    gap: 12px; /* Space between items */
+    height: 100%;
     flex-grow: 1;
 }
 .stat-item {
     text-align: center;
-    padding: 8px 0;
-    /* border-bottom: 1px solid var(--border-light); */ /* Optional separator */
+    padding: 12px 8px;
+    background: rgba(var(--bg-primary-light), 0.3);
+    border-radius: var(--control-border-radius);
+    transition: all var(--transition-duration-fast) ease;
+    border-left: 3px solid transparent; /* For hover accent */
 }
-/* .stat-item:last-child { border-bottom: none; } */
-.stat-label { display: block; font-size: 0.85em; color: var(--text-secondary); margin-bottom: 4px; }
-.stat-value { display: block; font-size: 1.6em; font-weight: 600; color: var(--text-primary); line-height: 1.2; }
+.stat-item:hover {
+    transform: scale(1.03);
+    background: rgba(var(--bg-primary-light), 0.5);
+    border-left-color: var(--accent-primary-solid);
+}
+.stat-label {
+    display: block;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+.stat-value {
+    display: block;
+    font-size: 1.8rem; /* Prominent value */
+    font-weight: 700;
+    color: var(--accent-positive-glow);
+    line-height: 1.2;
+    text-shadow: var(--shadow-text-glow-positive);
+}
+#var-value, #cvar-value { /* Assuming these are risk values */
+    color: var(--accent-negative-glow);
+    text-shadow: var(--shadow-text-glow-negative);
+}
 
-/* --- Optimal Allocation Card Specifics --- */
-.optimal-allocation-container {
-    display: flex;
-    flex-direction: column; /* Default stack table and chart grid */
-    gap: var(--dashboard-gap);
-    flex-grow: 1; overflow: hidden;
-}
-.optimal-table-wrapper { max-height: 280px; /* Scrollable table part */ }
-.pie-charts-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Responsive pie charts */
-    gap: 15px;
-    flex-grow: 1;
-}
+/* --- Optimal Allocation Card --- */
+.optimal-allocation-container { display: flex; flex-direction: column; gap: var(--dashboard-gap); flex-grow: 1; overflow: hidden; }
+.optimal-table-wrapper { max-height: 300px; /* Increased height */ }
+.pie-charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; flex-grow: 1; }
 .pie-chart-item {
-    background-color: var(--bg-card-subtle-accent);
-    border-radius: 8px;
-    padding: 15px;
+    background: rgba(var(--bg-primary-light), 0.4);
+    border-radius: var(--control-border-radius);
+    padding: 20px;
     text-align: center;
     display: flex;
     flex-direction: column;
     border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-inner-soft);
 }
-.pie-chart-title { font-size: 0.9em; color: var(--text-primary); margin-bottom: 10px; font-weight: 500; }
-.ai-insights-box { margin-top: 20px; }
+.pie-chart-title { font-size: 1rem; color: var(--text-primary); margin-bottom: 15px; font-weight: 500; }
+.ai-insights-box { margin-top: 24px; }
 .ai-insights-box #ai-explanation {
-    padding: 15px; font-size: 0.9em; background-color: var(--bg-card-subtle-accent);
-    border-radius: 8px; text-align: left; border: 1px solid var(--border-light);
+    padding: 20px;
+    font-size: 0.95rem;
+    background: rgba(var(--bg-primary-light), 0.2);
+    border-radius: var(--control-border-radius);
+    border: 1px solid var(--border-primary);
+    backdrop-filter: blur(5px);
 }
-.ai-insights-box #ai-explanation .ai-title { color: var(--accent-amber); text-align: center; margin-bottom: 8px; font-size: 1em;}
-
-/* --- Portfolio Performance Card Specifics --- */
-.performance-charts-container {
-    display: grid;
-    grid-template-columns: 1fr; /* Default to stacked */
-    gap: var(--dashboard-gap);
-    flex-grow: 1; overflow: hidden;
-}
-
-/* --- Currency Exchange Rates Card Specifics (Refined) --- */
-
-/* Adjust the card-content for this specific card to allow full-width items */
-/* This removes horizontal padding from the direct container, items will add it back for their content. */
-#exchange-rate-card > #exchange-rate-container.card-content-scrollable {
-    padding-left: 0;
-    padding-right: 0;
-    /* Vertical padding can be inherited from .dashboard-card's --card-padding for top/bottom,
-       or you can set specific padding-top/padding-bottom here if items don't provide enough.
-       Example: padding-top: 10px; padding-bottom: 10px; */
-}
-
-/* Style for the loading message (ensure it's centered within the new padding scheme) */
-#exchange-rate-container p.text-muted {
+.ai-insights-box #ai-explanation .ai-title {
+    color: var(--accent-secondary-glow);
     text-align: center;
-    /* Add horizontal padding to align text with card title, if container has no horizontal padding */
-    padding: 50px var(--card-padding);
-    font-size: 1.0em; /* Slightly more subtle */
-    color: var(--text-muted);
+    margin-bottom: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
 }
 
-/* Individual Exchange Rate Item Styling */
+/* --- Currency Exchange Rates Card --- */
 .exchange-rate-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    /* Vertical padding for the item, horizontal padding to align content with card title */
-    padding: 20px var(--card-padding); /* Adjusted vertical padding */
+    padding: 18px var(--card-padding); /* Adjusted padding */
     border-bottom: 1px solid var(--border-primary);
-    transition: background-color 0.25s ease-out,
-                border-left-color 0.25s ease-out,
-                transform 0.2s ease-out;
-    border-left: 4px solid transparent; /* Slightly thicker accent border on hover */
-    position: relative; /* For potential future pseudo-elements */
-}
-
-/* No border for the last item */
-.exchange-rate-item:last-child {
-    border-bottom: none;
-}
-
-.exchange-rate-item:hover {
-    background-color: var(--bg-card-subtle-accent);
-    border-left-color: var(--accent-green); /* Your defined accent green */
-    transform: translateX(4px); /* Subtle push effect on hover */
-}
-
-/* Styling for the Currency Pair (BTC -> USD) */
-.currency-pair {
-    display: flex;
-    align-items: center;
-    font-size: 1.1em; /* Clear and readable */
-}
-
-.currency-code {
-    font-weight: 500; /* Good emphasis */
-    letter-spacing: 0.25px; /* Slight spacing for readability */
-}
-
-.base-currency {
-    color: var(--text-primary); /* Main text color for base currency */
-}
-
-.quote-currency {
-    color: var(--text-secondary); /* Slightly less emphasis for quote currency */
-}
-
-.arrow-icon {
-    font-size: 1.1em; /* Relative to surrounding text */
-    color: var(--text-secondary); /* More visible than text-muted */
-    margin: 0 12px; /* Spacing around the arrow */
-    font-weight: 400; /* Standard weight */
-}
-
-/* Styling for the Rate Value */
-.rate-value {
-    font-size: 1.35em; /* Prominent but not oversized */
-    font-weight: 600;
-    color: var(--accent-green); /* Your defined accent green */
-    font-feature-settings: "tnum", "zero"; /* Tabular numbers, slashed zero (if font supports) */
-    letter-spacing: 0.5px;
-    /* Enhance glow: requires --accent-green-rgb variable or direct RGB values */
-    text-shadow: 0 0 10px rgba(var(--accent-green-rgb, 29, 233, 182), 0.35);
-    /* Fallback if --accent-green-rgb is not set (adjust RGB to match your --accent-green): */
-    /* text-shadow: 0 0 8px rgba(29, 233, 182, 0.3); */
-}
-
-/* --- Optional Currency Flags (Refined) --- */
-.currency-flag {
-    width: 22px; /* Slightly smaller for better balance */
-    height: 16px; /* Maintain aspect ratio */
-    margin-right: 8px;
-    background-color: var(--border-light); /* Placeholder background */
-    background-size: cover;
-    background-position: center;
-    border-radius: 3px; /* Softer corners */
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); /* Subtle shadow */
-    display: inline-block;
-    vertical-align: middle; /* Align with text */
-    flex-shrink: 0; /* Prevent shrinking if space is tight */
-}
-
-/* To use the enhanced text-shadow for .rate-value, you might need to define
-   an RGB version of your --accent-green in your :root.
-   For example, if your --accent-green is #1DE9B6, its RGB is 29, 233, 182.
-   Add to :root:
-   --accent-green-rgb: 29, 233, 182;
-*/
-
-/* If you decide not to use flags, you can hide them to reclaim space: */
-/*
-.currency-flag {
-    display: none;
-}
-.currency-pair .currency-code:first-of-type {
-    margin-left: 0; // If flags were providing left margin
-}
-*/
-
-
-/* --- Monte Carlo Risk Card Specifics --- */
-
-/* IMPORTANT: Update the grid placement for the card to be large enough for a chart.
-   The old size (span 4, 200px) is too small. A full-width card works best. */
-#monte-carlo-risk-section.dashboard-card {
-    grid-column: span 12;
-    grid-row: span 2;
-    min-height: 450px;
-}
-
-/* Styles the container holding the canvas for proper sizing */
-.monte-carlo-chart-container {
+    transition: background-color 0.2s ease, transform 0.2s ease;
     position: relative;
-    height: 280px; /* Adjust height as needed */
-    width: 100%;
+}
+.exchange-rate-item::before { /* Hover underline animation */
+    content: "";
+    position: absolute;
+    bottom: -1px; /* Align with border-bottom */
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background-color: var(--accent-positive-solid);
+    transition: width 0.3s ease, left 0.3s ease;
+}
+.exchange-rate-item:hover {
+    background: var(--bg-table-row-hover);
+    transform: scale(1.01); /* Subtle zoom */
+}
+.exchange-rate-item:hover::before { width: 100%; left: 0; }
+.exchange-rate-item:last-child { border-bottom: none; }
+.currency-pair { display: flex; align-items: center; font-size: 1.05rem; }
+.currency-code { font-weight: 500; }
+.base-currency { color: var(--text-primary); }
+.quote-currency { color: var(--text-secondary); }
+.arrow-icon { font-size: 1rem; color: var(--text-muted); margin: 0 10px; }
+.rate-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--accent-positive-glow);
+    text-shadow: var(--shadow-text-glow-positive);
+    font-feature-settings: "tnum";
+}
+.currency-flag {
+    width: 24px; height: 18px; /* Slightly larger */
+    margin-right: 10px;
+    background-color: var(--border-light);
+    background-size: cover; background-position: center;
+    border-radius: 3px; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    display: inline-block; vertical-align: middle; flex-shrink: 0;
 }
 
-/* Styles the new horizontal container for the stats below the chart */
+/* --- Monte Carlo & Stats Display Horizontal --- */
+.monte-carlo-chart-container { height: 300px; /* More space for chart */ }
 .stats-display-horizontal {
-    display: flex;
-    justify-content: space-around;
-    flex-wrap: wrap;
-    gap: 15px; /* Space between stat items */
-    padding-top: 15px; /* Space above the stats */
-    margin-top: 15px; /* Space between chart and stats separator line */
-    border-top: 1px solid var(--border-light); /* Separator line */
+    display: grid; /* Using grid for better alignment */
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 20px;
+    padding-top: 20px; margin-top: 20px;
+    border-top: 1px solid var(--border-primary);
 }
-
-/* Styles individual stat items within the horizontal display */
 .stats-display-horizontal .stat-item {
-    flex-basis: calc(25% - 15px); /* Aim for 4 items per row */
-    min-width: 120px; /* Minimum width before wrapping */
     text-align: center;
+    padding: 10px;
+    background: rgba(var(--bg-primary-light),0.2);
+    border-radius: var(--control-border-radius);
 }
-
 .stats-display-horizontal .stat-label {
-    display: block;
-    font-size: 0.8em;
-    text-transform: uppercase;
-    color: var(--text-secondary);
-    margin-bottom: 4px;
+    display: block; font-size: 0.75rem; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 5px;
 }
-
 .stats-display-horizontal .stat-value {
-    display: block;
-    font-size: 1.2em;
-    font-weight: 600;
+    display: block; font-size: 1.3rem; font-weight: 600;
     color: var(--text-primary);
+    font-feature-settings: "tnum";
+}
+#monte-carlo-var, #monte-carlo-cvar { color: var(--accent-negative-glow); text-shadow: var(--shadow-text-glow-negative); }
+#monte-carlo-mean { color: var(--accent-positive-glow); text-shadow: var(--shadow-text-glow-positive); }
+#monte-carlo-stddev { color: var(--accent-secondary-glow); /* Different color for volatility */ }
+
+/* --- AI Agent & Forms --- */
+.form-group { margin-bottom: 20px;}
+.form-control {
+    width: 100%; /* Ensure it takes full width */
+    padding: 12px 16px;
+    background: rgba(var(--bg-primary-light), 0.5);
+    border: 1px solid var(--border-primary);
+    color: var(--text-primary);
+    border-radius: var(--control-border-radius);
+    transition: border-color var(--transition-duration-fast) ease, box-shadow var(--transition-duration-fast) ease;
+    font-size: 1rem;
+}
+.form-control::placeholder { color: var(--text-muted); }
+.form-control:focus {
+    border-color: var(--border-interactive);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(var(--accent-primary-glow-rgb), 0.3);
+}
+.ai-response-box {
+    margin-top: 20px;
+    padding: 20px;
+    background: rgba(var(--bg-primary-light), 0.2);
+    border-radius: var(--control-border-radius);
+    border-left: 4px solid var(--accent-secondary-solid);
+    backdrop-filter: blur(5px);
+    font-size: 0.95rem;
+}
+.ai-response-box .ai-title {
+    color: var(--accent-secondary-glow);
+    margin-bottom: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
 }
 
-/* Use your accent colors for emphasis */
-#monte-carlo-var,
-#monte-carlo-cvar {
-    color: var(--accent-red);
+/* --- Latest Insights Card & Portfolio Performance --- */
+#news-container p.text-muted,
+#latest-insights .card-placeholder { /* Centralized placeholder styling */
+    text-align: center; padding: 50px var(--card-padding);
+    font-size: 1rem; color: var(--text-muted);
+}
+.performance-charts-container {
+    display: block;
+    overflow: hidden;
+    width:100%;
+}
+.plotly-chart-item { display: flex; flex-direction: column; min-height: 200px; }
+.plotly-chart-title {
+    font-size: 1rem; color: var(--text-secondary);
+    text-align: center; margin-bottom: 15px; font-weight: 500;
 }
 
-#monte-carlo-mean {
-    color: var(--accent-green);
+
+/*#ai-agent{margin-top: 50px}*/
+/* In analyze_portfolio_enhanced.css */
+.page-content-area.dashboard-grid {
+    /* ... existing styles ... */
+    /* Original: grid-auto-rows: minmax(200px, auto); */
+    grid-auto-rows: minmax(240px, auto); /* Increase the minimum row height */
+    /* ... existing styles ... */
+}
+
+/* --- Enhanced Analysis & Tools Hub Card --- */
+#analysis-tools-hub.dashboard-card {
+    grid-column: span 12; /* Default to full width, can be adjusted */
+    grid-row: span 2;    /* Adjust to fit content, typically 2-3 rows */
+    min-height: 500px;   /* Ensure enough space for tabs and content */
+    display: flex;       /* Ensure card children can flex correctly */
+    flex-direction: column;
+}
+
+#analysis-tools-hub .card-content {
+    flex-grow: 1; /* Allow card-content to fill available space */
+    display: flex;    /* For tabs-container to fill */
+    padding: 0; /* Remove card-content padding if tabs-container handles it */
+}
+
+#analysis-tools-hub .tabs-container {
+    display: flex;
+    /* flex-direction: row; /* Tabs on left, content on right - ALTERNATIVE LAYOUT */
+    flex-direction: column; /* Tabs on top, content below - STANDARD LAYOUT */
+    width: 100%;
+    height: 100%; /* Fill the card-content area */
+    flex-grow: 1;
+    border-radius: 0 0 var(--card-border-radius) var(--card-border-radius); /* Match card bottom radius */
+    overflow: hidden; /* Clip content if necessary */
+}
+
+/* --- Tabs Navigation Styling (Vertical or Horizontal) --- */
+#analysis-tools-hub .tabs-nav {
+    display: flex;
+    /* For Vertical Tabs (on the left) */
+    /* flex-direction: column;
+    width: 220px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border-primary);
+    padding: var(--card-padding) 0;
+    background: rgba(var(--bg-primary-light), 0.2); */
+
+    /* For Horizontal Tabs (on top) */
+    flex-direction: row;
+    flex-wrap: wrap; /* Allow tabs to wrap if too many */
+    border-bottom: 1px solid var(--border-primary);
+    padding: 0 var(--card-padding); /* Add padding to match card */
+    background: rgba(var(--bg-primary-light),0.1); /* Subtle bg for tab bar */
+    align-items: stretch; /* Make tab buttons same height */
+}
+
+#analysis-tools-hub .tab-link {
+    padding: 16px 22px; /* Generous padding for clickable area */
+    cursor: pointer;
+    border: none;
+    background-color: transparent;
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 0.95rem;
+    text-align: left; /* For vertical tabs */
+    transition: all var(--transition-duration-fast) ease;
+    position: relative;
+    display: flex; /* For icon alignment */
+    align-items: center;
+
+    /* For Vertical Tabs */
+    /* border-right: 3px solid transparent;
+    margin-right: -1px; */
+
+    /* For Horizontal Tabs */
+    border-bottom: 3px solid transparent;
+    margin-bottom: -1px; /* Overlap container border */
+}
+
+#analysis-tools-hub .tab-link .icon {
+    margin-right: 12px; /* Space between icon and text */
+    font-size: 1.1em;   /* Icon size */
+    width: 1.5em;       /* Fixed width for alignment */
+    text-align: center;
+    opacity: 0.7;
+}
+
+#analysis-tools-hub .tab-link:hover {
+    color: var(--text-primary);
+    background-color: rgba(var(--accent-primary-glow-rgb), 0.05);
+}
+#analysis-tools-hub .tab-link.active {
+    color: var(--accent-primary-glow);
+    background-color: rgba(var(--accent-primary-glow-rgb), 0.1);
+    font-weight: 600;
+}
+#analysis-tools-hub .tab-link.active .icon {
+    opacity: 1;
+}
+
+/* For Vertical Tabs Active State */
+/* #analysis-tools-hub .tab-link.active {
+    border-right-color: var(--accent-primary-glow);
+} */
+
+/* For Horizontal Tabs Active State */
+#analysis-tools-hub .tab-link.active {
+    border-bottom-color: var(--accent-primary-glow);
+}
+
+
+/* --- Tabs Content Styling --- */
+#analysis-tools-hub .tabs-content {
+    flex-grow: 1;
+    padding: var(--card-padding); /* Padding for the content area of tabs */
+    overflow-y: auto; /* Scroll if content is too tall for the card */
+    position: relative; /* For positioning tab-pane content */
+}
+
+#analysis-tools-hub .tab-pane {
+    display: none; /* Hidden by default */
+    animation: fadeInToolPane 0.4s ease-in-out forwards;
+    width: 100%;
+    height: 100%; /* Try to fill available space */
+}
+#analysis-tools-hub .tab-pane.active {
+    display: block; /* Show active tab */
+}
+
+/* Content within each tool tab pane */
+.tool-pane-intro {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center content */
+    justify-content: center; /* Center content */
+    text-align: center;
+    height: 100%; /* Make it take full height of the tab pane */
+    padding: 20px 0; /* Some vertical padding */
+}
+
+.tool-showcase-icon { /* Large icon for visual appeal */
+    font-size: 3.5rem; /* Make icon prominent */
+    color: var(--accent-primary-solid);
+    margin-bottom: 25px;
+    opacity: 0.6;
+}
+
+.tool-pane-intro h3 {
+    font-size: 1.75rem; /* Larger title for the tool */
+    color: var(--text-primary);
+    margin: 0 0 15px 0;
+    font-weight: 600;
+}
+
+.tool-pane-intro p {
+    font-size: 1.05rem; /* Readable description */
+    color: var(--text-secondary);
+    line-height: 1.7;
+    max-width: 550px; /* Constrain width for better readability */
+    margin-bottom: 30px;
+}
+
+.btn-launch-tool {
+    /* Using existing .btn-primary styles, but can be customized */
+    padding: 12px 30px;
+    font-size: 1rem;
+    min-width: 200px; /* Ensure buttons have a good width */
 }
 
 
 
-/* On wider viewports for this card, make them side-by-side */
-@media (min-width: 768px) { /* Or a specific breakpoint for this card */
+#portfolio-performance.dashboard-card {
+    grid-row: span 3; /* or more */
+    min-height: 400px; /* or any value */
+}
+
+#ai-agent.dashboard-card{
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
+
+@keyframes fadeInToolPane {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive adjustments for tabs within the card if needed */
+@media (max-width: 767px) {
+    #analysis-tools-hub .tabs-nav {
+        /* If using horizontal tabs, allow them to scroll on mobile */
+        overflow-x: auto;
+        white-space: nowrap; /* Keep tabs in one line for scrolling */
+        padding: 0 calc(var(--card-padding) / 2); /* Reduce padding */
+    }
+    #analysis-tools-hub .tab-link {
+        padding: 14px 16px; /* Adjust padding for smaller screens */
+        font-size: 0.9rem;
+    }
+    .tool-pane-intro h3 {
+        font-size: 1.5rem;
+    }
+    .tool-pane-intro p {
+        font-size: 0.95rem;
+    }
+    .tool-showcase-icon {
+        font-size: 3rem;
+        margin-bottom: 20px;
+    }
+}
+
+
+
+
+
+
+/* --- Responsive Adjustments --- */
+@media (min-width: 992px) { /* Medium devices (tablets, small desktops) */
     .performance-charts-container {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr 1fr; /* Two columns for performance charts */
     }
 }
-.plotly-chart-item { display: flex; flex-direction: column; min-height: 320px; }
-.plotly-chart-title { font-size: 1em; color: var(--text-secondary); text-align: center; margin-bottom: 10px; font-weight: 500; }
 
-
-/* --- Responsive Adjustments for Dashboard Grid --- */
-@media (max-width: 1200px) { /* Example: Medium screens */
+@media (max-width: 1200px) { /* Adjust grid spans for slightly smaller large screens */
     .page-content-area.dashboard-grid {
-        grid-template-columns: repeat(8, 1fr); /* Adjust to an 8-column system */
-        grid-auto-rows: minmax(170px, auto);
+        grid-template-columns: repeat(8, 1fr); /* Fewer columns */
+        grid-auto-rows: minmax(180px, auto);
     }
-    /* Re-evaluate spans for 8 columns. E.g., full width is now span 8 */
-    #holdings.dashboard-card           { grid-column: span 8; grid-row: span 2; }
-    #distribution.dashboard-card       { grid-column: span 4; grid-row: span 2; } /* Was 4, now 4/8 = half */
-    #fluctuations.dashboard-card       { grid-column: span 8; grid-row: span 2; } /* Was 8, now 8/8 = full or make it span 4 */
-    #key-metrics.dashboard-card        { grid-column: span 4; grid-row: span 1; }
-    #stock-risks.dashboard-card        { grid-column: span 8; grid-row: span 2; }
-    #optimal-allocation.dashboard-card { grid-column: span 8; grid-row: span 3; }
-    #portfolio-performance.dashboard-card { grid-column: span 8; grid-row: span 2; }
-    #ai-agent.dashboard-card {grid-column: span 8; grid-row: span 2;}
+    /* Update spans - Example, you'll need to adjust all as per your preference */
+    #holdings.dashboard-card { grid-column: span 8; }
+    #distribution.dashboard-card { grid-column: span 4; }
+    #key-metrics.dashboard-card { grid-column: span 4; }
+    /* ... (adjust all your spans for the 8-column layout) ... */
+    #latest-insights.dashboard-card, #exchange-rate-card.dashboard-card { grid-column: span 4; }
+    #optimal-allocation.dashboard-card, #portfolio-performance.dashboard-card,
+    #ai-agent.dashboard-card, #treasury-yield-chart-card.dashboard-card,
+    #monte-carlo-risk-section.dashboard-card { grid-column: span 8; }
 }
 
-@media (max-width: 992px) { /* Tablets */
+@media (max-width: 991px) { /* Tablets */
     .page-content-area.dashboard-grid {
-        grid-template-columns: repeat(4, 1fr); /* 4-column system */
-        grid-auto-rows: minmax(160px, auto);
-        gap: 15px; padding: 15px;
+        grid-template-columns: repeat(6, 1fr); /* Further reduce columns */
+        gap: 20px; padding: 20px;
     }
-    /* Adjust spans for 4 columns */
-    #holdings.dashboard-card           { grid-column: span 4; grid-row: span 2; }
-    #distribution.dashboard-card       { grid-column: span 2; grid-row: span 2; }
-    #fluctuations.dashboard-card       { grid-column: span 4; grid-row: span 2; }
-    #key-metrics.dashboard-card        { grid-column: span 2; grid-row: span 1; }
-    #stock-risks.dashboard-card        { grid-column: span 4; grid-row: span 2; }
-    #optimal-allocation.dashboard-card { grid-column: span 4; grid-row: span 3; }
-    #portfolio-performance.dashboard-card { grid-column: span 4; grid-row: span 3; } /* Might need more rows */
+     /* Update spans - Example, you'll need to adjust all as per your preference */
+    #holdings.dashboard-card, #fluctuations.dashboard-card, #stock-risks.dashboard-card { grid-column: span 6; }
+    #distribution.dashboard-card, #key-metrics.dashboard-card { grid-column: span 3; }
+    /* ... (adjust all your spans for the 6-column layout) ... */
+    #latest-insights.dashboard-card, #exchange-rate-card.dashboard-card { grid-column: span 3; }
+    #optimal-allocation.dashboard-card, #portfolio-performance.dashboard-card,
+    #ai-agent.dashboard-card, #treasury-yield-chart-card.dashboard-card,
+    #monte-carlo-risk-section.dashboard-card { grid-column: span 6; }
 
-    .pie-charts-grid { grid-template-columns: 1fr 1fr; } /* Two pie charts per row */
+    .pie-charts-grid { grid-template-columns: 1fr 1fr; }
 }
 
-@media (max-width: 767px) { /* Mobile */
-    .sidebar { left: -250px; /* Fully hidden when closed on mobile */ }
+@media (max-width: 767px) { /* Mobile devices */
+    .sidebar {
+        left: calc(-260px); /* Fully hidden on mobile */
+        width: 260px; /* Full width when open */
+    }
+    .sidebar.sidebar-is-open { left: 0; }
+    .sidebar::after { /* Make toggle always visible on edge */
+        right: -30px; /* Position outside when collapsed */
+        background: var(--bg-sidebar);
+        padding: 10px 5px 10px 10px;
+        border-top-right-radius: var(--control-border-radius);
+        border-bottom-right-radius: var(--control-border-radius);
+        box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+    }
+    .sidebar.sidebar-is-open::after { right: 15px; background: transparent; box-shadow: none; }
+
     .page-content-area.dashboard-grid {
-        margin-left: 0 !important; /* Sidebar overlays, no push */
+        margin-left: 0 !important; /* No margin for collapsed sidebar */
         width: 100% !important;
-        grid-template-columns: 1fr; /* Single column */
-        grid-auto-rows: auto; /* Let rows be determined by content height */
-        padding: 10px; gap: 10px;
+        grid-template-columns: 1fr; /* Single column layout */
+        grid-auto-rows: auto;
+        padding: 15px; gap: 15px;
     }
-    /* All cards take full width in single column */
     .dashboard-card { grid-column: span 1 !important; grid-row: auto !important; min-height: auto !important; }
+    .card-title { font-size: 1.2rem; }
+    .data-table { font-size: 0.85rem; }
+    .data-table th, .data-table td { padding: 10px 8px; white-space: normal; } /* Allow text wrapping */
+    .data-table td:nth-child(n+3) { white-space: nowrap; } /* Keep numbers nowrap if possible */
 
-    .card-title { font-size: 1.1em; }
-    .data-table { font-size: 0.8em; }
-    .data-table th, .data-table td { padding: 8px 6px; white-space: normal; } /* Allow wrapping on mobile */
-    .stats-display { flex-direction: row; flex-wrap: wrap; justify-content: space-between; } /* Stats side-by-side if they fit */
-    .stat-item { flex-basis: 48%; text-align: left; padding: 5px; }
-    .stat-value { font-size: 1.4em; }
-    .pie-charts-grid { grid-template-columns: 1fr; } /* Stack all pie charts */
-    .performance-charts-container { grid-template-columns: 1fr; } /* Stack Plotly charts */
+    .stats-display { flex-direction: row; flex-wrap: wrap; justify-content: space-between; }
+    .stat-item { flex-basis: calc(50% - 8px); text-align: left; padding: 8px; }
+    .stat-value { font-size: 1.5rem; }
+    .pie-charts-grid { grid-template-columns: 1fr; }
+    .performance-charts-container { grid-template-columns: 1fr; }
+    .stats-display-horizontal { grid-template-columns: 1fr 1fr; } /* Two columns on mobile */
 }
