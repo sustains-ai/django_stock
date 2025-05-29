@@ -21,6 +21,9 @@ urlpatterns = [
     path('fetch-currency-rates/<int:portfolio_id>/', views.fetch_currency_rates, name='fetch_currency_rates'),
     path('fetch-treasury-yield/<int:portfolio_id>/', views.fetch_treasury_yield_view, name='fetch_treasury_yield'),
     path('monte-carlo-risk/<int:portfolio_id>/', views.monte_carlo_risk_view, name='monte_carlo_risk'),
+    path("api/portfolio/<int:portfolio_id>/performance-stats/", views.performance_stats, name="performance-stats"),
+    path('all-yield-data/<int:portfolio_id>/', views.get_all_yield_data, name='all_yield_data'),
+
 
 
 

@@ -120,27 +120,88 @@
 
         
         
-        
-            {# CARD 4: Key Portfolio Metrics (Was "Advanced Risk Analysis" - Small stats display) #}
+                    
+                        <!-----------------------------------------------------------------------
+                CARD 4: Key Portfolio Metrics (Enhanced)
+                Displays a comprehensive set of performance and risk metrics
+                for the portfolio. Data is fetched dynamically via JavaScript.
+            ------------------------------------------------------------------------>
             <section id="key-metrics" class="dashboard-card">
                 <h2 class="card-title">Key Portfolio Metrics</h2>
-                <div class="card-content stats-display"> {# Wrapper for stats #}
+            
+                {# The main content area, using a CSS grid for layout #}
+                <div class="card-content stats-grid card-content-scrollable">
+            
+                    <!-- Group 1: Core Performance Metrics -->
                     <div class="stat-item">
-                        <span class="stat-label">Portfolio Variance</span>
-                        <span class="stat-value" id="variance-value">--</span>
+                        <span class="stat-label">Total Buying Price</span>
+                        <span class="stat-value currency" id="total-buying-price-value">--</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-label">Value at Risk (VaR 95%)</span>
-                        <span class="stat-value" id="var-value">--</span>
+                        <span class="stat-label">Current Market Value</span>
+                        <span class="stat-value currency" id="current-market-value-value">--</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-label">Cond. VaR (CVaR 95%)</span>
-                        <span class="stat-value" id="cvar-value">--</span>
+                        <span class="stat-label">Total Profit/Loss</span>
+                        <span class="stat-value currency" id="profit-loss-value">--</span> {# Will show +/- and color based on value #}
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Cumulative Return</span>
+                        <span class="stat-value percentage" id="cumulative-return-value">--</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Number of Holdings</span>
+                        <span class="stat-value" id="num-holdings-value">--</span>
+                    </div>
+            
+                    <!-- Group 2: Risk & Return Analysis Metrics -->
+                    <div class="stat-item">
+                        <span class="stat-label">Mean Daily Return (MC)</span>
+                        <span class="stat-value percentage" id="mean-return-value">--</span> {# From Monte Carlo simulation #}
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Portfolio Std Dev (Historic)</span>
+                        <span class="stat-value percentage" id="portfolio-std-dev-value">--</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Sharpe Ratio</span>
+                        <span class="stat-value" id="sharpe-ratio-value">--</span>
+                    </div>
+{#                    <div class="stat-item">#}
+{#                        <span class="stat-label">Portfolio Beta</span>#}
+{#                        <span class="stat-value" id="portfolio-beta-value">--</span>#}
+{#                    </div>#}
+                    <div class="stat-item">
+                        <span class="stat-label">Max Drawdown</span>
+                        <span class="stat-value percentage" id="max-drawdown-value">--</span>
+                    </div>
+{#                    <div class="stat-item">#}
+{#                        <span class="stat-label">Risk-Free Rate</span>#}
+{#                        <span class="stat-value percentage" id="risk-free-rate-value">--</span> {# Typically Treasury Yield #}
+{#                    </div>#}
+            
+                    <!-- Group 3: Specific Risk Measures (VaR, CVaR from different sources) -->
+                    <div class="stat-item">
+                        <span class="stat-label">Historic VaR (95%)</span>
+                        <span class="stat-value percentage" id="historic-var-value">--</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Historic CVaR (95%)</span>
+                        <span class="stat-value percentage" id="historic-cvar-value">--</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Monte Carlo VaR (95%)</span>
+                        <span class="stat-value percentage" id="mc-var-keymetric-value">--</span> {# For display in this key metrics card #}
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Monte Carlo CVaR (95%)</span>
+                        <span class="stat-value percentage" id="mc-cvar-keymetric-value">--</span> {# For display in this key metrics card #}
                     </div>
                 </div>
-                {# Button to load these metrics, can be placed in footer or content #}
+            
+                {# Card footer with a button to refresh all these metrics #}
                 <div class="card-footer text-center">
-                     <button id="load-all-risks-btn" class="btn btn-secondary btn-sm">Refresh Metrics</button>
+                     <button id="load-all-key-metrics-btn" class="btn btn-secondary btn-sm">Refresh All Metrics</button>
                 </div>
             </section>
 
@@ -332,22 +393,24 @@
                 <canvas id="treasuryYieldChart" style="max-height: 300px;"></canvas>
             </section>
         
-        <span style="display:none;" data-montecarlo-id="{{ portfolio.id }}"></span>
+        
+            <section id="treasury-yield-section" class="dashboard-card">
+                <h2 class="card-title">Treasury Yield Rates</h2>
+                <div id="treasury-yield-container" class="card-content card-content-scrollable">
+                    <div class="grid-2col">
+                        <div class="stat-item"><span class="stat-label">3 Month:</span> <span class="stat-value" id="yield-3m">--</span>%</div>
+                        <div class="stat-item"><span class="stat-label">2 Year:</span> <span class="stat-value" id="yield-2y">--</span>%</div>
+                        <div class="stat-item"><span class="stat-label">5 Year:</span> <span class="stat-value" id="yield-5y">--</span>%</div>
+                        <div class="stat-item"><span class="stat-label">7 Year:</span> <span class="stat-value" id="yield-7y">--</span>%</div>
+                        <div class="stat-item"><span class="stat-label">10 Year:</span> <span class="stat-value" id="yield-10y">--</span>%</div>
+                        <div class="stat-item"><span class="stat-label">30 Year:</span> <span class="stat-value" id="yield-30y">--</span>%</div>
+                    </div>
+                </div>
+            </section>
 
-{#            <!-- CARD: Monte Carlo Simulation (Portfolio-Level Risk) -->#}
-{#            <section id="monte-carlo-risk-section" class="dashboard-card" style="grid-column: span 4; grid-row: span 1; min-height: 200px; overflow-y: auto;">#}
-{#                <h2 class="card-title">Monte Carlo Simulation (Portfolio)</h2>#}
-{#                <div class="card-content stats-display">#}
-{#                    <div class="stat-item">#}
-{#                        <span class="stat-label">VaR (95%)</span>#}
-{#                        <span class="stat-value" id="monte-carlo-var">Loading...</span>#}
-{#                    </div>#}
-{#                    <div class="stat-item">#}
-{#                        <span class="stat-label">CVaR (95%)</span>#}
-{#                        <span class="stat-value" id="monte-carlo-cvar">Loading...</span>#}
-{#                    </div>#}
-{#                </div>#}
-{#            </section>#}
+        
+        <span style="display:none;" data-montecarlo-id="{{ portfolio.id }}"></span>
+        
 
 
                            <!-- CARD 11: Monte Carlo Simulation (Portfolio-Level Risk) -->
@@ -377,18 +440,7 @@
                         </div>
                     </div>
                 </section>
-{#                <section class="dashboard-card" style="grid-column: span 12; margin-top: 20px;">#}
-{#                    <h3>Advanced Analytics</h3>#}
-{#                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">#}
-{#                        <a href="{% url 'esg_analytics' portfolio.id %}" class="btn btn-primary">ESG Analytics</a>#}
-{#                        <a href="{% url 'advanced_risk' portfolio.id %}" class="btn btn-primary">Advanced Risk</a>#}
-{#                        <a href="{% url 'ml_strategies' portfolio.id %}" class="btn btn-primary">ML Strategies</a>#}
-{#                        <a href="{% url 'stress_testing' portfolio.id %}" class="btn btn-primary">Stress Testing</a>#}
-{#                        <a href="{% url 'backtesting' portfolio.id %}" class="btn btn-primary">Backtesting</a>#}
-{#                        <a href="{% url 'rebalance_insights' portfolio.id %}" class="btn btn-primary">Rebalance Insights</a>#}
-{#                        <a href="{% url 'generate_report' portfolio.id %}" class="btn btn-primary">Download Report</a>#}
-{#                    </div>#}
-{#                 </section>#}
+        
         
         {# CARD: Analysis & Tools Hub #}
                     <section id="analysis-tools-hub" class="dashboard-card">

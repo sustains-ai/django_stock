@@ -703,3 +703,129 @@ def monte_carlo_risk_view(request, portfolio_id):
         traceback.print_exc() # This will print the full Python traceback to your console
         return JsonResponse({"error": str(e)}, status=500)
 
+
+
+
+
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from .models import Portfolio, Stock, HistoricalStockData
+import numpy as np
+from collections import defaultdict
+from .utils import get_market_returns
+from .utils import get_treasury_yields
+
+
+
+def performance_stats(request, portfolio_id):
+    portfolio = get_object_or_404(Portfolio, id=portfolio_id)
+    stocks = Stock.objects.filter(portfolio=portfolio)
+
+    if not stocks.exists():
+        return JsonResponse({"error": "No stocks in this portfolio."}, status=404)
+
+    # --- Total Buying Price ---
+    total_buying_price = sum((stock.price or 0) * stock.quantity for stock in stocks)
+
+    # --- Current Market Value ---
+    current_market_value = 0
+    for stock in stocks:
+        live_price = stock.get_live_price()
+        if live_price:
+            current_market_value += live_price * stock.quantity
+        elif stock.price:  # fallback
+            current_market_value += float(stock.price) * stock.quantity
+
+    number_of_holdings = stocks.count()
+
+    # --- Get historical data ---
+    historical_data = HistoricalStockData.objects.filter(portfolio=portfolio).order_by("date")
+    if not historical_data.exists():
+        return JsonResponse({
+            "total_buying_price": round(total_buying_price, 2),
+            "current_market_value": round(current_market_value, 2),
+            "number_of_holdings": number_of_holdings,
+            "sharpe_ratio": None,
+            "beta": None,
+            "max_drawdown_pct": None,
+            "cumulative_return_pct": None
+        })
+
+    # --- Aggregate daily values ---
+    daily_values = defaultdict(float)
+    for row in historical_data:
+        daily_values[row.date] += row.adjusted_close  # Already portfolio-linked
+
+    sorted_dates = sorted(daily_values)
+    values = [daily_values[date] for date in sorted_dates]
+
+    if len(values) < 2:
+        return JsonResponse({
+            "total_buying_price": round(total_buying_price, 2),
+            "current_market_value": round(current_market_value, 2),
+            "number_of_holdings": number_of_holdings,
+            "sharpe_ratio": None,
+            "beta": None,
+            "max_drawdown_pct": None,
+            "cumulative_return_pct": None
+        })
+
+    returns = np.diff(values) / values[:-1]
+    market_data = get_market_returns()
+    market_return_dict = dict(market_data)
+
+    aligned_returns = []
+    for i, date in enumerate(sorted_dates[1:]):
+        date_str = date.strftime("%Y-%m-%d")
+        if date_str in market_return_dict:
+            aligned_returns.append((returns[i], market_return_dict[date_str]))
+
+    if aligned_returns:
+        port_ret, mkt_ret = zip(*aligned_returns)
+        beta = np.cov(port_ret, mkt_ret)[0][1] / np.var(mkt_ret)
+    else:
+        beta = None
+
+    sharpe_ratio = np.mean(returns) / np.std(returns) * np.sqrt(252) if len(returns) > 1 else None
+    cumulative_return = (values[-1] - values[0]) / values[0] if values[0] else None
+
+    running_max = np.maximum.accumulate(values)
+    drawdowns = (values - running_max) / running_max
+    max_drawdown = np.min(drawdowns) if len(drawdowns) else None
+
+    treasury_data = get_treasury_yields()
+    risk_free_rate = treasury_data.get("10y") if treasury_data else None
+
+    response_data = {
+        "total_buying_price": round(total_buying_price, 2),
+        "current_market_value": round(current_market_value, 2),
+        "number_of_holdings": number_of_holdings,
+        "sharpe_ratio": round(sharpe_ratio, 4) if sharpe_ratio else None,
+        "beta": beta,
+        "max_drawdown_pct": round(max_drawdown, 4) if max_drawdown else None,
+        "cumulative_return_pct": round(cumulative_return, 4) if cumulative_return else None,
+        "risk_free_rate": round(risk_free_rate, 4) if risk_free_rate else None
+    }
+
+    return JsonResponse(response_data)
+
+
+import logging
+from django.http import JsonResponse
+from .utils import get_treasury_yields
+
+def get_all_yield_data(request, portfolio_id):
+
+
+        yields = get_treasury_yields()
+
+
+        return JsonResponse({"status": "success", "yields": {
+            "3m": yields["3m"],
+            "2y": yields["2y"],
+            "5y": yields["5y"],
+            "7y": yields["7y"],
+            "10y": yields["10y"],
+            "30y": yields["30y"]
+        }}, status=200)
+

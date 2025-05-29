@@ -181,3 +181,75 @@ def monte_carlo_portfolio_var_cvar(log_returns, num_simulations=10000, confidenc
     cvar = sorted_returns[:var_index].mean()
 
     return round(var, 5), round(cvar, 5)
+
+
+
+import os
+import requests
+from datetime import datetime
+
+def get_market_returns(symbol="SPY"):
+    """Fetch daily returns of SPY ETF (S&P500 proxy) from Alpha Vantage."""
+    try:
+        api_key = os.getenv("ALPHA_VANTAGE_API_KEY")
+        url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&outputsize=full&apikey={api_key}"
+        response = requests.get(url)
+
+        if response.status_code != 200:
+            print("Failed to fetch SPY data")
+            return []
+
+        data = response.json().get("Time Series (Daily)", {})
+        sorted_dates = sorted(data.keys())
+        prices = [float(data[date]["4. close"]) for date in sorted_dates]
+
+        returns = []
+        for i in range(1, len(prices)):
+            daily_return = (prices[i] - prices[i-1]) / prices[i-1]
+            returns.append((datetime.strptime(sorted_dates[i], "%Y-%m-%d"), daily_return))
+
+        return returns[::-1]  # Most recent first
+    except Exception as e:
+        print(f"Error fetching SPY data: {e}")
+        return []
+
+
+import os
+import requests
+from datetime import datetime
+
+import os
+import requests
+from datetime import datetime
+
+def get_treasury_yields():
+    """Fetch daily Treasury yields (3m to 30y) from Alpha Vantage."""
+    try:
+        api_key = os.getenv("ALPHA_VANTAGE_API_KEY")
+        maturities = ["3month", "2year", "5year", "7year", "10year", "30year"]
+        yields = {"date": None}
+
+        for maturity in maturities:
+            url = f"https://www.alphavantage.co/query?function=TREASURY_YIELD&interval=daily&maturity={maturity}&apikey={api_key}"
+            response = requests.get(url)
+
+            if response.status_code != 200:
+                print(f"Failed to fetch Treasury yield data for {maturity}")
+                yields[maturity.replace("month", "m").replace("year", "y")] = 0
+                continue
+
+            data = response.json().get("data", [])
+            if not data:
+                print(f"No treasury data found for {maturity}")
+                yields[maturity.replace("month", "m").replace("year", "y")] = 0
+                continue
+
+            latest = data[0]
+            if not yields["date"]:  # Set date from the first successful response
+                yields["date"] = datetime.strptime(latest["date"], "%Y-%m-%d")
+            yields[maturity.replace("month", "m").replace("year", "y")] = float(latest.get("value", 0))
+
+        return yields
+    except Exception as e:
+        print(f"Error fetching Treasury yield data: {e}")
+        return {"date": None, "3m": 0, "2y": 0, "5y": 0, "7y": 0, "10y": 0, "30y": 0}

@@ -321,6 +321,7 @@ body {
 #exchange-rate-card.dashboard-card       { grid-column: span 6; grid-row: span 2; min-height: 450px; } /* Made span 6 */
 #treasury-yield-chart-card.dashboard-card{ grid-column: span 12; grid-row: span 2; min-height: 480px; }
 #monte-carlo-risk-section.dashboard-card { grid-column: span 12; grid-row: span 2; min-height: 480px; }
+#treasury-yield-section.dashboard-card  { grid-column: span 12; grid-row: span 2; min-height: 480px; }
 
 /* --- Table Styling --- */
 .data-table {
@@ -846,6 +847,95 @@ body {
     margin-top: 30px;
     margin-bottom: 30px;
 }
+
+
+/* Example CSS - Add to your stylesheet */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Responsive grid */
+    gap: 1rem; /* Space between items */
+    padding: 1rem;
+}
+
+.stat-item {
+    background-color: var(--background-alt); /* Or your card's inner item background */
+    padding: 0.75rem 1rem;
+    border-radius: var(--border-radius-sm);
+    box-shadow: var(--shadow-sm);
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.stat-value {
+    font-size: 1.2em;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.stat-value.currency::before {
+    /* content: '$'; /* Or handle via JS if currency is dynamic */
+    /* margin-right: 0.1em; */
+}
+.stat-value.percentage::after {
+    /* content: '%'; */
+    /* font-size: 0.8em; */
+    /* margin-left: 0.1em; */
+}
+
+.stat-value.positive {
+    color: var(--accent-green, green); /* Fallback to green */
+}
+
+.stat-value.negative {
+    color: var(--accent-red, red); /* Fallback to red */
+}
+
+/* In analyze_portfolio.css */
+
+/* Grid for Treasury Yield Stats */
+.grid-2col {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    padding: 10px 0;
+}
+
+/* Stat Items */
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+    transition: background 0.2s ease;
+}
+.stat-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+.stat-label {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+}
+.stat-value {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: var(--accent-green);
+    text-shadow: 0 0 5px rgba(var(--accent-green-rgb), 0.35);
+}
+
+/* Responsive Adjustment for Smaller Screens */
+@media (max-width: 767px) {
+    .grid-2col {
+        grid-template-columns: 1fr;
+    }
+}
+
 
 @keyframes fadeInToolPane {
     from { opacity: 0; transform: translateY(15px); }
