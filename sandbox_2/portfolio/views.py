@@ -2,6 +2,7 @@
 from .models import Portfolio, FundManager,HistoricalStockData
 from .forms import StockForm, PortfolioForm
 from django.contrib.auth import logout
+from django.views.decorators.cache import cache_page
 from django.core.cache import cache
 import pandas as pd
 import json
@@ -829,3 +830,60 @@ def get_all_yield_data(request, portfolio_id):
             "30y": yields["30y"]
         }}, status=200)
 
+
+
+# your_app_name/views.py
+
+from django.http import HttpResponse, HttpResponseServerError
+from django.core.cache import cache
+from redis.exceptions import RedisError # To catch potential Redis connection issues
+
+def test_redis_cache(request):
+    key = "my_django_test_key"  # Let's use a slightly more descriptive key
+    value_to_set = "Hello from Django, cached in Redis!"
+    html_response = "<h1>Redis Cache Test</h1>"
+
+    try:
+        # 1. Set a value in the cache
+        cache.set(key, value_to_set, timeout=60) # Cache for 60 seconds
+        html_response += f"<p>Attempted to set key '<code>{key}</code>' with value '<code>{value_to_set}</code>'.</p>"
+
+        # 2. Get the value from the cache
+        retrieved_value = cache.get(key)
+        html_response += f"<p>Attempted to retrieve key '<code>{key}</code>'.</p>"
+
+        if retrieved_value is not None:
+            html_response += f"<p style='color: green;'>Value from Redis: <strong>{retrieved_value}</strong></p>"
+            if retrieved_value == value_to_set:
+                html_response += "<p style='color: green; font-weight: bold;'>SUCCESS: Set and Get values match!</p>"
+            else:
+                html_response += f"<p style='color: orange; font-weight: bold;'>WARNING: Mismatch! Expected '{value_to_set}', but got '{retrieved_value}'.</p>"
+        else:
+            html_response += f"<p style='color: red; font-weight: bold;'>ERROR: Value for '<code>{key}</code>' was not found in cache. It might have expired or failed to set.</p>"
+
+        # 3. Optionally, you can try to delete it
+        # cache.delete(key)
+        # html_response += f"<p>Deleted key '<code>{key}</code>' (if it existed).</p>"
+
+        return HttpResponse(html_response)
+
+    except RedisError as e:
+        error_message = (
+            f"<h1>Redis Connection Error</h1>"
+            f"<p style='color: red;'>An error occurred while trying to communicate with Redis: <strong>{e}</strong></p>"
+            f"<p>Please check:</p>"
+            f"<ul>"
+            f"  <li>Your <code>REDIS_URL</code> in <code>.env</code> or environment variables.</li>"
+            f"  <li>Your <code>CACHES</code> configuration in <code>settings.py</code>.</li>"
+            f"  <li>That your Upstash (or other Redis) instance is running and accessible.</li>"
+            f"  <li>Your network connectivity and firewall rules (if applicable).</li>"
+            f"</ul>"
+        )
+        return HttpResponseServerError(error_message) # Return a 500 error
+    except Exception as e:
+        # Catch any other unexpected errors
+        error_message = (
+            f"<h1>Unexpected Error</h1>"
+            f"<p style='color: red;'>An unexpected error occurred: <strong>{e}</strong></p>"
+        )
+        return HttpResponseServerError(error_message)

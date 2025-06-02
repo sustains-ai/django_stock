@@ -23,6 +23,7 @@ urlpatterns = [
     path('monte-carlo-risk/<int:portfolio_id>/', views.monte_carlo_risk_view, name='monte_carlo_risk'),
     path("api/portfolio/<int:portfolio_id>/performance-stats/", views.performance_stats, name="performance-stats"),
     path('all-yield-data/<int:portfolio_id>/', views.get_all_yield_data, name='all_yield_data'),
+    path("test-redis/", views.test_redis_cache),
 
 
 

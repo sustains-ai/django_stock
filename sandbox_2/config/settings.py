@@ -156,14 +156,48 @@ LOGOUT_REDIRECT_URL = "/login/"  # URL to redirect to after logout
 
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+# settings.py
 import os
+from dotenv import load_dotenv
 
-PORT = os.getenv("PORT", "8000")  # Default to 8000 if PORT is not set
+load_dotenv()
 
+REDIS_URL = os.getenv("REDIS_URL") # Should be your "rediss://..." string from Upstash
 
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "unique-sustains-market-status-cache",
+if not REDIS_URL:
+    print("WARNING: REDIS_URL not set. Using LocMemCache.")
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        }
     }
-}
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_URL, # e.g., "rediss://default:password@host:port"
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                # REMOVE explicit SSL settings here if REDIS_URL starts with "rediss://"
+                # "CONNECTION_POOL_KWARGS": {"ssl": True}, # REMOVE or COMMENT OUT
+                # "CONNECTION_CLASS": "redis.connection.SSLConnection", # REMOVE or COMMENT OUT
+                # If you still have issues, you might need to ensure certificate verification
+                # is handled correctly, sometimes this helps with cloud providers:
+                "CONNECTION_POOL_KWARGS": {
+                     "ssl_cert_reqs": None, # Disables client-side cert verification;
+                                            # Upstash has valid certs, so this is usually for
+                                            # specific network environments or older Python SSL.
+                                            # Try without this first.
+                }
+            }
+        }
+    }
+    # If the above with "ssl_cert_reqs": None doesn't work,
+    # try with an empty OPTIONS dict first (most idiomatic for rediss://)
+    # "OPTIONS": {
+    #     "CLIENT_CLASS": "django_redis.client.DefaultClient",
+    # }
+
+
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_CACHE_ALIAS = "default"
