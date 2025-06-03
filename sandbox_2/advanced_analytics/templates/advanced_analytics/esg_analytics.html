@@ -12,6 +12,10 @@
     <button onclick="fetchESGScores({{ portfolio_id }})">Load ESG Scores</button>
 
     <div id="no-data-message" style="margin-top: 20px; color: red;"></div>
+    <div id="loading-spinner" style="display: none; text-align: center; margin-top: 20px;">
+        <div class="spinner"></div>
+    </div>
+
 
     <table id="esg-table" style="margin-top: 20px;">
         <thead>

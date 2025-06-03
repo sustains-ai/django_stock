@@ -52,3 +52,18 @@ th {
     color: #f87171; /* soft red tone for alerts */
     font-weight: 500;
 }
+
+.spinner {
+    border: 6px solid #2d3748;
+    border-top: 6px solid #0ABF53;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
