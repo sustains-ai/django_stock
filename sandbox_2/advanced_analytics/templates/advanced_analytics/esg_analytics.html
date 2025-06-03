@@ -1,5 +1,38 @@
-{% extends "portfolio/base.html" %}
-{% block content %}
-<h2>ESG Analytics for Portfolio {{ portfolio_id }}</h2>
-<p>Coming soon...</p>
-{% endblock %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ESG Analytics</title>
+    <link rel="stylesheet" href="{% static 'css/esg_analytics.css' %}">
+</head>
+<body>
+<div class="esg-dashboard">
+    <h1>ESG Scores for Portfolio</h1>
+    <button onclick="fetchESGScores({{ portfolio_id }})">Load ESG Scores</button>
+
+    <div id="no-data-message" style="margin-top: 20px; color: red;"></div>
+
+    <table id="esg-table" style="margin-top: 20px;">
+        <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Total ESG Score</th>
+                <th>Environment</th>
+                <th>Governance</th>
+                <th>Social</th>
+                <th>Controversy Level</th>
+                <th>Controversy Score</th>
+                <th>ESG Risk Level</th>
+            </tr>
+        </thead>
+        <tbody id="esg-scores-body"></tbody>
+    </table>
+</div>
+
+<script>
+    console.log("Script loaded");
+</script>
+<script src="{% static 'js/esg_analytics.js' %}"></script>
+</body>
+</html>
