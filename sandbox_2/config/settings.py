@@ -136,6 +136,7 @@ STATIC_URL = "/static/"
 # Add this to specify the static files directory
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'portfolio/static'),
+    os.path.join(BASE_DIR,'advanced_analytics/static')
 ]
 
 # ✅ Add WhiteNoise for serving static files in production
