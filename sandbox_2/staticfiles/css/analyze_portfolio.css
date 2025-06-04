@@ -522,6 +522,7 @@ body {
     flex-direction: column;
     border: 1px solid var(--border-light);
     box-shadow: var(--shadow-inner-soft);
+
 }
 .pie-chart-title { font-size: 1rem; color: var(--text-primary); margin-bottom: 15px; font-weight: 500; }
 .ai-insights-box { margin-top: 24px; }
