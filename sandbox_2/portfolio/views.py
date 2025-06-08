@@ -1,3 +1,4 @@
+from datetime import datetime
 
 from .models import Portfolio, FundManager,HistoricalStockData
 from .forms import StockForm, PortfolioForm
@@ -59,6 +60,7 @@ import requests
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login
 from django.shortcuts import render, redirect
+from django.utils.timezone import now
 
 from .utils import fetch_news_sentiment,global_open_closed_status
 from .ai_agent import portfolio_risk_agent
@@ -79,6 +81,7 @@ def custom_login(request):
     print("🟡 Login page loaded")
 
     return render(request, 'portfolio/login.html', {
+        'timestamp': datetime.now().timestamp(),
         'form': form,
         'news_data': news_data,
         'news_fetch_success': news_fetch_success
@@ -313,7 +316,7 @@ def analyze_portfolio(request, portfolio_id):
         'risk_measures': risk_measures,
         'portfolio_value_json': json.dumps(portfolio_value_json or []),
         'ai_answer': ai_answer,
-
+        'timestamp': int(datetime.now().timestamp())
     })
 
 
