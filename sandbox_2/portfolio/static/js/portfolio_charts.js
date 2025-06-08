@@ -5,16 +5,13 @@
 
 // New palette for charts, derived from the B2B scheme
 const chartColorPalette = [
-    '#D3D3D3', // Primary Accent Grey (From Manu)
-    '#1DE9B6', // Primary Accent Green (From Manu)
-    '#FF9292', // Highlight soft red (From Manu)
-    '#B0B0B0', // Secondary Accent grey (From Manu)
-    '#A4A4A4', // Secondary grey (From Manu)
-    '#3E3E3E', // Professional black (From Manu)
-    '#AAC0AF', // Secondary green (From Coolors)
-    '#3D5467', // Charcoal (From Coolers)
-    // Ask Manu for more colors
-];
+    "#FF5733", "#54AA63", "#E231E2", "#800567", "#111169",
+    "#800522", "#78CDE2", "#FA02F2", "#FF00FF", "#FA0202",
+    "#FA7A02", "#053E80", "#028FFA", "#FF007F", "#54E578",
+    "#020EFA", "#B802FA", "#0E4A0F", "#FA027E", "#FA0227",
+    "#379C16", "#05806D", "#13579B", "#260580", "#9BCE24",
+    "#8C0A1B"
+]
 
 // ✅ Use colors from the new palette cyclically
 function getChartColors(length) {

@@ -1,54 +1,177 @@
-<!--<h1>Add Stock</h1>-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Add Stock</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      background-color: #000;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #333;
+    }
 
-<!--<form method="post">-->
-<!--    {% csrf_token %}-->
+    .page-wrapper {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
 
-<!--    &lt;!&ndash; Portfolio Selection Dropdown &ndash;&gt;-->
-<!--    <label for="portfolio_id">Select Portfolio:</label>-->
-<!--    <select name="portfolio_id" id="portfolio_id" required>-->
-<!--        <option value="">&#45;&#45; Select Portfolio &#45;&#45;</option>-->
-<!--        {% for portfolio in portfolios %}-->
-<!--            <option value="{{ portfolio.id }}">{{ portfolio.name }}</option>-->
-<!--        {% endfor %}-->
-<!--    </select>-->
+    .form-container {
+      width: 100%;
+      max-width: 600px;
+      background-color: #fff;
+      border-radius: 12px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+      padding: 2rem 1.5rem;
+    }
 
-<!--    &lt;!&ndash; Stock Form Fields &ndash;&gt;-->
-<!--    {{ form.as_p }}-->
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 600;
+      text-align: center;
+      color: #0abf53;
+      margin-bottom: 0.3rem;
+    }
 
-<!--    <button type="submit">Add Stock</button>-->
-<!--</form>-->
-<!--&lt;!&ndash;<h1>Add Stock</h1>&ndash;&gt;-->
+    .form-description {
+      text-align: center;
+      color: #6c757d;
+      margin-bottom: 1.25rem;
+      font-size: 0.95rem;
+    }
 
-<!--&lt;!&ndash;<form method="post">&ndash;&gt;-->
-<!--&lt;!&ndash;    {% csrf_token %}&ndash;&gt;-->
+    .error-message {
+      color: #b00020;
+      background-color: #f8d7da;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      margin-bottom: 1.25rem;
+      font-weight: 600;
+      text-align: center;
+    }
 
-<!--&lt;!&ndash;    &lt;!&ndash; Stock Form Fields (Including Portfolio) &ndash;&gt;&ndash;&gt;-->
-<!--&lt;!&ndash;    {{ form.as_p }}&ndash;&gt;-->
+    form p {
+      margin-bottom: 1.2rem;
+      /* Responsive layout */
+    }
 
-<!--&lt;!&ndash;    <button type="submit">Add Stock</button>&ndash;&gt;-->
-<!--&lt;!&ndash;</form>&ndash;&gt;-->
+    /* Responsive form layout: stack label & input on small, side by side on larger */
+    @media (max-width: 576px) {
+      form p {
+        display: flex;
+        flex-direction: column;
+      }
 
+      form p label {
+        margin-bottom: 0.3rem;
+      }
+    }
 
-<h1>Add Stock</h1>
+    @media (min-width: 577px) {
+      form p {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
 
-{% if error %}
-    <p style="color: red;">{{ error }}</p>  <!-- Display error messages -->
-{% endif %}
+      form p label {
+        flex: 0 0 140px; /* fixed label width */
+        margin-bottom: 0;
+      }
 
-<form method="post">
-    {% csrf_token %}
+      form p input,
+      form p select,
+      form p textarea {
+        flex: 1 1 auto;
+      }
+    }
 
-    <!-- Portfolio Selection Dropdown -->
-    <label for="portfolio_id">Select Portfolio:</label>
-    <select name="portfolio_id" id="portfolio_id" required>
-        <option value="">-- Select Portfolio --</option>
-        {% for portfolio in portfolios %}
-            <option value="{{ portfolio.id }}">{{ portfolio.name }}</option>
-        {% endfor %}
-    </select>
+    form p label {
+      font-weight: 500;
+      color: #333;
+      min-width: 120px;
+      user-select: none;
+    }
 
-    <!-- Stock Form Fields -->
-    {{ form.as_p }}
+    form p input,
+    form p select,
+    form p textarea {
+      width: 100%;
+      max-width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #ced4da;
+      border-radius: 8px;
+      font-size: 1rem;
+      box-sizing: border-box;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      word-wrap: break-word;
+    }
 
-    <button type="submit">Add Stock</button>
-</form>
+    form p input:focus,
+    form p select:focus,
+    form p textarea:focus {
+      border-color: #0abf53;
+      outline: none;
+      box-shadow: 0 0 0 0.2rem rgba(10, 191, 83, 0.25);
+    }
+
+    .btn-submit {
+      display: block;
+      width: 100%;
+      background-color: #0abf53;
+      color: white;
+      padding: 0.75rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      margin-top: 1rem;
+    }
+
+    .btn-submit:hover {
+      background-color: #099548;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrapper">
+    <div class="form-container">
+      <h1>Add Stock</h1>
+
+      <p class="form-description">
+        Add stocks to your portfolio by selecting the portfolio and entering stock details below.
+      </p>
+
+      {% if error %}
+        <div class="error-message">{{ error }}</div>
+      {% endif %}
+
+      <form method="post">
+        {% csrf_token %}
+
+        <p>
+          <label for="portfolio_id">Select Portfolio:</label>
+          <select name="portfolio_id" id="portfolio_id" required>
+            <option value="" disabled selected>-- Select Portfolio --</option>
+            {% for portfolio in portfolios %}
+              <option value="{{ portfolio.id }}">{{ portfolio.name }}</option>
+            {% endfor %}
+          </select>
+        </p>
+
+        {{ form.as_p }}
+
+        <button type="submit" class="btn-submit">Add Stock</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

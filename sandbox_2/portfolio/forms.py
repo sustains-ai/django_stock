@@ -9,4 +9,4 @@ class StockForm(forms.ModelForm):
 class PortfolioForm(forms.ModelForm):
     class Meta:
         model = Portfolio
-        fields = ['name']
+        fields = ['name', 'description']

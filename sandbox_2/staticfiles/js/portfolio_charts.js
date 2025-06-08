@@ -151,96 +151,95 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const stockChartElement = document.getElementById("stockChart");
-    if (stockChartElement) {
-        try {
-            const historicalDataString = stockChartElement.dataset.historical;
-            if (!historicalDataString) {
-                // console.warn("Historical data attribute not found for stockChart.");
-                return;
-            }
-            const historicalData = JSON.parse(historicalDataString);
-            if (Object.keys(historicalData).length === 0) {
-                // console.warn("No historical data available for stockChart.");
-                return;
-            }
 
-            // Ensure there's at least one stock's data to get dates from
-            const firstStockSymbol = Object.keys(historicalData)[0];
-            if (!historicalData[firstStockSymbol] || !historicalData[firstStockSymbol].dates) {
-                console.error("Historical data format error: missing dates for the first stock.");
-                return;
-            }
-            const labels = historicalData[firstStockSymbol].dates;
+    if (!stockChartElement) return;
 
-            // Use getChartColors for multiple lines, ensuring distinct colors
-            const lineColors = getChartColors(Object.keys(historicalData).length);
-            const datasets = Object.keys(historicalData).map((symbol, index) => ({
+    try {
+        const historicalDataStr = stockChartElement.dataset.historical;
+        if (!historicalDataStr) {
+            console.warn("No historical data found in stockChart dataset.");
+            return;
+        }
+
+        const historicalData = JSON.parse(historicalDataStr);
+        const stockSymbols = Object.keys(historicalData);
+
+        if (stockSymbols.length === 0) {
+            console.warn("Parsed historical data is empty.");
+            return;
+        }
+
+        const firstSymbol = stockSymbols[0];
+        const firstStock = historicalData[firstSymbol];
+
+        if (!firstStock || !Array.isArray(firstStock.dates)) {
+            console.error("Invalid data format: 'dates' array missing for the first stock.");
+            return;
+        }
+
+        const labels = firstStock.dates;
+        const lineColors = getChartColors(stockSymbols.length);
+
+        const datasets = stockSymbols.map((symbol, index) => {
+            const stock = historicalData[symbol];
+            return {
                 label: symbol,
-                data: historicalData[symbol].prices,
-                borderColor: lineColors[index], // USE NEW PALETTE (cyclically)
-                backgroundColor: lineColors[index] + '33', // Lighter version with alpha for area fill if desired
-                fill: false, // Set to 'origin' or true for area under line
-                tension: 0.1 // Makes lines a bit smoother
-            }));
+                data: stock.prices || [],
+                borderColor: lineColors[index % lineColors.length],
+                backgroundColor: lineColors[index % lineColors.length] + '33',
+                fill: false,
+                tension: 0.1,
+            };
+        });
 
-            new Chart(stockChartElement.getContext("2d"), {
-                type: 'line',
-                data: { labels, datasets },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                color: '#CDD9E5' // Primary Text
-                            }
-                        },
+        const ctx = stockChartElement.getContext("2d");
+        new Chart(ctx, {
+            type: 'line',
+            data: { labels, datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#CDD9E5' }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Stock Price Fluctuations',
+                        color: '#CDD9E5',
+                        font: { size: 16 }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    x: {
                         title: {
                             display: true,
-                            text: 'Stock Price Fluctuations',
-                            color: '#CDD9E5',
-                            font: { size: 16 }
+                            text: 'Date',
+                            color: '#8B949E'
                         },
-                        tooltip: {
-                            mode: 'index', // Show tooltip for all datasets at that x-index
-                            intersect: false,
-                        }
+                        ticks: { color: '#8B949E' },
+                        grid: { color: '#30363D' }
                     },
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Date',
-                                color: '#8B949E' // Secondary Text
-                            },
-                            ticks: {
-                                color: '#8B949E' // Secondary Text
-                            },
-                            grid: {
-                                color: '#30363D' // Borders/Dividers
-                            }
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Price',
+                            color: '#8B949E'
                         },
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Price', // Removed (Adjusted Close) for brevity unless essential
-                                color: '#8B949E' // Secondary Text
-                            },
-                            ticks: {
-                                color: '#8B949E', // Secondary Text
-                                // beginAtZero: false // Default, adjust if needed
-                            },
-                            grid: {
-                                color: '#30363D' // Borders/Dividers
-                            }
-                        }
+                        ticks: { color: '#8B949E' },
+                        grid: { color: '#30363D' }
                     }
                 }
-            });
-        } catch (error) {
-            console.error("Error processing or rendering stockChart:", error);
-        }
+            }
+        });
+
+    } catch (err) {
+        console.error("Failed to render stockChart:", err);
     }
 
     // These calls will now use the updated createPieChart function with the new palette

@@ -9,48 +9,37 @@ html, body {
 
 body {
     font-family: 'Roboto', sans-serif;
+    background-color: #f9fafb;
 }
-
-/* Navbar */
 .navbar-custom {
     background-color: #1a1a1a;
-    border-bottom: 1px solid #333;
 }
-
-.navbar-brand {
-    color: #0ABF53 !important;
-    font-weight: 700;
+.navbar-custom .navbar-brand,
+.navbar-custom .nav-link {
+    color: #fff;
 }
-
-.nav-link {
-    color: #e0e0e0 !important;
+.navbar-custom .nav-link:hover {
+    color: #0dcaf0;
 }
-
-.nav-link:hover {
-    color: #0ABF53 !important;
+.navbar-toggler {
+    border-color: rgba(255, 255, 255, 0.2);
 }
-
-/* Main Content */
-main {
-    /*padding: 2rem 0 4rem 0; !* Maintain padding for spacing *!*/
-    flex:1;
-}
-
-/* Footer */
-footer {
+.footer {
     background-color: #1a1a1a;
-    color: #e0e0e0;
-    border-top: 1px solid #333;
-    padding: 2rem 0;
-    margin-top: 2rem;
+    font-size: 0.9rem;
 }
-
-footer p {
-    margin: 0;
+main {
+    padding: 40px 20px;
 }
-
-footer strong {
-    color: #0ABF53;
+.btn-outline-light:hover {
+    background-color: #FFFFFF;
+    color: #000;
+}
+@media (max-width: 768px) {
+    .navbar-nav {
+        text-align: center;
+        margin-top: 10px;
+    }
 }
 
 /* Ensure Last Section Doesn't Collapse Margin with Footer */

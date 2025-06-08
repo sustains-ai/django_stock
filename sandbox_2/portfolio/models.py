@@ -28,6 +28,7 @@ class FundManager(models.Model):
 
 class Portfolio(models.Model):
     name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)  # Optional field
     fund_manager = models.ForeignKey(FundManager, on_delete=models.CASCADE, related_name="portfolios")
     created_at = models.DateTimeField(auto_now_add=True)
     # Optional: Add an updated_at field for easier cache invalidation later if needed for portfolio-level caches

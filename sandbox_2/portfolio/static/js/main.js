@@ -24,13 +24,10 @@ document.addEventListener("DOMContentLoaded", function() {
                 datasets: [{
                     data: stockValues,
                     backgroundColor: [
-                        'rgba(255, 99, 132, 0.6)',
-                        'rgba(54, 162, 235, 0.6)',
-                        'rgba(255, 206, 86, 0.6)',
-                        'rgba(75, 192, 192, 0.6)',
-                        'rgba(153, 102, 255, 0.6)',
-                        'rgba(255, 159, 64, 0.6)'
-                    ]
+                        '#1e272e', '#485460', '#808e9b', '#2f3542',
+                        '#57606f', '#3742fa', '#5352ed', '#2c3e50',
+                        '#34495e', '#3d3d3d', '#5f27cd', '#222f3e'
+                    ],
                 }]
             },
             options: {
