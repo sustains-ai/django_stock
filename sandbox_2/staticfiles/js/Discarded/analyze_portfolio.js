@@ -69,12 +69,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 datasets: [{
                     data: stockValues,
                     backgroundColor: [
-                        'rgba(255, 99, 132, 0.6)',
-                        'rgba(54, 162, 235, 0.6)',
-                        'rgba(255, 206, 86, 0.6)',
-                        'rgba(75, 192, 192, 0.6)',
-                        'rgba(153, 102, 255, 0.6)',
-                        'rgba(255, 159, 64, 0.6)'
+                        "#FF5733", "#54AA63", "#E231E2", "#800567", "#111169",
+                        "#800522", "#78CDE2", "#FA02F2", "#FF00FF", "#FA0202",
+                        "#FA7A02", "#053E80", "#028FFA", "#FF007F", "#54E578",
+                        "#020EFA", "#B802FA", "#0E4A0F", "#FA027E", "#FA0227",
+                        "#379C16", "#05806D", "#13579B", "#260580", "#9BCE24",
+                        "#8C0A1B"
                     ]
                 }]
             },
