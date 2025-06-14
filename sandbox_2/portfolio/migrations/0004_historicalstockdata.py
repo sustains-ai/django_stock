@@ -14,14 +14,31 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='HistoricalStockData',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('symbol', models.CharField(max_length=10)),
-                ('date', models.DateField()),
-                ('adjusted_close', models.FloatField()),
-                ('portfolio', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='historical_data', to='portfolio.portfolio')),
+                ('id',
+                 models.BigAutoField(
+                     auto_created=True,
+                     primary_key=True,
+                     serialize=False,
+                     verbose_name='ID')),
+                ('symbol',
+                 models.CharField(
+                     max_length=10)),
+                ('date',
+                 models.DateField()),
+                ('adjusted_close',
+                 models.FloatField()),
+                ('portfolio',
+                 models.ForeignKey(
+                     on_delete=django.db.models.deletion.CASCADE,
+                     related_name='historical_data',
+                     to='portfolio.portfolio')),
             ],
             options={
-                'unique_together': {('portfolio', 'symbol', 'date')},
+                'unique_together': {
+                    (
+                        'portfolio',
+                        'symbol',
+                        'date')},
             },
         ),
     ]

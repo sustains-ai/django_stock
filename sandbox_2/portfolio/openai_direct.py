@@ -1,10 +1,10 @@
 from openai import OpenAI
-import os
 from dotenv import load_dotenv
 load_dotenv()
 
 # Initialize OpenAI client
 client = OpenAI()
+
 
 def ask_openai(question: str) -> str:
     response = client.chat.completions.create(
@@ -15,6 +15,7 @@ def ask_openai(question: str) -> str:
         ],
     )
     return response.choices[0].message.content.strip()
+
 
 # Test run
 if __name__ == "__main__":

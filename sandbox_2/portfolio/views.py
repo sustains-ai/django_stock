@@ -1,9 +1,25 @@
+from .utils import fetch_treasury_yield
+from .utils import fetch_news_sentiment, global_open_closed_status
+# To catch potential Redis connection issues
+from redis.exceptions import RedisError
+from django.http import HttpResponse, HttpResponseServerError
+from .utils import get_treasury_yields
+from .utils import get_market_returns
+from collections import defaultdict
+from .utils import monte_carlo_portfolio_var_cvar  # Assuming this is correct
+from .models import Portfolio, HistoricalStockData  # Assuming these are correct
+from .utils import monte_carlo_portfolio_var_cvar
+from .utils import fetch_currency_exchange_rates
+from .utils import fetch_news_sentiment
+from django.views.decorators.http import require_POST
+from .ai_agent import portfolio_risk_agent
+from django.utils.timezone import now
 from datetime import datetime
 
-from .models import Portfolio, FundManager,HistoricalStockData
+from .models import Portfolio, FundManager, HistoricalStockData
 from .forms import StockForm, PortfolioForm
 from django.contrib.auth import logout
-from django.views.decorators.cache import cache_page
+from django.views.decorators.cache import never_cache
 from django.core.cache import cache
 import pandas as pd
 import json
@@ -37,7 +53,7 @@ import pandas as pd
 from .models import Portfolio, HistoricalStockData
 from .risk_analysis import perform_risk_analysis  # Import new function
 
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import login
 from django.shortcuts import render, redirect
 from django.contrib.auth.forms import AuthenticationForm
 
@@ -46,8 +62,6 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 
-import os
-import requests
 from django.shortcuts import render, redirect
 from django.contrib.auth import login
 from django.contrib.auth.forms import AuthenticationForm
@@ -55,23 +69,12 @@ from dotenv import load_dotenv
 
 load_dotenv()  # Ensures .env is loaded if not already
 
-import os
-import requests
-from django.contrib.auth.forms import AuthenticationForm
-from django.contrib.auth import login
-from django.shortcuts import render, redirect
-from django.utils.timezone import now
-
-from .utils import fetch_news_sentiment,global_open_closed_status
-from .ai_agent import portfolio_risk_agent
-
-
-
 
 def custom_login(request):
     form = AuthenticationForm(data=request.POST or None)
     news_data = fetch_news_sentiment()
-    news_fetch_success = bool(news_data)  # True if news_data is not empty, False otherwise
+    # True if news_data is not empty, False otherwise
+    news_fetch_success = bool(news_data)
     print("✅ News fetch success:", news_fetch_success)
 
     if request.method == "POST" and form.is_valid():
@@ -88,13 +91,9 @@ def custom_login(request):
     })
 
 
-
-
 def logout_view(request):
     logout(request)
     return redirect('login')  # or redirect('/') if you prefer
-
-
 
 
 def index(request):
@@ -105,11 +104,9 @@ def index(request):
 @fund_manager_required
 def portfolio_list(request):
     portfolios = Portfolio.objects.filter(fund_manager__user=request.user)
-    return render(request, 'portfolio/portfolio_list.html', {'portfolios': portfolios})
-
-
-
-
+    return render(request,
+                  'portfolio/portfolio_list.html',
+                  {'portfolios': portfolios})
 
 
 @login_required
@@ -117,20 +114,20 @@ def add_portfolio(request):
     if request.method == 'POST':
         form = PortfolioForm(request.POST)
         if form.is_valid():
-            portfolio = form.save(commit=False)  # Don't save to the database yet
+            # Don't save to the database yet
+            portfolio = form.save(commit=False)
             # Associate the portfolio with the logged-in user's fund manager
             try:
-                portfolio.fund_manager = FundManager.objects.get(user=request.user)
+                portfolio.fund_manager = FundManager.objects.get(
+                    user=request.user)
                 portfolio.save()  # Now save to the database
                 return redirect('portfolio_list')
             except FundManager.DoesNotExist:
-                return render(request, 'portfolio/error.html', {'message': 'No FundManager associated with this user.'})
+                return render(request, 'portfolio/error.html',
+                              {'message': 'No FundManager associated with this user.'})
     else:
         form = PortfolioForm()
     return render(request, 'portfolio/add_portfolio.html', {'form': form})
-
-
-
 
 
 @login_required
@@ -143,12 +140,15 @@ def add_stock(request):
             portfolio_id = request.POST.get("portfolio_id")
             if not portfolio_id:
                 messages.error(request, "Please select a portfolio!")
-                return render(request, "portfolio/add_stock.html", {"form": form, "portfolios": portfolios})
+                return render(request, "portfolio/add_stock.html",
+                              {"form": form, "portfolios": portfolios})
 
-            portfolio = get_object_or_404(Portfolio, id=portfolio_id, fund_manager__user=request.user)
+            portfolio = get_object_or_404(
+                Portfolio, id=portfolio_id, fund_manager__user=request.user)
             stock_data.portfolio = portfolio
 
-            existing_stock = portfolio.stocks.filter(symbol=stock_data.symbol).first()
+            existing_stock = portfolio.stocks.filter(
+                symbol=stock_data.symbol).first()
             if existing_stock:
                 total_quantity = existing_stock.quantity + stock_data.quantity
                 weighted_price = (
@@ -158,75 +158,100 @@ def add_stock(request):
                 existing_stock.quantity = total_quantity
                 existing_stock.price = weighted_price
                 existing_stock.save()
-                messages.success(request, f"Updated {stock_data.symbol} in {portfolio.name}")
+                messages.success(
+                    request, f"Updated {
+                        stock_data.symbol} in {
+                        portfolio.name}")
             else:
                 stock_data.save()
                 if stock_data.fetch_and_store_historical_data():
-                    messages.success(request, f"Added {stock_data.symbol} to {portfolio.name} with Alpha Vantage data")
+                    messages.success(
+                        request, f"Added {
+                            stock_data.symbol} to {
+                            portfolio.name} with Alpha Vantage data")
                 else:
-                    messages.warning(request, f"Added {stock_data.symbol} to {portfolio.name}, but failed to fetch Alpha Vantage data")
-            return redirect("analyze_portfolio",portfolio_id=portfolio.id)
+                    messages.warning(
+                        request, f"Added {
+                            stock_data.symbol} to {
+                            portfolio.name}, but failed to fetch Alpha Vantage data")
+            return redirect("analyze_portfolio", portfolio_id=portfolio.id)
         else:
-            messages.error(request, "Invalid stock data. Please check the form.")
+            messages.error(
+                request, "Invalid stock data. Please check the form.")
     else:
         form = StockForm()
-    return render(request, "portfolio/add_stock.html", {"form": form, "portfolios": portfolios})
+    return render(request, "portfolio/add_stock.html",
+                  {"form": form, "portfolios": portfolios})
 
-
-
-from django.views.decorators.http import require_POST
 
 @login_required
 @require_POST
 def delete_stock(request, portfolio_id, symbol):
-    portfolio = get_object_or_404(Portfolio, id=portfolio_id, fund_manager__user=request.user)
+    portfolio = get_object_or_404(
+        Portfolio,
+        id=portfolio_id,
+        fund_manager__user=request.user)
     stock = portfolio.stocks.filter(symbol=symbol).first()
 
     if stock:
         stock.delete()
-        messages.success(request, f'Stock {symbol} has been removed from {portfolio.name}.')
+        messages.success(
+            request,
+            f'Stock {symbol} has been removed from {
+                portfolio.name}.')
     else:
-        messages.warning(request, f'Stock {symbol} not found in this portfolio.')
+        messages.warning(
+            request,
+            f'Stock {symbol} not found in this portfolio.')
 
     return redirect('analyze_portfolio', portfolio_id=portfolio.id)
 
 
-
-
-
-
-
-
-
-
+@never_cache
 @login_required
 def analyze_portfolio(request, portfolio_id):
-    portfolio = get_object_or_404(Portfolio, id=portfolio_id, fund_manager__user=request.user)
+    portfolio = get_object_or_404(
+        Portfolio,
+        id=portfolio_id,
+        fund_manager__user=request.user)
     stocks = portfolio.stocks.all()
 
-    # Calculate stock data and total value
+    # Calculate total value and structure stock data
     stock_data = []
     total_value = 0
+    stock_symbols = []
+
     for stock in stocks:
         manual_price = stock.price
-        live_price = stock.get_live_price()
-        price = manual_price if manual_price else live_price
+        try:
+            live_price = stock.get_live_price()
+        except Exception as e:
+            print(f"⚠️ Error fetching live price for {stock.symbol}: {e}")
+            live_price = None
+
+        price = manual_price or live_price
         if price is not None:
             stock_total = price * stock.quantity
             total_value += stock_total
+            stock_symbols.append(stock.symbol)
+
             stock_data.append({
                 'name': stock.name,
                 'symbol': stock.symbol,
                 'quantity': stock.quantity,
                 'manual_price': float(manual_price) if manual_price else None,
-                'live_price': live_price,
+                'live_price': float(live_price) if live_price else None,
                 'total_value': float(stock_total),
             })
 
-    # Fetch historical prices
-    historical_prices_qs = HistoricalStockData.objects.filter(portfolio=portfolio).order_by("date")
-    if not historical_prices_qs.exists():
-        messages.warning(request, "No historical data available for this portfolio.")
+    # Fetch historical stock data
+    historical_qs = HistoricalStockData.objects.filter(
+        portfolio=portfolio).order_by("date")
+
+    if not historical_qs.exists():
+        messages.warning(
+            request,
+            "No historical data available for this portfolio.")
         return render(request, 'portfolio/analyze_portfolio.html', {
             'portfolio': portfolio,
             'stock_data': stock_data,
@@ -234,93 +259,90 @@ def analyze_portfolio(request, portfolio_id):
             'historical_data': json.dumps({}),
             'portfolio_analysis': None,
             'risk_measures': {},
+            'portfolio_value_json': json.dumps([]),
+            'ai_answer': None,
+            'timestamp': int(now().timestamp())
         })
 
-    # Convert to DataFrame
-    historical_prices_df = pd.DataFrame.from_records(
-        historical_prices_qs.values("date", "symbol", "adjusted_close")
-    )
+    df = pd.DataFrame.from_records(
+        historical_qs.values(
+            "date", "symbol", "adjusted_close"))
+    if df.empty:
+        messages.warning(request, "Historical data exists but is empty.")
+        return render(...)
 
-    # Pivot to time series and filter available symbols
-    daily_prices = historical_prices_df.pivot(index='date', columns='symbol', values='adjusted_close').dropna()
-    available_symbols = daily_prices.columns.tolist()
-    stock_symbols = [stock.symbol for stock in stocks if stock.symbol in available_symbols]
+    # Pivot time series
+    pivot_df = df.pivot(
+        index='date',
+        columns='symbol',
+        values='adjusted_close').dropna()
+    available_symbols = pivot_df.columns.tolist()
+    filtered_symbols = [s for s in stock_symbols if s in available_symbols]
 
-    # Build historical data for template
-    historical_data = {}
-    for symbol in stock_symbols:
-        symbol_data = historical_prices_df[historical_prices_df["symbol"] == symbol]
-        historical_data[symbol] = {
-            "dates": symbol_data["date"].astype(str).tolist(),
-            "prices": symbol_data["adjusted_close"].tolist()
-        }
+    if not filtered_symbols:
+        messages.warning(
+            request,
+            "None of the stocks have valid historical data.")
+        return render(...)
 
-    # Compute daily returns
-    X = daily_prices.pct_change().dropna()
-    if X.empty:
-        messages.warning(request, "Not enough historical data to compute returns.")
-        return render(request, 'portfolio/analyze_portfolio.html', {
-            'portfolio': portfolio,
-            'stock_data': stock_data,
-            'total_value': float(total_value),
-            'historical_data': json.dumps(historical_data),
-            'portfolio_analysis': None,
-            'risk_measures': {},
-        })
-
-    # Perform risk analysis
-    portfolio_analysis = perform_risk_analysis(X)
-    risk_measures = calculate_risk_measures(X, stock_symbols)
-
-    if portfolio_analysis is None:
-        messages.warning(request, "Portfolio optimization failed. Ensure enough price data is available.")
-        return render(request, 'portfolio/analyze_portfolio.html', {
-            'portfolio': portfolio,
-            'stock_data': stock_data,
-            'total_value': float(total_value),
-            'historical_data': json.dumps(historical_data),
-            'portfolio_analysis': None,
-            'risk_measures': risk_measures,
-        })
-
-    # Prepare JSON for template
-    portfolio_analysis_json = {
-        "mean_variance": json.dumps(portfolio_analysis["mean_variance"]),
-        "cvar": json.dumps(portfolio_analysis["cvar"]),
-        "erc": json.dumps(portfolio_analysis["erc"]),
+    # Build historical data for chart
+    historical_data = {
+        symbol: {
+            "dates": df[df["symbol"] == symbol]["date"].astype(str).tolist(),
+            "prices": df[df["symbol"] == symbol]["adjusted_close"].tolist()
+        } for symbol in filtered_symbols
     }
 
-    # ✅ Compute portfolio value over time for Plotly chart
-    portfolio_values = (daily_prices[stock_symbols] * pd.Series(
-        {stock.symbol: stock.quantity for stock in stocks if stock.symbol in stock_symbols}
-    )).sum(axis=1)
+    # Compute daily returns
+    X = pivot_df[filtered_symbols].pct_change().dropna()
+    if X.empty:
+        messages.warning(
+            request,
+            "Not enough historical data to compute returns.")
+        return render(...)
+
+    # Risk analysis
+    portfolio_analysis = perform_risk_analysis(X)
+    risk_measures = calculate_risk_measures(X, filtered_symbols)
+
+    if not portfolio_analysis:
+        messages.warning(
+            request,
+            "Portfolio optimization failed due to insufficient data.")
+        return render(...)
+
+    # Portfolio time series value
+    portfolio_values = (pivot_df[filtered_symbols] * pd.Series({
+        stock.symbol: stock.quantity for stock in stocks if stock.symbol in filtered_symbols
+    })).sum(axis=1)
 
     portfolio_value_json = portfolio_values.reset_index()
     portfolio_value_json["date"] = portfolio_value_json["date"].astype(str)
-    portfolio_value_json.columns = ["x", "y"]  # Required for Plotly
+    portfolio_value_json.columns = ["x", "y"]
     portfolio_value_json = portfolio_value_json.to_dict(orient="records")
 
+    # Optional: AI Q&A
     ai_answer = None
     if request.method == "POST" and "ai_question" in request.POST:
-        question = request.POST.get("ai_question")
-        ai_answer = portfolio_risk_agent(portfolio_id, question)
-
+        ai_answer = portfolio_risk_agent(
+            portfolio_id, request.POST.get("ai_question"))
 
     return render(request, 'portfolio/analyze_portfolio.html', {
         'portfolio': portfolio,
         'stock_data': stock_data,
         'total_value': float(total_value),
-        'historical_data': json.dumps(historical_data or []),
-        'portfolio_analysis': portfolio_analysis_json,
+        'historical_data': json.dumps(historical_data),
+        'portfolio_analysis': {
+            "mean_variance": json.dumps(portfolio_analysis.get("mean_variance", {})),
+            "cvar": json.dumps(portfolio_analysis.get("cvar", {})),
+            "erc": json.dumps(portfolio_analysis.get("erc", {})),
+        },
         'optimal_table': portfolio_analysis,
         'risk_measures': risk_measures,
-        'portfolio_value_json': json.dumps(portfolio_value_json or []),
+        'portfolio_value_json': json.dumps(portfolio_value_json),
         'ai_answer': ai_answer,
-        'timestamp': int(datetime.now().timestamp())
+        'timestamp': int(now().timestamp())
     })
-
-
-
 
 
 @login_required
@@ -328,26 +350,40 @@ def portfolio_risk(request, portfolio_id):
     """
     Computes risk measures for the entire portfolio and tracks portfolio value over time.
     """
-    portfolio = get_object_or_404(Portfolio, id=portfolio_id, fund_manager__user=request.user)
+    portfolio = get_object_or_404(
+        Portfolio,
+        id=portfolio_id,
+        fund_manager__user=request.user)
     stocks = portfolio.stocks.all()
 
     # Fetch historical stock data
-    historical_prices_qs = HistoricalStockData.objects.filter(portfolio=portfolio).order_by("date")
+    historical_prices_qs = HistoricalStockData.objects.filter(
+        portfolio=portfolio).order_by("date")
     if not historical_prices_qs.exists():
-        messages.warning(request, "No historical data available to calculate portfolio risk.")
+        messages.warning(
+            request,
+            "No historical data available to calculate portfolio risk.")
         return render(request, "portfolio/analyze_portfolio.html", {
             "portfolio": portfolio,
         })
 
     # Convert to DataFrame
-    df = pd.DataFrame.from_records(historical_prices_qs.values("date", "symbol", "adjusted_close"))
-    price_data = df.pivot(index="date", columns="symbol", values="adjusted_close").ffill()
+    df = pd.DataFrame.from_records(
+        historical_prices_qs.values(
+            "date", "symbol", "adjusted_close"))
+    price_data = df.pivot(
+        index="date",
+        columns="symbol",
+        values="adjusted_close").ffill()
 
     # Filter stocks with historical data
     available_symbols = price_data.columns.tolist()
-    valid_stocks = [stock for stock in stocks if stock.symbol in available_symbols]
+    valid_stocks = [
+        stock for stock in stocks if stock.symbol in available_symbols]
     if not valid_stocks:
-        messages.warning(request, "No valid stocks with historical data for risk calculation.")
+        messages.warning(
+            request,
+            "No valid stocks with historical data for risk calculation.")
         return render(request, "portfolio/analyze_portfolio.html", {
             "portfolio": portfolio,
         })
@@ -355,13 +391,17 @@ def portfolio_risk(request, portfolio_id):
     # Compute daily returns
     X = price_data[available_symbols].pct_change().dropna()
     if X.empty:
-        messages.warning(request, "Not enough historical data to compute returns.")
+        messages.warning(
+            request,
+            "Not enough historical data to compute returns.")
         return render(request, "portfolio/analyze_portfolio.html", {
             "portfolio": portfolio,
         })
 
     # Portfolio weights (equal weights for available stocks)
-    portfolio_weights = {stock.symbol: 1 / len(available_symbols) for stock in valid_stocks}
+    portfolio_weights = {
+        stock.symbol: 1 /
+        len(available_symbols) for stock in valid_stocks}
 
     # Calculate portfolio risk
     portfolio_risk_measures = calculate_portfolio_risk(X, portfolio_weights)
@@ -370,7 +410,10 @@ def portfolio_risk(request, portfolio_id):
     stock_quantities = {stock.symbol: stock.quantity for stock in valid_stocks}
 
     # Compute portfolio value over time
-    portfolio_values = (price_data[available_symbols] * pd.Series(stock_quantities)).sum(axis=1)
+    portfolio_values = (
+        price_data[available_symbols] *
+        pd.Series(stock_quantities)).sum(
+        axis=1)
 
     # Convert portfolio value to JSON
     portfolio_value_json = portfolio_values.reset_index()
@@ -378,8 +421,6 @@ def portfolio_risk(request, portfolio_id):
     # portfolio_value_json = portfolio_value_json.rename(columns={"date": "x", 0: "y"}).to_dict(orient="records")
     portfolio_value_json.columns = ["x", "y"]  # ✅ Important fix
     portfolio_value_json = portfolio_value_json.to_dict(orient="records")
-
-
 
     print("DEBUG: Portfolio Value JSON")
     print(json.dumps(portfolio_value_json, indent=4))
@@ -393,10 +434,6 @@ def portfolio_risk(request, portfolio_id):
     }
 
     return render(request, "portfolio/analyze_portfolio.html", context)
-
-
-
-
 
 
 def calculate_efficient_frontier(X, portfolio_weights):
@@ -413,17 +450,24 @@ def calculate_efficient_frontier(X, portfolio_weights):
     points = 50  # Number of portfolios
     rm = "MV"  # Mean-Variance (Standard Deviation) Risk Measure
     hist = True
-    w_frontier = port.efficient_frontier(model="Classic", rm=rm, points=points, hist=hist)
+    w_frontier = port.efficient_frontier(
+        model="Classic", rm=rm, points=points, hist=hist)
 
     # Compute portfolio returns and standard deviation
     mu = port.mu.values.flatten()  # Expected returns
     sigma = port.cov.values  # Covariance matrix
 
     frontier_returns = np.dot(w_frontier.T, mu)  # Portfolio expected return
-    frontier_risks = np.sqrt(np.einsum('ij,jk,ik->i', w_frontier.T, sigma, w_frontier.T))  # Portfolio volatility
+    frontier_risks = np.sqrt(
+        np.einsum(
+            'ij,jk,ik->i',
+            w_frontier.T,
+            sigma,
+            w_frontier.T))  # Portfolio volatility
 
     # Format output as risk-return points
-    efficient_frontier_data = [{"x": float(frontier_risks[i]), "y": float(frontier_returns[i])} for i in range(points)]
+    efficient_frontier_data = [{"x": float(frontier_risks[i]), "y": float(
+        frontier_returns[i])} for i in range(points)]
 
     return efficient_frontier_data
 
@@ -438,13 +482,20 @@ def load_risk_measure(request, portfolio_id, measure):
 
     portfolio = get_object_or_404(Portfolio, id=portfolio_id)
 
-    historical_prices_qs = HistoricalStockData.objects.filter(portfolio=portfolio).order_by("date")
+    historical_prices_qs = HistoricalStockData.objects.filter(
+        portfolio=portfolio).order_by("date")
     if not historical_prices_qs.exists():
         print("❌ No historical data available")
-        return JsonResponse({"error": "No historical data available"}, status=400)
+        return JsonResponse(
+            {"error": "No historical data available"}, status=400)
 
-    df = pd.DataFrame.from_records(historical_prices_qs.values("date", "symbol", "adjusted_close"))
-    price_data = df.pivot(index="date", columns="symbol", values="adjusted_close")
+    df = pd.DataFrame.from_records(
+        historical_prices_qs.values(
+            "date", "symbol", "adjusted_close"))
+    price_data = df.pivot(
+        index="date",
+        columns="symbol",
+        values="adjusted_close")
 
     print("📊 Price Data:")
     print(price_data.head())  # Print first few rows for debugging
@@ -494,15 +545,20 @@ def delete_portfolio(request, portfolio_id):
         portfolio = get_object_or_404(Portfolio, id=portfolio_id)
         portfolio_name = portfolio.name
         portfolio.delete()
-        messages.success(request, f'Portfolio "{portfolio_name}" has been deleted successfully.')
+        messages.success(
+            request,
+            f'Portfolio "{portfolio_name}" has been deleted successfully.')
     return redirect('portfolio_list')
-
-
 
 
 def std_dev_view(request, portfolio_id):
     # ✅ Fetch Portfolio Data (Ensure it's always available)
-    portfolio_weights = {'AAPL': 0.2, 'TSLA': 0.2, 'GOOG': 0.2, 'META': 0.2, 'MSFT': 0.2}
+    portfolio_weights = {
+        'AAPL': 0.2,
+        'TSLA': 0.2,
+        'GOOG': 0.2,
+        'META': 0.2,
+        'MSFT': 0.2}
     efficient_frontier_data = [
         {"x": 0.15, "y": 0.08},
         {"x": 0.20, "y": 0.10},
@@ -517,7 +573,6 @@ def std_dev_view(request, portfolio_id):
         "portfolio_weights_json": portfolio_weights_json,
         "efficient_frontier_json": efficient_frontier_json,
     })
-
 
 
 # def market_status_view(request):
@@ -535,21 +590,19 @@ def std_dev_view(request, portfolio_id):
 #         print(f"❌ Serving fallback from cache: {e}")
 #         if fallback_data:
 #             return JsonResponse(fallback_data)
-#         return JsonResponse({"error": "Failed to fetch market status"}, status=500)
+# return JsonResponse({"error": "Failed to fetch market status"},
+# status=500)
 
-from django.http import JsonResponse
 
 def market_status_view(request):
-        market_data = global_open_closed_status()
-        response= JsonResponse(market_data,safe=False)
-        print("Response Content:", response.content.decode('utf-8'))  # Debug output
-        return response
+    market_data = global_open_closed_status()
+    response = JsonResponse(market_data, safe=False)
+    print("Response Content:", response.content.decode('utf-8'))  # Debug output
+    return response
 
 
 # views.py
 
-from django.shortcuts import render
-from .ai_agent import portfolio_risk_agent
 
 def ask_ai_view(request, portfolio_id):
     answer = ""
@@ -560,8 +613,6 @@ def ask_ai_view(request, portfolio_id):
 
 
 # views.py
-from django.http import JsonResponse
-from .utils import fetch_news_sentiment
 
 
 def fetch_news_view(request, portfolio_id):
@@ -570,17 +621,13 @@ def fetch_news_view(request, portfolio_id):
 
 
 # views.py
-from django.http import JsonResponse
-from .utils import fetch_currency_exchange_rates
 
-def fetch_currency_rates(request,portfolio_id):
+def fetch_currency_rates(request, portfolio_id):
     try:
         rates = fetch_currency_exchange_rates()
         return JsonResponse({"exchange_rates": rates})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
-
-from .utils import fetch_treasury_yield
 
 
 def fetch_treasury_yield_view(request, portfolio_id):
@@ -598,18 +645,6 @@ def fetch_treasury_yield_view(request, portfolio_id):
         return JsonResponse({"error": str(e)}, status=500)
 
 
-from django.http import JsonResponse
-from .models import Portfolio, HistoricalStockData
-from .utils import monte_carlo_portfolio_var_cvar
-import pandas as pd
-import numpy as np
-
-import numpy as np
-import pandas as pd
-from django.http import JsonResponse
-from .models import Portfolio, HistoricalStockData # Assuming these are correct
-from .utils import monte_carlo_portfolio_var_cvar # Assuming this is correct
-
 def monte_carlo_risk_view(request, portfolio_id):
     try:
         print(f"🔍 Starting Monte Carlo risk view for portfolio {portfolio_id}")
@@ -620,7 +655,8 @@ def monte_carlo_risk_view(request, portfolio_id):
 
         for stock in stocks:
             # Your existing logic for fetching and preparing price data
-            records = HistoricalStockData.objects.filter(portfolio=portfolio, symbol=stock.symbol).order_by("date")
+            records = HistoricalStockData.objects.filter(
+                portfolio=portfolio, symbol=stock.symbol).order_by("date")
             if records.exists():
                 df = pd.DataFrame(
                     [(r.date, r.adjusted_close) for r in records],
@@ -628,46 +664,64 @@ def monte_carlo_risk_view(request, portfolio_id):
                 ).set_index("date")
                 price_data.append(df)
             else:
-                print(f"⚠️ Skipping {stock.symbol} due to no data in portfolio {portfolio_id}") # Added portfolio_id for clarity
+                # Added portfolio_id for clarity
+                print(
+                    f"⚠️ Skipping {
+                        stock.symbol} due to no data in portfolio {portfolio_id}")
 
         if not price_data:
-            print(f"❌ No price data found for any stock in portfolio {portfolio_id}") # Added portfolio_id
+            # Added portfolio_id
+            print(
+                f"❌ No price data found for any stock in portfolio {portfolio_id}")
             # Consider status 400 for client-side correctable errors if appropriate,
             # or if no data means an issue with the portfolio setup.
             # For now, keeping 500 as per your original code.
-            return JsonResponse({"error": "No price data found for any stock"}, status=500)
+            return JsonResponse(
+                {"error": "No price data found for any stock"}, status=500)
 
         combined_df = pd.concat(price_data, axis=1, join="inner").dropna()
 
         # Add a check for empty combined_df after join and dropna
-        if combined_df.empty or len(combined_df) < 2: # Need at least 2 rows for shift(1)
-            print(f"❌ Combined price data is insufficient after join/dropna for portfolio {portfolio_id}")
-            return JsonResponse({"error": "Not enough overlapping/valid price data for analysis"}, status=500) # Or 400
+        if combined_df.empty or len(
+                combined_df) < 2:  # Need at least 2 rows for shift(1)
+            print(
+                f"❌ Combined price data is insufficient after join/dropna for portfolio {portfolio_id}")
+            return JsonResponse(
+                {"error": "Not enough overlapping/valid price data for analysis"}, status=500)  # Or 400
 
-        print(f"📊 Price Data (portfolio {portfolio_id}):\n", combined_df.head()) # Added portfolio_id
+        print(
+            f"📊 Price Data (portfolio {portfolio_id}):\n",
+            combined_df.head())  # Added portfolio_id
 
         log_returns = np.log(combined_df / combined_df.shift(1)).dropna()
 
         # Add a check for empty log_returns
         if log_returns.empty:
             print(f"❌ Log returns are empty for portfolio {portfolio_id}")
-            return JsonResponse({"error": "Could not calculate log returns from available price data"}, status=500) # Or 400
+            return JsonResponse(
+                {"error": "Could not calculate log returns from available price data"}, status=500)  # Or 400
 
-        print(f"📈 Returns Data (portfolio {portfolio_id}):\n", log_returns.tail()) # Added portfolio_id
+        print(
+            f"📈 Returns Data (portfolio {portfolio_id}):\n",
+            log_returns.tail())  # Added portfolio_id
 
         # Ensure there's at least one column of returns for weighting
         if log_returns.shape[1] == 0:
-            print(f"❌ No valid asset returns columns for portfolio {portfolio_id}")
-            return JsonResponse({"error": "No valid asset returns to process"}, status=500) # Or 400
+            print(
+                f"❌ No valid asset returns columns for portfolio {portfolio_id}")
+            return JsonResponse(
+                {"error": "No valid asset returns to process"}, status=500)  # Or 400
 
         weights = np.array([1.0 / log_returns.shape[1]] * log_returns.shape[1])
         portfolio_log_returns = log_returns.dot(weights)
 
-        # Ensure portfolio_log_returns is not empty (e.g., if weights was empty, though unlikely with above check)
+        # Ensure portfolio_log_returns is not empty (e.g., if weights was
+        # empty, though unlikely with above check)
         if portfolio_log_returns.empty:
-            print(f"❌ Portfolio log returns series is empty for portfolio {portfolio_id}")
-            return JsonResponse({"error": "Could not calculate portfolio log returns"}, status=500) # Or 400
-
+            print(
+                f"❌ Portfolio log returns series is empty for portfolio {portfolio_id}")
+            return JsonResponse(
+                {"error": "Could not calculate portfolio log returns"}, status=500)  # Or 400
 
         # === ADDITIONS START HERE ===
         # Calculate mean and standard deviation of the portfolio log returns
@@ -676,7 +730,8 @@ def monte_carlo_risk_view(request, portfolio_id):
 
         # Get VaR and CVaR from your utils function (these are raw, e.g., -0.031)
         # Your function monte_carlo_portfolio_var_cvar already returns these
-        var_raw, cvar_raw = monte_carlo_portfolio_var_cvar(portfolio_log_returns)
+        var_raw, cvar_raw = monte_carlo_portfolio_var_cvar(
+            portfolio_log_returns)
 
         # Convert all four values to percentages
         var_pct = var_raw * 100
@@ -686,39 +741,36 @@ def monte_carlo_risk_view(request, portfolio_id):
 
         # Construct the JSON response with the keys JavaScript expects
         response_data = {
-            "VaR_pct": round(var_pct, 4) if not np.isnan(var_pct) else None,
-            "CVaR_pct": round(cvar_pct, 4) if not np.isnan(cvar_pct) else None,
-            "mean_return_pct": round(mean_return_pct, 2) if not np.isnan(mean_return_pct) else None,
-            "std_dev_return_pct": round(std_dev_return_pct, 2) if not np.isnan(std_dev_return_pct) else None,
+            "VaR_pct": round(
+                var_pct,
+                4) if not np.isnan(var_pct) else None,
+            "CVaR_pct": round(
+                cvar_pct,
+                4) if not np.isnan(cvar_pct) else None,
+            "mean_return_pct": round(
+                mean_return_pct,
+                2) if not np.isnan(mean_return_pct) else None,
+            "std_dev_return_pct": round(
+                    std_dev_return_pct,
+                    2) if not np.isnan(std_dev_return_pct) else None,
         }
         # === ADDITIONS END HERE ===
 
         # Print the data being sent for debugging
-        print(f"✅ monte_carlo_risk_view for portfolio {portfolio_id} sending data: {response_data}")
-        return JsonResponse(response_data) # Return the new response_data
+        print(
+            f"✅ monte_carlo_risk_view for portfolio {portfolio_id} sending data: {response_data}")
+        return JsonResponse(response_data)  # Return the new response_data
 
     # Your existing exception handling
-    except Portfolio.DoesNotExist: # Specific exception first
+    except Portfolio.DoesNotExist:  # Specific exception first
         print(f"❌ Portfolio with ID {portfolio_id} not found.")
         return JsonResponse({"error": "Portfolio not found"}, status=404)
     except Exception as e:
-        print(f"❌ Exception occurred in monte_carlo_risk_view for portfolio {portfolio_id}: {e}")
-        import traceback # Import traceback here for more detailed error logging
-        traceback.print_exc() # This will print the full Python traceback to your console
+        print(
+            f"❌ Exception occurred in monte_carlo_risk_view for portfolio {portfolio_id}: {e}")
+        import traceback  # Import traceback here for more detailed error logging
+        traceback.print_exc()  # This will print the full Python traceback to your console
         return JsonResponse({"error": str(e)}, status=500)
-
-
-
-
-
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
-from .models import Portfolio, Stock, HistoricalStockData
-import numpy as np
-from collections import defaultdict
-from .utils import get_market_returns
-from .utils import get_treasury_yields
-
 
 
 def performance_stats(request, portfolio_id):
@@ -726,10 +778,13 @@ def performance_stats(request, portfolio_id):
     stocks = Stock.objects.filter(portfolio=portfolio)
 
     if not stocks.exists():
-        return JsonResponse({"error": "No stocks in this portfolio."}, status=404)
+        return JsonResponse(
+            {"error": "No stocks in this portfolio."}, status=404)
 
     # --- Total Buying Price ---
-    total_buying_price = sum((stock.price or 0) * stock.quantity for stock in stocks)
+    total_buying_price = sum(
+        (stock.price or 0) *
+        stock.quantity for stock in stocks)
 
     # --- Current Market Value ---
     current_market_value = 0
@@ -743,7 +798,8 @@ def performance_stats(request, portfolio_id):
     number_of_holdings = stocks.count()
 
     # --- Get historical data ---
-    historical_data = HistoricalStockData.objects.filter(portfolio=portfolio).order_by("date")
+    historical_data = HistoricalStockData.objects.filter(
+        portfolio=portfolio).order_by("date")
     if not historical_data.exists():
         return JsonResponse({
             "total_buying_price": round(total_buying_price, 2),
@@ -758,7 +814,8 @@ def performance_stats(request, portfolio_id):
     # --- Aggregate daily values ---
     daily_values = defaultdict(float)
     for row in historical_data:
-        daily_values[row.date] += row.adjusted_close  # Already portfolio-linked
+        # Already portfolio-linked
+        daily_values[row.date] += row.adjusted_close
 
     sorted_dates = sorted(daily_values)
     values = [daily_values[date] for date in sorted_dates]
@@ -790,8 +847,10 @@ def performance_stats(request, portfolio_id):
     else:
         beta = None
 
-    sharpe_ratio = np.mean(returns) / np.std(returns) * np.sqrt(252) if len(returns) > 1 else None
-    cumulative_return = (values[-1] - values[0]) / values[0] if values[0] else None
+    sharpe_ratio = np.mean(returns) / np.std(returns) * \
+        np.sqrt(252) if len(returns) > 1 else None
+    cumulative_return = (values[-1] - values[0]) / \
+        values[0] if values[0] else None
 
     running_max = np.maximum.accumulate(values)
     drawdowns = (values - running_max) / running_max
@@ -814,32 +873,22 @@ def performance_stats(request, portfolio_id):
     return JsonResponse(response_data)
 
 
-import logging
-from django.http import JsonResponse
-from .utils import get_treasury_yields
-
 def get_all_yield_data(request, portfolio_id):
 
+    yields = get_treasury_yields()
 
-        yields = get_treasury_yields()
-
-
-        return JsonResponse({"status": "success", "yields": {
-            "3m": yields["3m"],
-            "2y": yields["2y"],
-            "5y": yields["5y"],
-            "7y": yields["7y"],
-            "10y": yields["10y"],
-            "30y": yields["30y"]
-        }}, status=200)
-
+    return JsonResponse({"status": "success", "yields": {
+        "3m": yields["3m"],
+        "2y": yields["2y"],
+        "5y": yields["5y"],
+        "7y": yields["7y"],
+        "10y": yields["10y"],
+        "30y": yields["30y"]
+    }}, status=200)
 
 
 # your_app_name/views.py
 
-from django.http import HttpResponse, HttpResponseServerError
-from django.core.cache import cache
-from redis.exceptions import RedisError # To catch potential Redis connection issues
 
 def test_redis_cache(request):
     key = "my_django_test_key"  # Let's use a slightly more descriptive key
@@ -848,7 +897,7 @@ def test_redis_cache(request):
 
     try:
         # 1. Set a value in the cache
-        cache.set(key, value_to_set, timeout=60) # Cache for 60 seconds
+        cache.set(key, value_to_set, timeout=60)  # Cache for 60 seconds
         html_response += f"<p>Attempted to set key '<code>{key}</code>' with value '<code>{value_to_set}</code>'.</p>"
 
         # 2. Get the value from the cache
@@ -882,7 +931,7 @@ def test_redis_cache(request):
             f"  <li>Your network connectivity and firewall rules (if applicable).</li>"
             f"</ul>"
         )
-        return HttpResponseServerError(error_message) # Return a 500 error
+        return HttpResponseServerError(error_message)  # Return a 500 error
     except Exception as e:
         # Catch any other unexpected errors
         error_message = (

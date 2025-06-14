@@ -1,8 +1,10 @@
 # utils.py
 
-import yfinance as yf  # Not used in the functions we're caching, but keep if used elsewhere
+# Not used in the functions we're caching, but keep if used elsewhere
+import yfinance as yf
 import pandas as pd  # Not used in the functions we're caching, but keep if used elsewhere
-# from .models import HistoricalStockData, Portfolio # Not directly used here, consider if needed
+# from .models import HistoricalStockData, Portfolio # Not directly used
+# here, consider if needed
 import os
 import requests
 from dotenv import load_dotenv
@@ -14,7 +16,8 @@ from django.core.cache import cache  # <<<--- IMPORT REDIS CACHE
 load_dotenv()
 
 
-def fetch_news_sentiment(symbol="AAPL", limit=10):  # Added symbol and limit params to make it more generic
+# Added symbol and limit params to make it more generic
+def fetch_news_sentiment(symbol="AAPL", limit=10):
     """Fetch the latest news sentiment data from Alpha Vantage, with Redis caching."""
     # 1. Define Cache Key
     cache_key = f"news_sentiment_av_{symbol}_limit{limit}"
@@ -25,7 +28,8 @@ def fetch_news_sentiment(symbol="AAPL", limit=10):  # Added symbol and limit par
         print(f"Cache HIT for {cache_key} (news_sentiment)")
         return cached_data
 
-    print(f"Cache MISS for {cache_key} (news_sentiment). Fetching from Alpha Vantage...")
+    print(
+        f"Cache MISS for {cache_key} (news_sentiment). Fetching from Alpha Vantage...")
     # 3. API Call on Cache Miss
     try:
         api_key = os.getenv("ALPHA_VANTAGE_API_KEY")
@@ -35,29 +39,35 @@ def fetch_news_sentiment(symbol="AAPL", limit=10):  # Added symbol and limit par
 
         # Added tickers parameter based on the function in your models.py
         url = f"https://www.alphavantage.co/query?function=NEWS_SENTIMENT&tickers={symbol}&sort=LATEST&limit={limit}&apikey={api_key}"
-        response = requests.get(url, headers={"User-Agent": "python-requests"})  # Added User-Agent
+        response = requests.get(
+            url, headers={
+                "User-Agent": "python-requests"})  # Added User-Agent
         response.raise_for_status()  # Check for HTTP errors
 
         news_sentiment_data = response.json()
         feed_data = news_sentiment_data.get("feed", [])
 
         # 4. Store in Cache
-        # News sentiment can change, but API limits are strict. Cache for ~30 mins.
+        # News sentiment can change, but API limits are strict. Cache for ~30
+        # mins.
         cache_timeout_seconds = 60 * 30  # 30 minutes
         cache.set(cache_key, feed_data, timeout=cache_timeout_seconds)
-        print(f"Set cache for {cache_key} (news_sentiment) for {cache_timeout_seconds}s")
+        print(
+            f"Set cache for {cache_key} (news_sentiment) for {cache_timeout_seconds}s")
 
         return feed_data
     except requests.exceptions.HTTPError as http_err:
         print(
-            f"HTTP error (fetch_news_sentiment for {symbol}): {http_err} - Response: {response.text if 'response' in locals() else 'N/A'}")
+            f"HTTP error (fetch_news_sentiment for {symbol}): {http_err} - Response: {
+                response.text if 'response' in locals() else 'N/A'}")
         return []
     except requests.exceptions.RequestException as req_err:
         print(f"Request error (fetch_news_sentiment for {symbol}): {req_err}")
         return []
     except (KeyError, ValueError, TypeError) as e:
         print(
-            f"Data processing error (fetch_news_sentiment for {symbol}): {e} - Data: {news_sentiment_data if 'news_sentiment_data' in locals() else 'N/A'}")
+            f"Data processing error (fetch_news_sentiment for {symbol}): {e} - Data: {
+                news_sentiment_data if 'news_sentiment_data' in locals() else 'N/A'}")
         return []
     except Exception as e:
         print(f"Unexpected error (fetch_news_sentiment for {symbol}): {e}")
@@ -67,7 +77,8 @@ def fetch_news_sentiment(symbol="AAPL", limit=10):  # Added symbol and limit par
 def global_open_closed_status():
     """Fetch global market open/closed status from Alpha Vantage, with Redis caching."""
     # 1. Define Cache Key
-    cache_key = "market_status_av_global"  # This data is global and doesn't depend on params
+    # This data is global and doesn't depend on params
+    cache_key = "market_status_av_global"
 
     # 2. Check Cache
     cached_data = cache.get(cache_key)
@@ -75,28 +86,38 @@ def global_open_closed_status():
         print(f"Cache HIT for {cache_key} (global_market_status)")
         return cached_data
 
-    print(f"Cache MISS for {cache_key} (global_market_status). Fetching from Alpha Vantage...")
+    print(
+        f"Cache MISS for {cache_key} (global_market_status). Fetching from Alpha Vantage...")
     # 3. API Call on Cache Miss
     try:
         api_key = os.getenv("ALPHA_VANTAGE_API_KEY")
         if not api_key:
-            print("Error: ALPHA_VANTAGE_API_KEY not set.")  # Changed from raise to print for consistency
+            # Changed from raise to print for consistency
+            print("Error: ALPHA_VANTAGE_API_KEY not set.")
             return None
 
         url = f"https://www.alphavantage.co/query?function=MARKET_STATUS&apikey={api_key}"
-        response = requests.get(url, timeout=10, headers={"User-Agent": "python-requests"})
+        response = requests.get(
+            url, timeout=10, headers={
+                "User-Agent": "python-requests"})
         response.raise_for_status()
 
         global_open_close_data = response.json()
         if "markets" not in global_open_close_data:
-            print("❌ Unexpected response format or missing 'markets' key (global_market_status).")
+            print(
+                "❌ Unexpected response format or missing 'markets' key (global_market_status).")
             return None
 
         # 4. Store in Cache
-        # Market status changes, but not every second for all markets. Cache for 5-15 mins.
+        # Market status changes, but not every second for all markets. Cache
+        # for 5-15 mins.
         cache_timeout_seconds = 60 * 10  # 10 minutes
-        cache.set(cache_key, global_open_close_data, timeout=cache_timeout_seconds)
-        print(f"Set cache for {cache_key} (global_market_status) for {cache_timeout_seconds}s")
+        cache.set(
+            cache_key,
+            global_open_close_data,
+            timeout=cache_timeout_seconds)
+        print(
+            f"Set cache for {cache_key} (global_market_status) for {cache_timeout_seconds}s")
 
         return global_open_close_data
 
@@ -105,14 +126,16 @@ def global_open_closed_status():
         return None
     except requests.exceptions.HTTPError as http_err:
         print(
-            f"HTTP error (global_market_status): {http_err} - Response: {response.text if 'response' in locals() else 'N/A'}")
+            f"HTTP error (global_market_status): {http_err} - Response: {
+                response.text if 'response' in locals() else 'N/A'}")
         return None
     except requests.exceptions.RequestException as e:
         print(f"❌ Request failed (global_market_status): {e}")
         return None
     except (KeyError, ValueError, TypeError) as e:
         print(
-            f"Data processing error (global_market_status): {e} - Data: {global_open_close_data if 'global_open_close_data' in locals() else 'N/A'}")
+            f"Data processing error (global_market_status): {e} - Data: {
+                global_open_close_data if 'global_open_close_data' in locals() else 'N/A'}")
         return None
     except Exception as e:
         print(f"❌ An unexpected error occurred (global_market_status): {e}")
@@ -151,10 +174,12 @@ def fetch_currency_exchange_rates():
         cached_rate_info = cache.get(cache_key)
         if cached_rate_info is not None:
             print(f"Cache HIT for {cache_key} (currency_exchange)")
-            results.append(cached_rate_info)  # cached_rate_info should be the dict we store
+            # cached_rate_info should be the dict we store
+            results.append(cached_rate_info)
             continue  # Move to the next currency pair
 
-        print(f"Cache MISS for {cache_key} (currency_exchange). Fetching for {from_currency}->{to_currency}...")
+        print(
+            f"Cache MISS for {cache_key} (currency_exchange). Fetching for {from_currency}->{to_currency}...")
         # 3. API Call on Cache Miss
         current_pair_result = {
             "from": from_currency,
@@ -165,7 +190,9 @@ def fetch_currency_exchange_rates():
         }
         try:
             url = f"{base_url}&from_currency={from_currency}&to_currency={to_currency}&apikey={api_key}"
-            response = requests.get(url, timeout=10, headers={"User-Agent": "python-requests"})
+            response = requests.get(
+                url, timeout=10, headers={
+                    "User-Agent": "python-requests"})
             response.raise_for_status()
             data = response.json()
 
@@ -181,25 +208,33 @@ def fetch_currency_exchange_rates():
             if current_pair_result["rate"] is not None:
                 # Exchange rates can be volatile. Cache for 5-30 mins.
                 cache_timeout_seconds = 60 * 15  # 15 minutes
-                cache.set(cache_key, current_pair_result, timeout=cache_timeout_seconds)  # Store the whole dict
-                print(f"Set cache for {cache_key} (currency_exchange) for {cache_timeout_seconds}s")
+                cache.set(
+                    cache_key,
+                    current_pair_result,
+                    timeout=cache_timeout_seconds)  # Store the whole dict
+                print(
+                    f"Set cache for {cache_key} (currency_exchange) for {cache_timeout_seconds}s")
 
         except requests.exceptions.HTTPError as http_err:
             error_msg = f"HTTP error: {http_err}"
-            print(f"{error_msg} fetching exchange rate {from_currency}->{to_currency}")
+            print(
+                f"{error_msg} fetching exchange rate {from_currency}->{to_currency}")
             current_pair_result["error"] = error_msg
         except requests.exceptions.RequestException as e:
             error_msg = f"Request error: {e}"
-            print(f"{error_msg} fetching exchange rate {from_currency}->{to_currency}")
+            print(
+                f"{error_msg} fetching exchange rate {from_currency}->{to_currency}")
             current_pair_result["error"] = error_msg
         except (KeyError, ValueError, TypeError) as e:
             error_msg = f"Data processing error: {e}"
             print(
-                f"{error_msg} for exchange rate {from_currency}->{to_currency} - Data: {data if 'data' in locals() else 'N/A'}")
+                f"{error_msg} for exchange rate {from_currency}->{to_currency} - Data: {
+                    data if 'data' in locals() else 'N/A'}")
             current_pair_result["error"] = error_msg
         except Exception as e:
             error_msg = f"Unexpected error: {e}"
-            print(f"{error_msg} fetching exchange rate {from_currency}->{to_currency}")
+            print(
+                f"{error_msg} fetching exchange rate {from_currency}->{to_currency}")
             current_pair_result["error"] = error_msg
 
         results.append(current_pair_result)
@@ -220,7 +255,8 @@ def fetch_treasury_yield(interval="monthly", maturity="10year"):  # Made params 
         print(f"Cache HIT for {cache_key} (treasury_yield)")
         return cached_data
 
-    print(f"Cache MISS for {cache_key} (treasury_yield). Fetching from Alpha Vantage...")
+    print(
+        f"Cache MISS for {cache_key} (treasury_yield). Fetching from Alpha Vantage...")
     # 3. API Call on Cache Miss
     try:
         api_key = os.getenv("ALPHA_VANTAGE_API_KEY")
@@ -233,36 +269,49 @@ def fetch_treasury_yield(interval="monthly", maturity="10year"):  # Made params 
         response.raise_for_status()
 
         data = response.json()
-        # Check if 'data' key exists and is not empty, common for treasury yields
+        # Check if 'data' key exists and is not empty, common for treasury
+        # yields
         if "data" not in data or not data["data"]:
-            print(f"No 'data' found or empty for treasury yield {maturity} {interval}: {data}")
-            # Cache this "no data" response for a shorter period to avoid repeated failed lookups
-            cache.set(cache_key, {"name": data.get("name"), "interval": data.get("interval"), "unit": data.get("unit"),
-                                  "data": []}, timeout=60 * 60)  # Cache empty for 1hr
+            print(
+                f"No 'data' found or empty for treasury yield {maturity} {interval}: {data}")
+            # Cache this "no data" response for a shorter period to avoid
+            # repeated failed lookups
+            cache.set(cache_key,
+                      {"name": data.get("name"),
+                       "interval": data.get("interval"),
+                       "unit": data.get("unit"),
+                          "data": []},
+                      timeout=60 * 60)  # Cache empty for 1hr
             return data  # Return the structure Alpha Vantage gives for no data
 
         # 4. Store in Cache
         # Treasury yields update daily/monthly. Cache for a long period.
-        cache_timeout_seconds = 60 * 60 * 12  # 12 hours for monthly, maybe shorter for daily if used
+        # 12 hours for monthly, maybe shorter for daily if used
+        cache_timeout_seconds = 60 * 60 * 12
         if interval == "daily":
             cache_timeout_seconds = 60 * 60 * 4  # 4 hours for daily
         cache.set(cache_key, data, timeout=cache_timeout_seconds)
-        print(f"Set cache for {cache_key} (treasury_yield) for {cache_timeout_seconds}s")
+        print(
+            f"Set cache for {cache_key} (treasury_yield) for {cache_timeout_seconds}s")
 
         return data
     except requests.exceptions.HTTPError as http_err:
         print(
-            f"HTTP error (fetch_treasury_yield for {maturity} {interval}): {http_err} - Response: {response.text if 'response' in locals() else 'N/A'}")
+            f"HTTP error (fetch_treasury_yield for {maturity} {interval}): {http_err} - Response: {
+                response.text if 'response' in locals() else 'N/A'}")
         return None
     except requests.exceptions.RequestException as req_err:
-        print(f"Request error (fetch_treasury_yield for {maturity} {interval}): {req_err}")
+        print(
+            f"Request error (fetch_treasury_yield for {maturity} {interval}): {req_err}")
         return None
     except (KeyError, ValueError, TypeError) as e:
         print(
-            f"Data processing error (fetch_treasury_yield for {maturity} {interval}): {e} - Data: {data if 'data' in locals() else 'N/A'}")
+            f"Data processing error (fetch_treasury_yield for {maturity} {interval}): {e} - Data: {
+                data if 'data' in locals() else 'N/A'}")
         return None
     except Exception as e:
-        print(f"Unexpected error (fetch_treasury_yield for {maturity} {interval}): {e}")
+        print(
+            f"Unexpected error (fetch_treasury_yield for {maturity} {interval}): {e}")
         return None
 
 
@@ -279,7 +328,10 @@ def monte_carlo_var_cvar(yields, num_simulations=10000, confidence_level=0.95):
     return round(var, 5), round(cvar, 5)
 
 
-def monte_carlo_portfolio_var_cvar(log_returns, num_simulations=10000, confidence_level=0.95):
+def monte_carlo_portfolio_var_cvar(
+        log_returns,
+        num_simulations=10000,
+        confidence_level=0.95):
     mu = np.mean(log_returns)
     sigma = np.std(log_returns)
     simulated_returns = np.random.normal(mu, sigma, num_simulations)
@@ -290,7 +342,8 @@ def monte_carlo_portfolio_var_cvar(log_returns, num_simulations=10000, confidenc
     return round(var, 5), round(cvar, 5)
 
 
-def get_market_returns(symbol="SPY", outputsize="compact"):  # Added outputsize for flexibility
+# Added outputsize for flexibility
+def get_market_returns(symbol="SPY", outputsize="compact"):
     """Fetch daily returns of an ETF (e.g., SPY) from Alpha Vantage, with Redis caching."""
     # 1. Define Cache Key
     cache_key = f"market_returns_av_{symbol}_{outputsize}"
@@ -299,9 +352,11 @@ def get_market_returns(symbol="SPY", outputsize="compact"):  # Added outputsize 
     cached_data = cache.get(cache_key)
     if cached_data is not None:
         print(f"Cache HIT for {cache_key} (market_returns)")
-        return cached_data  # This will be the list of (datetime, return_value) tuples
+        # This will be the list of (datetime, return_value) tuples
+        return cached_data
 
-    print(f"Cache MISS for {cache_key} (market_returns). Fetching for {symbol} from Alpha Vantage...")
+    print(
+        f"Cache MISS for {cache_key} (market_returns). Fetching for {symbol} from Alpha Vantage...")
     # 3. API Call on Cache Miss
     try:
         api_key = os.getenv("ALPHA_VANTAGE_API_KEY")
@@ -315,20 +370,28 @@ def get_market_returns(symbol="SPY", outputsize="compact"):  # Added outputsize 
         response.raise_for_status()
 
         data = response.json()
-        time_series_data = data.get("Time Series (Daily)")  # Key is "Time Series (Daily)"
+        # Key is "Time Series (Daily)"
+        time_series_data = data.get("Time Series (Daily)")
 
         if not time_series_data:
-            print(f"No 'Time Series (Daily)' data found for {symbol} (market_returns): {data}")
-            cache.set(cache_key, [], timeout=60 * 60)  # Cache empty list for 1hr for bad symbol
+            print(
+                f"No 'Time Series (Daily)' data found for {symbol} (market_returns): {data}")
+            # Cache empty list for 1hr for bad symbol
+            cache.set(cache_key, [], timeout=60 * 60)
             return []
 
         # Sort dates ensuring they are actual date strings
-        valid_dates = [date_str for date_str in time_series_data.keys() if isinstance(date_str, str)]
+        valid_dates = [
+            date_str for date_str in time_series_data.keys() if isinstance(
+                date_str, str)]
         try:
             # Attempt to sort dates, assuming YYYY-MM-DD format
-            sorted_dates = sorted(valid_dates, key=lambda d: datetime.strptime(d, "%Y-%m-%d"))
+            sorted_dates = sorted(
+                valid_dates, key=lambda d: datetime.strptime(
+                    d, "%Y-%m-%d"))
         except ValueError:
-            print(f"Error sorting dates for {symbol}, unexpected date format found. Dates: {valid_dates[:5]}")
+            print(
+                f"Error sorting dates for {symbol}, unexpected date format found. Dates: {valid_dates[:5]}")
             return []  # Or handle more gracefully
 
         # Use '5. adjusted close' for returns calculation
@@ -336,39 +399,52 @@ def get_market_returns(symbol="SPY", outputsize="compact"):  # Added outputsize 
                   "5. adjusted close" in time_series_data[date]]
 
         if len(prices) < 2:
-            print(f"Not enough price points to calculate returns for {symbol}.")
-            cache.set(cache_key, [], timeout=60 * 60)  # Cache empty list for 1hr
+            print(
+                f"Not enough price points to calculate returns for {symbol}.")
+            # Cache empty list for 1hr
+            cache.set(cache_key, [], timeout=60 * 60)
             return []
 
         returns_data = []
-        # Iterate from the second date string in sorted_dates to align with prices
+        # Iterate from the second date string in sorted_dates to align with
+        # prices
         for i in range(1, len(prices)):
             # The date for the return is the date of prices[i]
-            current_date_str = sorted_dates[
-                i + (len(valid_dates) - len(prices))]  # Adjust index if prices list is shorter due to missing data
+            # Adjust index if prices list is shorter due to missing data
+            current_date_str = sorted_dates[i +
+                                            (len(valid_dates) - len(prices))]
             daily_return = (prices[i] - prices[i - 1]) / prices[i - 1]
             returns_data.append(
-                (datetime.strptime(current_date_str, "%Y-%m-%d").date(), daily_return))  # Store date object
+                (datetime.strptime(
+                    current_date_str,
+                    "%Y-%m-%d").date(),
+                    daily_return))  # Store date object
 
         # 4. Store in Cache
         # Market returns can be cached daily.
         cache_timeout_seconds = 60 * 60 * 6  # 6 hours
-        cache.set(cache_key, returns_data, timeout=cache_timeout_seconds)  # Store the list of tuples
-        print(f"Set cache for {cache_key} (market_returns) for {cache_timeout_seconds}s")
+        # Store the list of tuples
+        cache.set(cache_key, returns_data, timeout=cache_timeout_seconds)
+        print(
+            f"Set cache for {cache_key} (market_returns) for {cache_timeout_seconds}s")
 
-        return returns_data  # Original was [::-1], if you need most recent first, apply it here or in calling code
+        # Original was [::-1], if you need most recent first, apply it here or
+        # in calling code
+        return returns_data
         # For consistency, usually time series data is oldest to newest.
 
     except requests.exceptions.HTTPError as http_err:
         print(
-            f"HTTP error (get_market_returns for {symbol}): {http_err} - Response: {response.text if 'response' in locals() else 'N/A'}")
+            f"HTTP error (get_market_returns for {symbol}): {http_err} - Response: {
+                response.text if 'response' in locals() else 'N/A'}")
         return []
     except requests.exceptions.RequestException as req_err:
         print(f"Request error (get_market_returns for {symbol}): {req_err}")
         return []
     except (KeyError, ValueError, TypeError) as e:
         print(
-            f"Data processing error (get_market_returns for {symbol}): {e} - Data: {data if 'data' in locals() else 'N/A'}")
+            f"Data processing error (get_market_returns for {symbol}): {e} - Data: {
+                data if 'data' in locals() else 'N/A'}")
         return []
     except Exception as e:
         print(f"Unexpected error (get_market_returns for {symbol}): {e}")
@@ -380,15 +456,22 @@ def get_treasury_yields():  # Renamed from fetch_treasury_yields for consistency
     api_key = os.getenv("ALPHA_VANTAGE_API_KEY")
     if not api_key:
         print("Error: ALPHA_VANTAGE_API_KEY not set.")
-        return {"date": None, "3m": 0.0, "2y": 0.0, "5y": 0.0, "7y": 0.0, "10y": 0.0,
-                "30y": 0.0}  # Return default structure
+        return {
+            "date": None,
+            "3m": 0.0,
+            "2y": 0.0,
+            "5y": 0.0,
+            "7y": 0.0,
+            "10y": 0.0,
+            "30y": 0.0}  # Return default structure
 
     maturities_map = {
         "3m": "3month", "2y": "2year", "5y": "5year",
         "7y": "7year", "10y": "10year", "30y": "30year"
     }
     # This will store the final dict: {"date": ..., "3m": ..., "2y": ...}
-    # We can cache the whole dict once all individual yields are fetched or fail.
+    # We can cache the whole dict once all individual yields are fetched or
+    # fail.
     overall_cache_key = "treasury_yields_av_latest_daily_set"
 
     cached_overall_yields = cache.get(overall_cache_key)
@@ -396,7 +479,8 @@ def get_treasury_yields():  # Renamed from fetch_treasury_yields for consistency
         print(f"Cache HIT for {overall_cache_key} (overall_treasury_yields)")
         return cached_overall_yields
 
-    print(f"Cache MISS for {overall_cache_key} (overall_treasury_yields). Fetching individual maturities...")
+    print(
+        f"Cache MISS for {overall_cache_key} (overall_treasury_yields). Fetching individual maturities...")
 
     # Initialize results with default values
     yields_result = {"date": None}
@@ -406,7 +490,8 @@ def get_treasury_yields():  # Renamed from fetch_treasury_yields for consistency
     # Fetch each maturity, potentially using individual caches if desired,
     # but for one combined call, we'll just fetch all then cache the combined result.
     # For simplicity, this example will refetch all if the combined cache is missed.
-    # A more advanced version could cache each maturity's latest value individually.
+    # A more advanced version could cache each maturity's latest value
+    # individually.
 
     all_maturities_fetched_successfully = True
 
@@ -417,25 +502,36 @@ def get_treasury_yields():  # Renamed from fetch_treasury_yields for consistency
         cached_individual_yield = cache.get(individual_cache_key)
         if cached_individual_yield is not None:
             print(f"Cache HIT for individual maturity {individual_cache_key}")
-            if not yields_result["date"] and cached_individual_yield.get("date"):
-                yields_result["date"] = cached_individual_yield["date"]  # Use date from first valid cached entry
-            yields_result[short_name] = cached_individual_yield.get("value", 0.0)
+            if not yields_result["date"] and cached_individual_yield.get(
+                    "date"):
+                # Use date from first valid cached entry
+                yields_result["date"] = cached_individual_yield["date"]
+            yields_result[short_name] = cached_individual_yield.get(
+                "value", 0.0)
             continue  # Next maturity
 
-        print(f"Cache MISS for individual maturity {individual_cache_key}. Fetching {api_maturity_name}...")
+        print(
+            f"Cache MISS for individual maturity {individual_cache_key}. Fetching {api_maturity_name}...")
         try:
             url = f"https://www.alphavantage.co/query?function=TREASURY_YIELD&interval=daily&maturity={api_maturity_name}&apikey={api_key}"
-            response = requests.get(url, headers={"User-Agent": "python-requests"}, timeout=10)
+            response = requests.get(
+                url,
+                headers={
+                    "User-Agent": "python-requests"},
+                timeout=10)
             response.raise_for_status()
 
             data = response.json()
             api_data_list = data.get("data", [])
 
             if not api_data_list:
-                print(f"No treasury data found for {api_maturity_name} from API.")
+                print(
+                    f"No treasury data found for {api_maturity_name} from API.")
                 # yields_result[short_name] remains 0.0
                 # Cache this "no data" state for the individual maturity
-                cache.set(individual_cache_key, {"date": None, "value": 0.0}, timeout=60 * 60)  # Cache no data for 1hr
+                cache.set(
+                    individual_cache_key, {
+                        "date": None, "value": 0.0}, timeout=60 * 60)  # Cache no data for 1hr
                 all_maturities_fetched_successfully = False  # Mark if any maturity fails
                 continue
 
@@ -444,26 +540,37 @@ def get_treasury_yields():  # Renamed from fetch_treasury_yields for consistency
             current_value_str = latest_entry.get("value")
 
             if current_value_str == ".":  # Alpha Vantage sometimes returns "." for missing data
-                print(f"Missing value ('.') for treasury yield {api_maturity_name} on {current_date_str}")
+                print(
+                    f"Missing value ('.') for treasury yield {api_maturity_name} on {current_date_str}")
                 current_value_float = 0.0  # Default to 0.0 or handle as error
             else:
                 current_value_float = float(current_value_str)
 
             if not yields_result["date"] and current_date_str:
                 try:
-                    yields_result["date"] = datetime.strptime(current_date_str, "%Y-%m-%d").date()
+                    yields_result["date"] = datetime.strptime(
+                        current_date_str, "%Y-%m-%d").date()
                 except ValueError:
-                    print(f"Invalid date format for {api_maturity_name}: {current_date_str}")
+                    print(
+                        f"Invalid date format for {api_maturity_name}: {current_date_str}")
                     yields_result["date"] = None  # Or keep it None
 
             yields_result[short_name] = current_value_float
 
             # Cache the individual successful fetch
-            individual_data_to_cache = {"date": yields_result["date"], "value": current_value_float}
-            cache.set(individual_cache_key, individual_data_to_cache, timeout=60 * 60 * 4)  # Cache individual for 4hrs
+            individual_data_to_cache = {
+                "date": yields_result["date"],
+                "value": current_value_float}
+            cache.set(
+                individual_cache_key,
+                individual_data_to_cache,
+                timeout=60 *
+                60 *
+                4)  # Cache individual for 4hrs
 
         except Exception as e:
-            print(f"Error fetching Treasury yield for {api_maturity_name}: {e}")
+            print(
+                f"Error fetching Treasury yield for {api_maturity_name}: {e}")
             # yields_result[short_name] remains 0.0
             all_maturities_fetched_successfully = False  # Mark if any maturity fails
 

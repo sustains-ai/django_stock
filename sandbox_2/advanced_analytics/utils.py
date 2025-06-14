@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 def get_esg_scores_for_portfolio(symbols):
     try:
         connection = psycopg2.connect(
@@ -23,8 +24,8 @@ def get_esg_scores_for_portfolio(symbols):
             symbols = tuple(symbols)
 
         query = f"""
-            SELECT "Symbol", "Total_ESG_Risk_score", "Environment_Risk_Score", 
-                   "Governance_Risk_Score", "Social_Risk_Score", 
+            SELECT "Symbol", "Total_ESG_Risk_score", "Environment_Risk_Score",
+                   "Governance_Risk_Score", "Social_Risk_Score",
                    "Controversy_Level", "Controversy_Score",  "ESG_Risk_Level"
             FROM "ESG_Risk_rating"
             WHERE "Symbol" IN %s;

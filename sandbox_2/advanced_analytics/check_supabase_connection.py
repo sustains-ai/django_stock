@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 def test_supabase_connection():
     try:
         connection = psycopg2.connect(
@@ -26,6 +27,7 @@ def test_supabase_connection():
         print("🔌 Connection closed")
     except Exception as e:
         print(f"❌ Failed to connect: {e}")
+
 
 if __name__ == "__main__":
     test_supabase_connection()

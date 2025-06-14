@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import riskfolio as rp  # Assuming you're using riskfolio
 
+
 def perform_risk_analysis(X):
     """
     Perform risk analysis and optimization on the portfolio.
@@ -25,10 +26,20 @@ def perform_risk_analysis(X):
     hist = True
 
     # --- 1. Mean-Variance Optimization (MV) ---
-    w_mv = port.optimization(model=model, rm='MV', obj='Sharpe', rf=rf, hist=hist)
+    w_mv = port.optimization(
+        model=model,
+        rm='MV',
+        obj='Sharpe',
+        rf=rf,
+        hist=hist)
 
     # --- 2. Conditional Value at Risk (CVaR) Optimization ---
-    w_cvar = port.optimization(model=model, rm='CVaR', obj='Sharpe', rf=rf, hist=hist)
+    w_cvar = port.optimization(
+        model=model,
+        rm='CVaR',
+        obj='Sharpe',
+        rf=rf,
+        hist=hist)
 
     # --- 3. Equal Risk Contribution (ERC) Portfolio ---
     w_erc = port.rp_optimization(model=model, rm='MV', rf=rf, hist=hist)
@@ -41,17 +52,19 @@ def perform_risk_analysis(X):
         # "cvar": w_cvar.squeeze().to_dict(),
         # "erc": w_erc.squeeze().to_dict()
         "mean_variance": (
-            w_mv.squeeze().to_dict() if isinstance(w_mv.squeeze(), pd.Series) else w_mv.squeeze().item()
+            w_mv.squeeze().to_dict() if isinstance(
+                w_mv.squeeze(), pd.Series) else w_mv.squeeze().item()
         ),
         "cvar": (
-            w_cvar.squeeze().to_dict() if isinstance(w_cvar.squeeze(), pd.Series) else w_cvar.squeeze().item()
+            w_cvar.squeeze().to_dict() if isinstance(
+                w_cvar.squeeze(), pd.Series) else w_cvar.squeeze().item()
         ),
         "erc": (
-            w_erc.squeeze().to_dict() if isinstance(w_erc.squeeze(), pd.Series) else w_erc.squeeze().item()
+            w_erc.squeeze().to_dict() if isinstance(
+                w_erc.squeeze(), pd.Series) else w_erc.squeeze().item()
         )
 
     }
-
 
 
 # def calculate_risk_measures(returns, stock_symbols):
@@ -106,11 +119,18 @@ def calculate_portfolio_risk(X, weights):
     w = np.array([weights[symbol] for symbol in X.columns]).reshape(-1, 1)
 
     # Compute portfolio standard deviation (Volatility)
-    portfolio_std_dev = np.sqrt(np.dot(w.T, np.dot(X.cov(), w)))  # No indexing needed
+    portfolio_std_dev = np.sqrt(
+        np.dot(
+            w.T,
+            np.dot(
+                X.cov(),
+                w)))  # No indexing needed
 
     # Compute historical VaR and CVaR (fixed indexing issue)
-    portfolio_var_95 = rp.VaR_Hist(X @ w, alpha=0.05)  # Removed [0, 0] indexing
-    portfolio_cvar_95 = rp.CVaR_Hist(X @ w, alpha=0.05)  # Removed [0, 0] indexing
+    portfolio_var_95 = rp.VaR_Hist(
+        X @ w, alpha=0.05)  # Removed [0, 0] indexing
+    portfolio_cvar_95 = rp.CVaR_Hist(
+        X @ w, alpha=0.05)  # Removed [0, 0] indexing
 
     return {
         "Std_Dev": portfolio_std_dev,
