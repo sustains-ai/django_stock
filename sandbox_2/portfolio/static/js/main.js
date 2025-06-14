@@ -24,9 +24,12 @@ document.addEventListener("DOMContentLoaded", function() {
                 datasets: [{
                     data: stockValues,
                     backgroundColor: [
-                        '#1e272e', '#485460', '#808e9b', '#2f3542',
-                        '#57606f', '#3742fa', '#5352ed', '#2c3e50',
-                        '#34495e', '#3d3d3d', '#5f27cd', '#222f3e'
+                        "#FF5733", "#54AA63", "#E231E2", "#800567", "#111169",
+                        "#800522", "#78CDE2", "#FA02F2", "#FF00FF", "#FA0202",
+                        "#FA7A02", "#053E80", "#028FFA", "#FF007F", "#54E578",
+                        "#020EFA", "#B802FA", "#0E4A0F", "#FA027E", "#FA0227",
+                        "#379C16", "#05806D", "#13579B", "#260580", "#9BCE24",
+                        "#8C0A1B"
                     ],
                 }]
             },
