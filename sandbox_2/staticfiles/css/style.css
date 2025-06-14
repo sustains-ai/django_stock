@@ -1,7 +1,7 @@
 /* Reset and Base Styles */
 html, body {
     height: 100%;
-    display: flex;
+    display:flex;
     flex-direction: column;
     margin: 0;
     padding: 0;
@@ -10,86 +10,31 @@ html, body {
 body {
     font-family: 'Roboto', sans-serif;
     background-color: #f9fafb;
-    color: #222;
-    line-height: 1.6;
 }
-
-/* Navbar */
 .navbar-custom {
-    background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+    background-color: #1a1a1a;
 }
-
 .navbar-custom .navbar-brand,
 .navbar-custom .nav-link {
-    color: #fff !important;
+    color: #fff;
 }
-
-.navbar-custom .nav-link {
-    transition: color 0.3s ease;
-}
-
 .navbar-custom .nav-link:hover {
-    color: #00e0ff;
-}
-
-.navbar-toggler {
-    border: none;
-    background-color: #0dcaf0;
-    border-radius: 6px;
-}
-
-/* Buttons */
-.btn-outline-light {
-    border-radius: 25px;
-    padding: 6px 18px;
-    transition: all 0.3s ease;
-}
-
-.btn-outline-light:hover {
-    background-color: #fff;
-    color: #000;
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-}
-
-/* Footer */
-.footer {
-    background-color: #1a1a1a;
-    color: #ccc;
-    border-top: 1px solid #333;
-    font-size: 0.85rem;
-}
-
-.footer strong {
     color: #0dcaf0;
 }
-
-/* Main Content */
+.navbar-toggler {
+    border-color: rgba(255, 255, 255, 0.2);
+}
+.footer {
+    background-color: #1a1a1a;
+    font-size: 0.9rem;
+}
 main {
     padding: 40px 20px;
-    background-color: #fff;
-    border-radius: 12px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
-    margin-top: 30px;
 }
-
-/* Cards / Portfolio Boxes (optional enhancement) */
-.card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    border-radius: 12px;
+.btn-outline-light:hover {
+    background-color: #FFFFFF;
+    color: #000;
 }
-
-.card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-}
-
-/* Typography */
-h1, h2, h3 {
-    font-weight: 700;
-    color: #1a1a1a;
-}
-
-/* Responsive */
 @media (max-width: 768px) {
     .navbar-nav {
         text-align: center;
@@ -97,7 +42,7 @@ h1, h2, h3 {
     }
 }
 
-/* Prevent margin collapse with footer */
+/* Ensure Last Section Doesn't Collapse Margin with Footer */
 main .portfolio-section:last-child {
-    margin-bottom: 0;
+    margin-bottom: 0; /* Prevent margin collapse with footer */
 }
