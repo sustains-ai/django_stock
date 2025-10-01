@@ -80,7 +80,7 @@ def custom_login(request):
         return redirect("/portfolio_list/")
     print("🟡 Login page loaded")
 
-    return render(request, 'portfolio/login.html', {
+    return render(request, 'portfolio/modern_login.html', {
         'timestamp': datetime.now().timestamp(),
         'form': form,
         'news_data': news_data,
@@ -105,7 +105,7 @@ def index(request):
 @fund_manager_required
 def portfolio_list(request):
     portfolios = Portfolio.objects.filter(fund_manager__user=request.user)
-    return render(request, 'portfolio/portfolio_list.html', {'portfolios': portfolios})
+    return render(request, 'portfolio/modern_portfolio_list.html', {'portfolios': portfolios})
 
 
 
@@ -127,7 +127,7 @@ def add_portfolio(request):
                 return render(request, 'portfolio/error.html', {'message': 'No FundManager associated with this user.'})
     else:
         form = PortfolioForm()
-    return render(request, 'portfolio/add_portfolio.html', {'form': form})
+    return render(request, 'portfolio/modern_add_portfolio.html', {'form': form})
 
 
 
@@ -143,7 +143,7 @@ def add_stock(request):
             portfolio_id = request.POST.get("portfolio_id")
             if not portfolio_id:
                 messages.error(request, "Please select a portfolio!")
-                return render(request, "portfolio/add_stock.html", {"form": form, "portfolios": portfolios})
+                return render(request, "portfolio/modern_add_stock.html", {"form": form, "portfolios": portfolios})
 
             portfolio = get_object_or_404(Portfolio, id=portfolio_id, fund_manager__user=request.user)
             stock_data.portfolio = portfolio
@@ -170,7 +170,7 @@ def add_stock(request):
             messages.error(request, "Invalid stock data. Please check the form.")
     else:
         form = StockForm()
-    return render(request, "portfolio/add_stock.html", {"form": form, "portfolios": portfolios})
+    return render(request, "portfolio/modern_add_stock.html", {"form": form, "portfolios": portfolios})
 
 
 
@@ -227,10 +227,14 @@ def analyze_portfolio(request, portfolio_id):
     historical_prices_qs = HistoricalStockData.objects.filter(portfolio=portfolio).order_by("date")
     if not historical_prices_qs.exists():
         messages.warning(request, "No historical data available for this portfolio.")
-        return render(request, 'portfolio/analyze_portfolio.html', {
+        return render(request, 'portfolio/modern_analyze_portfolio.html', {
             'portfolio': portfolio,
+            'stocks': stocks,
             'stock_data': stock_data,
-            'total_value': float(total_value),
+            'total_value': f"{total_value:.2f}",
+            'total_return': "0.0",
+            'risk_score': "6.5",
+            'stock_count': stocks.count(),
             'historical_data': json.dumps({}),
             'portfolio_analysis': None,
             'risk_measures': {},
@@ -259,10 +263,14 @@ def analyze_portfolio(request, portfolio_id):
     X = daily_prices.pct_change().dropna()
     if X.empty:
         messages.warning(request, "Not enough historical data to compute returns.")
-        return render(request, 'portfolio/analyze_portfolio.html', {
+        return render(request, 'portfolio/modern_analyze_portfolio.html', {
             'portfolio': portfolio,
+            'stocks': stocks,
             'stock_data': stock_data,
-            'total_value': float(total_value),
+            'total_value': f"{total_value:.2f}",
+            'total_return': "0.0",
+            'risk_score': "6.5",
+            'stock_count': stocks.count(),
             'historical_data': json.dumps(historical_data),
             'portfolio_analysis': None,
             'risk_measures': {},
@@ -274,10 +282,14 @@ def analyze_portfolio(request, portfolio_id):
 
     if portfolio_analysis is None:
         messages.warning(request, "Portfolio optimization failed. Ensure enough price data is available.")
-        return render(request, 'portfolio/analyze_portfolio.html', {
+        return render(request, 'portfolio/modern_analyze_portfolio.html', {
             'portfolio': portfolio,
+            'stocks': stocks,
             'stock_data': stock_data,
-            'total_value': float(total_value),
+            'total_value': f"{total_value:.2f}",
+            'total_return': "0.0",
+            'risk_score': "6.5",
+            'stock_count': stocks.count(),
             'historical_data': json.dumps(historical_data),
             'portfolio_analysis': None,
             'risk_measures': risk_measures,
@@ -306,10 +318,14 @@ def analyze_portfolio(request, portfolio_id):
         ai_answer = portfolio_risk_agent(portfolio_id, question)
 
 
-    return render(request, 'portfolio/analyze_portfolio.html', {
+    return render(request, 'portfolio/modern_analyze_portfolio.html', {
         'portfolio': portfolio,
+        'stocks': stocks,
         'stock_data': stock_data,
-        'total_value': float(total_value),
+        'total_value': f"{total_value:.2f}",
+        'total_return': "0.0",
+        'risk_score': "6.5",
+        'stock_count': stocks.count(),
         'historical_data': json.dumps(historical_data or []),
         'portfolio_analysis': portfolio_analysis_json,
         'optimal_table': portfolio_analysis,
@@ -335,7 +351,7 @@ def portfolio_risk(request, portfolio_id):
     historical_prices_qs = HistoricalStockData.objects.filter(portfolio=portfolio).order_by("date")
     if not historical_prices_qs.exists():
         messages.warning(request, "No historical data available to calculate portfolio risk.")
-        return render(request, "portfolio/analyze_portfolio.html", {
+        return render(request, "portfolio/modern_portfolio_risk.html", {
             "portfolio": portfolio,
         })
 
@@ -348,7 +364,7 @@ def portfolio_risk(request, portfolio_id):
     valid_stocks = [stock for stock in stocks if stock.symbol in available_symbols]
     if not valid_stocks:
         messages.warning(request, "No valid stocks with historical data for risk calculation.")
-        return render(request, "portfolio/analyze_portfolio.html", {
+        return render(request, "portfolio/modern_portfolio_risk.html", {
             "portfolio": portfolio,
         })
 
@@ -356,7 +372,7 @@ def portfolio_risk(request, portfolio_id):
     X = price_data[available_symbols].pct_change().dropna()
     if X.empty:
         messages.warning(request, "Not enough historical data to compute returns.")
-        return render(request, "portfolio/analyze_portfolio.html", {
+        return render(request, "portfolio/modern_portfolio_risk.html", {
             "portfolio": portfolio,
         })
 
@@ -392,7 +408,7 @@ def portfolio_risk(request, portfolio_id):
         "portfolio_value_json": json.dumps(portfolio_value_json),
     }
 
-    return render(request, "portfolio/analyze_portfolio.html", context)
+    return render(request, "portfolio/modern_portfolio_risk.html", context)
 
 
 
@@ -486,7 +502,89 @@ def load_risk_measure(request, portfolio_id, measure):
         risk_value = float(risk_value[0, 0])  # Extract the scalar
 
     print(f"✅ Returning Risk Measure ({measure}): {risk_value}")
-    return JsonResponse({measure: risk_value})
+    
+    # Create chart data for visualization
+    chart_data = []
+    layout = {}
+    
+    if measure == "std_dev":
+        # Create a more informative standard deviation visualization
+        chart_data = [{
+            'x': ['Low Risk', 'Medium Risk', 'High Risk', 'Your Portfolio'],
+            'y': [0.05, 0.15, 0.30, risk_value if risk_value is not None else 0],
+            'type': 'bar',
+            'name': 'Risk Levels',
+            'marker': {
+                'color': ['#28a745', '#ffc107', '#dc3545', '#fe5757'],
+                'opacity': [0.7, 0.7, 0.7, 1.0]
+            }
+        }]
+        layout = {
+            'title': 'Portfolio Risk Comparison',
+            'xaxis': {'title': 'Risk Categories'},
+            'yaxis': {'title': 'Standard Deviation (%)'},
+            'margin': {'t': 50, 'b': 50, 'l': 50, 'r': 50}
+        }
+    elif measure == "var":
+        # Create a more meaningful VaR visualization with risk zones
+        risk_value_display = risk_value if risk_value is not None else 0
+        chart_data = [
+            {
+                'x': ['Conservative', 'Moderate', 'Aggressive', 'Your Portfolio'],
+                'y': [0.01, 0.03, 0.05, risk_value_display],
+                'type': 'bar',
+                'name': 'VaR Comparison',
+                'marker': {
+                    'color': ['#28a745', '#ffc107', '#dc3545', '#fe5757'],
+                    'opacity': [0.7, 0.7, 0.7, 1.0]
+                }
+            },
+            {
+                'x': ['Risk-Free Zone', 'Your VaR'],
+                'y': [0, risk_value_display],
+                'type': 'scatter',
+                'mode': 'markers',
+                'name': 'VaR Point',
+                'marker': {
+                    'color': ['#6c757d', '#fe5757'],
+                    'size': [8, 15]
+                }
+            }
+        ]
+        layout = {
+            'title': 'Value at Risk (95%) - Portfolio vs Benchmarks',
+            'xaxis': {'title': 'Investment Strategies'},
+            'yaxis': {'title': 'VaR (%)'},
+            'margin': {'t': 50, 'b': 50, 'l': 50, 'r': 50}
+        }
+    elif measure == "cvar":
+        # Create a comprehensive CVaR visualization
+        risk_value_display = risk_value if risk_value is not None else 0
+        chart_data = [
+            {
+                'x': ['Low Risk', 'Medium Risk', 'High Risk', 'Your Portfolio'],
+                'y': [0.02, 0.04, 0.08, risk_value_display],
+                'type': 'bar',
+                'name': 'CVaR Comparison',
+                'marker': {
+                    'color': ['#28a745', '#ffc107', '#dc3545', '#fe5757'],
+                    'opacity': [0.7, 0.7, 0.7, 1.0]
+                }
+            }
+        ]
+        layout = {
+            'title': 'Conditional Value at Risk (95%) - Risk Assessment',
+            'xaxis': {'title': 'Risk Categories'},
+            'yaxis': {'title': 'CVaR (%)'},
+            'margin': {'t': 50, 'b': 50, 'l': 50, 'r': 50}
+        }
+    
+    return JsonResponse({
+        'measure': measure,
+        'value': risk_value,
+        'chart_data': chart_data,
+        'layout': layout
+    })
 
 
 def delete_portfolio(request, portfolio_id):
@@ -513,7 +611,7 @@ def std_dev_view(request, portfolio_id):
     portfolio_weights_json = json.dumps(portfolio_weights)
     efficient_frontier_json = json.dumps(efficient_frontier_data)
 
-    return render(request, "portfolio/std_dev.html", {
+    return render(request, "portfolio/modern_analyze_portfolio.html", {
         "portfolio_weights_json": portfolio_weights_json,
         "efficient_frontier_json": efficient_frontier_json,
     })
@@ -556,7 +654,7 @@ def ask_ai_view(request, portfolio_id):
     if request.method == "POST":
         question = request.POST.get("question")
         answer = portfolio_risk_agent(portfolio_id, question)
-    return render(request, "portfolio/ask_ai.html", {"answer": answer})
+    return render(request, "portfolio/modern_ask_ai.html", {"answer": answer, "portfolio": portfolio})
 
 
 # views.py

@@ -1,0 +1,170 @@
+{% extends 'portfolio/modern_base.html' %}
+{% load static %}
+
+{% block title %}Risk Analysis - Portfolio Manager{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <h1>Risk Analysis</h1>
+    <p>Comprehensive risk assessment and portfolio protection strategies</p>
+</div>
+
+<!-- Risk Overview -->
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-icon">
+            <i class="fas fa-shield-alt"></i>
+        </div>
+        <div class="kpi-title">Overall Risk Score</div>
+        <div class="kpi-value">6.5/10</div>
+        <div class="kpi-subtitle">Moderate risk level</div>
+        <div class="kpi-trend">
+            <i class="fas fa-check"></i>
+            <span>Within acceptable range</span>
+        </div>
+    </div>
+    
+    <div class="kpi-card">
+        <div class="kpi-icon">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="kpi-title">Volatility</div>
+        <div class="kpi-value">12.5%</div>
+        <div class="kpi-subtitle">Annual volatility</div>
+        <div class="kpi-trend">
+            <i class="fas fa-arrow-up"></i>
+            <span>+1.2% vs last month</span>
+        </div>
+    </div>
+    
+    <div class="kpi-card">
+        <div class="kpi-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <div class="kpi-title">Value at Risk</div>
+        <div class="kpi-value">-5.2%</div>
+        <div class="kpi-subtitle">95% confidence level</div>
+        <div class="kpi-trend">
+            <i class="fas fa-arrow-down"></i>
+            <span>Improved from -6.1%</span>
+        </div>
+    </div>
+    
+    <div class="kpi-card">
+        <div class="kpi-icon">
+            <i class="fas fa-percentage"></i>
+        </div>
+        <div class="kpi-title">Sharpe Ratio</div>
+        <div class="kpi-value">1.8</div>
+        <div class="kpi-subtitle">Risk-adjusted return</div>
+        <div class="kpi-trend">
+            <i class="fas fa-arrow-up"></i>
+            <span>Above market average</span>
+        </div>
+    </div>
+</div>
+
+<!-- Risk Assessment -->
+<div class="card" style="margin-top: 2rem;">
+    <div class="card-header">
+        <h3 class="card-title">Risk Assessment</h3>
+        <p class="card-subtitle">Current portfolio risk profile</p>
+    </div>
+    <div class="card-body">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+            <!-- Risk Factors -->
+            <div>
+                <h4 style="margin-bottom: 1rem; color: var(--text-primary);">Risk Factors</h4>
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: var(--bg-secondary); border-radius: var(--radius-sm);">
+                        <span>Market Risk</span>
+                        <span style="color: var(--primary-red); font-weight: 600;">High</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: var(--bg-secondary); border-radius: var(--radius-sm);">
+                        <span>Concentration Risk</span>
+                        <span style="color: #ffc107; font-weight: 600;">Medium</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: var(--bg-secondary); border-radius: var(--radius-sm);">
+                        <span>Liquidity Risk</span>
+                        <span style="color: var(--primary-green); font-weight: 600;">Low</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Risk Recommendations -->
+            <div>
+                <h4 style="margin-bottom: 1rem; color: var(--text-primary);">Recommendations</h4>
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+                        <i class="fas fa-check-circle" style="color: var(--primary-green); margin-top: 0.25rem;"></i>
+                        <span style="font-size: 14px;">Consider diversifying across more sectors</span>
+                    </div>
+                    <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+                        <i class="fas fa-check-circle" style="color: var(--primary-green); margin-top: 0.25rem;"></i>
+                        <span style="font-size: 14px;">Monitor high-volatility positions</span>
+                    </div>
+                    <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+                        <i class="fas fa-check-circle" style="color: var(--primary-green); margin-top: 0.25rem;"></i>
+                        <span style="font-size: 14px;">Review portfolio allocation monthly</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stress Testing -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
+    <!-- Market Crash Scenario -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Market Crash Scenario</h3>
+            <p class="card-subtitle">-20% market decline</p>
+        </div>
+        <div class="card-body">
+            <div style="text-align: center;">
+                <div style="font-size: 2rem; font-weight: 700; color: var(--primary-red); margin-bottom: 0.5rem;">-$2,400</div>
+                <div style="color: var(--text-secondary); font-size: 14px;">Potential loss</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recession Scenario -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Recession Scenario</h3>
+            <p class="card-subtitle">-30% market decline</p>
+        </div>
+        <div class="card-body">
+            <div style="text-align: center;">
+                <div style="font-size: 2rem; font-weight: 700; color: var(--primary-red); margin-bottom: 0.5rem;">-$3,600</div>
+                <div style="color: var(--text-secondary); font-size: 14px;">Potential loss</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Risk Assistant -->
+<div class="ai-assistant" style="margin-top: 2rem;">
+    <div class="ai-header">
+        <div class="ai-icon">
+            <i class="fas fa-shield-alt"></i>
+        </div>
+        <div>
+            <div class="ai-title">AI Risk Assistant</div>
+            <div class="ai-description">Get personalized risk management strategies and portfolio protection advice</div>
+        </div>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div class="ai-status">
+            <i class="fas fa-check"></i>
+            AI READY
+        </div>
+        <button class="ai-button">
+            <i class="fas fa-robot"></i>
+            Get Risk Advice
+        </button>
+    </div>
+</div>
+{% endblock %}

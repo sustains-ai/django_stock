@@ -1,0 +1,35 @@
+from django.urls import path
+from . import views_modern
+from . import views  # Import original views for portfolio analysis
+
+urlpatterns = [
+    # Modern UI Routes
+    path('', views_modern.modern_login, name='login'),
+    path('dashboard/', views_modern.modern_dashboard, name='dashboard'),
+    path('portfolio_list/', views_modern.modern_portfolio_list, name='portfolio_list'),
+    path('analytics/', views_modern.modern_analytics, name='analytics'),
+    path('risk/', views_modern.modern_risk_analysis, name='risk'),
+    path('settings/', views_modern.modern_settings, name='settings'),
+    
+    # Portfolio Management (using original views but with modern templates)
+    path('add_portfolio/', views.add_portfolio, name='add_portfolio'),
+    path('add_stock/', views.add_stock, name='add_stock'),
+    path('portfolio/<int:portfolio_id>/delete-stock/<str:symbol>/', views.delete_stock, name='delete_stock'),
+    path('analyze/<int:portfolio_id>/', views.analyze_portfolio, name='analyze_portfolio'),
+    path('delete_portfolio/<int:portfolio_id>/', views.delete_portfolio, name='delete_portfolio'),
+    path('portfolio/<int:portfolio_id>/risk/', views.portfolio_risk, name='portfolio_risk'),
+    
+    # API endpoints
+    path('api/market-status/', views.market_status_view, name='market_status'),
+    path("ask-ai/<int:portfolio_id>/", views.ask_ai_view, name="ask_ai"),
+    path('analyze/<int:portfolio_id>/fetch-news/', views.fetch_news_view, name='fetch_news'),
+    path('fetch-currency-rates/<int:portfolio_id>/', views.fetch_currency_rates, name='fetch_currency_rates'),
+    path('fetch-treasury-yield/<int:portfolio_id>/', views.fetch_treasury_yield_view, name='fetch_treasury_yield'),
+    path('monte-carlo-risk/<int:portfolio_id>/', views.monte_carlo_risk_view, name='monte_carlo_risk'),
+    path("api/portfolio/<int:portfolio_id>/performance-stats/", views.performance_stats, name="performance-stats"),
+    path('all-yield-data/<int:portfolio_id>/', views.get_all_yield_data, name='all_yield_data'),
+    path("load-risk-measure/<int:portfolio_id>/<str:measure>/", views.load_risk_measure, name="load_risk_measure"),
+    
+    # Logout
+    path('logout/', views_modern.modern_logout, name='logout'),
+]

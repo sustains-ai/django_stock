@@ -102,18 +102,45 @@ def calculate_portfolio_risk(X, weights):
             "Portfolio CVaR": None,
         }
 
+    # Filter weights to only include symbols that exist in X.columns
+    available_symbols = [symbol for symbol in X.columns if symbol in weights]
+    if not available_symbols:
+        return {
+            "Std_Dev": None,
+            "VaR_95": None,
+            "CVaR_95": None,
+        }
+
+    # Create filtered DataFrame and weights
+    X_filtered = X[available_symbols]
+    weights_filtered = {symbol: weights[symbol] for symbol in available_symbols}
+    
+    # Normalize weights to sum to 1
+    total_weight = sum(weights_filtered.values())
+    if total_weight > 0:
+        weights_filtered = {symbol: weight/total_weight for symbol, weight in weights_filtered.items()}
+
     # Convert weights to a numpy array
-    w = np.array([weights[symbol] for symbol in X.columns]).reshape(-1, 1)
+    w = np.array([weights_filtered[symbol] for symbol in X_filtered.columns]).reshape(-1, 1)
 
-    # Compute portfolio standard deviation (Volatility)
-    portfolio_std_dev = np.sqrt(np.dot(w.T, np.dot(X.cov(), w)))  # No indexing needed
+    try:
+        # Compute portfolio standard deviation (Volatility)
+        portfolio_std_dev = np.sqrt(np.dot(w.T, np.dot(X_filtered.cov(), w)))[0, 0]
 
-    # Compute historical VaR and CVaR (fixed indexing issue)
-    portfolio_var_95 = rp.VaR_Hist(X @ w, alpha=0.05)  # Removed [0, 0] indexing
-    portfolio_cvar_95 = rp.CVaR_Hist(X @ w, alpha=0.05)  # Removed [0, 0] indexing
+        # Compute historical VaR and CVaR
+        portfolio_returns = X_filtered @ w
+        portfolio_var_95 = rp.VaR_Hist(portfolio_returns, alpha=0.05)
+        portfolio_cvar_95 = rp.CVaR_Hist(portfolio_returns, alpha=0.05)
 
-    return {
-        "Std_Dev": portfolio_std_dev,
-        "VaR_95": portfolio_var_95,
-        "CVaR_95": portfolio_cvar_95,
-    }
+        return {
+            "Std_Dev": portfolio_std_dev,
+            "VaR_95": portfolio_var_95,
+            "CVaR_95": portfolio_cvar_95,
+        }
+    except Exception as e:
+        print(f"Error in calculate_portfolio_risk: {e}")
+        return {
+            "Std_Dev": None,
+            "VaR_95": None,
+            "CVaR_95": None,
+        }

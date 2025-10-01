@@ -1,0 +1,130 @@
+{% extends 'portfolio/modern_base.html' %}
+{% load static %}
+
+{% block title %}Analytics - Portfolio Manager{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <h1>Portfolio Analytics</h1>
+    <p>Real performance metrics and insights for your investments</p>
+</div>
+
+<!-- Performance Overview -->
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-icon">
+            <i class="fas fa-briefcase"></i>
+        </div>
+        <div class="kpi-title">Total Portfolios</div>
+        <div class="kpi-value">{{ total_portfolios }}</div>
+        <div class="kpi-subtitle">Active portfolios</div>
+    </div>
+    
+    <div class="kpi-card">
+        <div class="kpi-icon">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="kpi-title">Total Stocks</div>
+        <div class="kpi-value">{{ total_stocks }}</div>
+        <div class="kpi-subtitle">Across all portfolios</div>
+    </div>
+    
+    <div class="kpi-card">
+        <div class="kpi-icon">
+            <i class="fas fa-percentage"></i>
+        </div>
+        <div class="kpi-title">Avg Return</div>
+        <div class="kpi-value">{{ avg_return|floatformat:1 }}%</div>
+        <div class="kpi-subtitle">Portfolio average</div>
+    </div>
+    
+    <div class="kpi-card">
+        <div class="kpi-icon">
+            <i class="fas fa-chart-pie"></i>
+        </div>
+        <div class="kpi-title">Diversification</div>
+        <div class="kpi-value">
+            {% if total_stocks > 0 %}
+                {% widthratio total_stocks total_portfolios 1 %}
+            {% else %}
+                0
+            {% endif %}
+        </div>
+        <div class="kpi-subtitle">Avg stocks per portfolio</div>
+    </div>
+</div>
+
+<!-- Portfolio Performance Summary -->
+{% if portfolio_performance %}
+<div class="card" style="margin-top: 2rem;">
+    <div class="card-header">
+        <h3 class="card-title">Portfolio Performance</h3>
+        <p class="card-subtitle">Real performance data from your portfolios</p>
+    </div>
+    <div class="card-body">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+            {% for performance in portfolio_performance %}
+            <div style="padding: 1.5rem; background: var(--bg-secondary); border-radius: var(--radius-md); border-left: 4px solid {% if performance.return >= 0 %}var(--primary-red){% else %}#dc3545{% endif %};">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                    <i class="fas fa-briefcase" style="font-size: 1.5rem; color: {% if performance.return >= 0 %}var(--primary-red){% else %}#dc3545{% endif %};"></i>
+                    <div>
+                        <div style="font-weight: 600; color: var(--text-primary);">{{ performance.name }}</div>
+                        <div style="font-size: 14px; color: var(--text-secondary);">Portfolio performance</div>
+                    </div>
+                </div>
+                <div style="font-size: 1.5rem; font-weight: 700; color: {% if performance.return >= 0 %}var(--primary-red){% else %}#dc3545{% endif %}; margin-bottom: 0.5rem;">{{ performance.return|floatformat:1 }}%</div>
+                <div style="color: var(--text-secondary);">${{ performance.value|floatformat:2 }} total value</div>
+                <div style="margin-top: 1rem;">
+                    <a href="{% url 'analyze_portfolio' performance.portfolio.id %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-chart-line"></i>
+                        View Details
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card" style="margin-top: 2rem;">
+    <div class="card-body" style="text-align: center; padding: 3rem;">
+        <i class="fas fa-chart-bar" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+        <h3 style="color: var(--text-secondary); margin-bottom: 1rem;">No Performance Data</h3>
+        <p style="color: var(--text-muted); margin-bottom: 2rem;">Create portfolios and add stocks to see performance analytics</p>
+        <a href="{% url 'add_portfolio' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i>
+            Create Portfolio
+        </a>
+    </div>
+</div>
+{% endif %}
+
+<!-- Quick Actions -->
+<div class="card" style="margin-top: 2rem;">
+    <div class="card-header">
+        <h3 class="card-title">Quick Actions</h3>
+        <p class="card-subtitle">Manage your portfolios and investments</p>
+    </div>
+    <div class="card-body">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <a href="{% url 'add_portfolio' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i>
+                Create Portfolio
+            </a>
+            <a href="{% url 'add_stock' %}" class="btn btn-secondary">
+                <i class="fas fa-chart-line"></i>
+                Add Stock
+            </a>
+            <a href="{% url 'portfolio_list' %}" class="btn btn-secondary">
+                <i class="fas fa-briefcase"></i>
+                View Portfolios
+            </a>
+            <a href="{% url 'risk' %}" class="btn btn-secondary">
+                <i class="fas fa-shield-alt"></i>
+                Risk Analysis
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

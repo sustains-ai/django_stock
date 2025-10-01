@@ -1,0 +1,87 @@
+{% extends 'portfolio/modern_base.html' %}
+{% load static %}
+
+{% block title %}Portfolios - Portfolio Manager{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <h1>Your Investment Portfolios</h1>
+    <p>Manage your investments with advanced analytics and real-time insights</p>
+</div>
+
+<!-- Portfolio Grid -->
+<div class="portfolio-grid">
+    {% for portfolio in portfolios %}
+    <div class="portfolio-card">
+        <div class="portfolio-title">{{ portfolio.name }}</div>
+        <div class="portfolio-meta">
+            <i class="fas fa-calendar"></i>
+            Created {{ portfolio.created_at|date:"M d, Y" }}
+        </div>
+        <div class="portfolio-actions">
+            <a href="{% url 'analyze_portfolio' portfolio.id %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-chart-bar"></i>
+                Analyze
+            </a>
+            <a href="{% url 'portfolio_risk' portfolio.id %}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-shield-alt"></i>
+                Risk
+            </a>
+            <form action="{% url 'delete_portfolio' portfolio.id %}" method="POST" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-secondary btn-sm" style="background: #dc3545; border-color: #dc3545;" onclick="return confirm('Are you sure you want to delete this portfolio?')">
+                    <i class="fas fa-trash"></i>
+                    Delete
+                </button>
+            </form>
+        </div>
+    </div>
+    {% empty %}
+    <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+        <div class="card-body">
+            <i class="fas fa-briefcase" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+            <h3 style="color: var(--text-secondary); margin-bottom: 1rem;">No Portfolios Yet</h3>
+            <p style="color: var(--text-muted); margin-bottom: 2rem;">Create your first portfolio to start tracking your investments</p>
+            <a href="{% url 'add_portfolio' %}" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus"></i>
+                Create Portfolio
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Add Portfolio Button -->
+{% if portfolios %}
+<div style="text-align: center; margin-top: 2rem;">
+    <a href="{% url 'add_portfolio' %}" class="btn btn-primary btn-lg">
+        <i class="fas fa-plus"></i>
+        Create New Portfolio
+    </a>
+</div>
+{% endif %}
+
+<!-- AI Assistant -->
+<div class="ai-assistant" style="margin-top: 3rem;">
+    <div class="ai-header">
+        <div class="ai-icon">
+            <i class="fas fa-robot"></i>
+        </div>
+        <div>
+            <div class="ai-title">AI Portfolio Assistant</div>
+            <div class="ai-description">Get personalized insights and recommendations for your portfolios</div>
+        </div>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div class="ai-status">
+            <i class="fas fa-check"></i>
+            AI READY
+        </div>
+        <button class="ai-button">
+            <i class="fas fa-comments"></i>
+            Ask AI Assistant
+        </button>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,588 @@
+{% extends 'portfolio/modern_base.html' %}
+{% load static %}
+
+{% block title %}Risk Analysis - {{ portfolio.name }}{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <h1>Portfolio Risk Analysis</h1>
+    <p>Comprehensive risk assessment for {{ portfolio.name }}</p>
+</div>
+
+<!-- Portfolio ID Container -->
+<div id="portfolio-container" data-portfolio-id="{{ portfolio.id }}" data-portfolio-value='{{ portfolio_value_json|safe }}' style="display: none;"></div>
+
+<!-- Risk Measure Selection -->
+<div class="card" style="margin-bottom: 2rem;">
+    <div class="card-header">
+        <h3 class="card-title">Risk Analysis Tools</h3>
+        <p class="card-subtitle">Select a risk measure to analyze your portfolio</p>
+    </div>
+    <div class="card-body">
+        <div class="form-group">
+            <label for="risk-selector" class="form-label">Choose Risk Measure:</label>
+            <select id="risk-selector" class="form-control">
+                <option value="std_dev">Standard Deviation</option>
+                <option value="var">Value at Risk (VaR)</option>
+                <option value="cvar">Conditional Value at Risk (CVaR)</option>
+            </select>
+        </div>
+        
+        <div style="text-align: center; margin-top: 1.5rem;">
+            <button id="load-risk-btn" class="btn btn-primary">
+                <i class="fas fa-chart-line"></i>
+                Load Risk Analysis
+            </button>
+        </div>
+        
+        <div id="risk-content" style="margin-top: 2rem;">
+            <div style="text-align: center; padding: 2rem; background: var(--bg-secondary); border-radius: var(--radius-md);">
+                <i class="fas fa-shield-alt" style="font-size: 2rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+                <p style="color: var(--text-secondary);">Select a risk measure to analyze your portfolio</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Portfolio Value Over Time -->
+<div class="card" style="margin-bottom: 2rem;">
+    <div class="card-header">
+        <h3 class="card-title">Portfolio Value Over Time</h3>
+        <p class="card-subtitle">Track your portfolio performance</p>
+    </div>
+    <div class="card-body">
+        <div id="portfolio-valueoveryears-chart" style="height: 400px;"></div>
+    </div>
+</div>
+
+<!-- Risk Measures Summary -->
+{% if portfolio_risk_measures %}
+<div class="card" style="margin-bottom: 2rem;">
+    <div class="card-header">
+        <h3 class="card-title">Portfolio Risk Summary</h3>
+        <p class="card-subtitle">Key risk metrics for your portfolio</p>
+    </div>
+    <div class="card-body">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+            {% if portfolio_risk_measures.Std_Dev %}
+            <div style="text-align: center; padding: 1.5rem; background: var(--bg-secondary); border-radius: var(--radius-md);">
+                <i class="fas fa-chart-line" style="font-size: 2rem; color: var(--primary-red); margin-bottom: 0.5rem;"></i>
+                <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">Standard Deviation</div>
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">{{ portfolio_risk_measures.Std_Dev|floatformat:4 }}</div>
+            </div>
+            {% endif %}
+            
+            {% if portfolio_risk_measures.VaR_95 %}
+            <div style="text-align: center; padding: 1.5rem; background: var(--bg-secondary); border-radius: var(--radius-md);">
+                <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #ffc107; margin-bottom: 0.5rem;"></i>
+                <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">Value at Risk (95%)</div>
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">{{ portfolio_risk_measures.VaR_95|floatformat:4 }}</div>
+            </div>
+            {% endif %}
+            
+            {% if portfolio_risk_measures.CVaR_95 %}
+            <div style="text-align: center; padding: 1.5rem; background: var(--bg-secondary); border-radius: var(--radius-md);">
+                <i class="fas fa-shield-alt" style="font-size: 2rem; color: #dc3545; margin-bottom: 0.5rem;"></i>
+                <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">Conditional VaR (95%)</div>
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">{{ portfolio_risk_measures.CVaR_95|floatformat:4 }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Monte Carlo Simulation -->
+<div class="card" style="margin-bottom: 2rem;">
+    <div class="card-header">
+        <h3 class="card-title">Monte Carlo Risk Analysis</h3>
+        <p class="card-subtitle">Advanced risk simulation</p>
+    </div>
+    <div class="card-body">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+            <button id="monte-carlo-btn" class="btn btn-secondary">
+                <i class="fas fa-dice"></i>
+                Run Monte Carlo Simulation
+            </button>
+        </div>
+        <div id="monte-carlo-results" style="display: none;">
+            <div style="padding: 1.5rem; background: var(--bg-secondary); border-radius: var(--radius-md);">
+                <div style="text-align: center;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--primary-red); margin-bottom: 1rem;"></i>
+                    <p style="color: var(--text-secondary);">Running Monte Carlo simulation...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Treasury Yield Data -->
+<div class="card" style="margin-bottom: 2rem;">
+    <div class="card-header">
+        <h3 class="card-title">Treasury Yield Analysis</h3>
+        <p class="card-subtitle">Risk-free rate comparison</p>
+    </div>
+    <div class="card-body">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+            <button id="treasury-yield-btn" class="btn btn-secondary">
+                <i class="fas fa-chart-bar"></i>
+                Load Treasury Yield Data
+            </button>
+        </div>
+        <div id="treasury-yield-results" style="display: none;">
+            <div style="padding: 1.5rem; background: var(--bg-secondary); border-radius: var(--radius-md);">
+                <div style="text-align: center;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--primary-red); margin-bottom: 1rem;"></i>
+                    <p style="color: var(--text-secondary);">Loading treasury yield data...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Currency Exchange Rates -->
+<div class="card" style="margin-bottom: 2rem;">
+    <div class="card-header">
+        <h3 class="card-title">Currency Exchange Rates</h3>
+        <p class="card-subtitle">International market exposure</p>
+    </div>
+    <div class="card-body">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+            <button id="currency-rates-btn" class="btn btn-secondary">
+                <i class="fas fa-globe"></i>
+                Load Currency Rates
+            </button>
+        </div>
+        <div id="currency-rates-results" style="display: none;">
+            <div style="padding: 1.5rem; background: var(--bg-secondary); border-radius: var(--radius-md);">
+                <div style="text-align: center;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--primary-red); margin-bottom: 1rem;"></i>
+                    <p style="color: var(--text-secondary);">Loading currency exchange rates...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- News Sentiment -->
+<div class="card" style="margin-bottom: 2rem;">
+    <div class="card-header">
+        <h3 class="card-title">Market News Sentiment</h3>
+        <p class="card-subtitle">Latest market news and sentiment analysis</p>
+    </div>
+    <div class="card-body">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+            <button id="news-sentiment-btn" class="btn btn-secondary">
+                <i class="fas fa-newspaper"></i>
+                Load News Sentiment
+            </button>
+        </div>
+        <div id="news-sentiment-results" style="display: none;">
+            <div style="padding: 1.5rem; background: var(--bg-secondary); border-radius: var(--radius-md);">
+                <div style="text-align: center;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--primary-red); margin-bottom: 1rem;"></i>
+                    <p style="color: var(--text-secondary);">Loading news sentiment data...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Interactive Features -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const portfolioId = document.getElementById('portfolio-container').dataset.portfolioId;
+    
+    // Risk measure selector
+    document.getElementById('load-risk-btn').addEventListener('click', function() {
+        const riskMeasure = document.getElementById('risk-selector').value;
+        loadRiskMeasure(portfolioId, riskMeasure);
+    });
+    
+    // Monte Carlo simulation
+    document.getElementById('monte-carlo-btn').addEventListener('click', function() {
+        runMonteCarloSimulation(portfolioId);
+    });
+    
+    // Treasury yield data
+    document.getElementById('treasury-yield-btn').addEventListener('click', function() {
+        loadTreasuryYieldData(portfolioId);
+    });
+    
+    // Currency rates
+    document.getElementById('currency-rates-btn').addEventListener('click', function() {
+        loadCurrencyRates(portfolioId);
+    });
+    
+    // News sentiment
+    document.getElementById('news-sentiment-btn').addEventListener('click', function() {
+        loadNewsSentiment(portfolioId);
+    });
+    
+    // Load portfolio value chart
+    loadPortfolioValueChart();
+});
+
+function loadRiskMeasure(portfolioId, measure) {
+    const riskContent = document.getElementById('risk-content');
+    riskContent.innerHTML = '<div style="text-align: center; padding: 2rem;"><i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--primary-red); margin-bottom: 1rem;"></i><p style="color: var(--text-secondary);">Loading risk analysis...</p></div>';
+    
+    fetch(`/load-risk-measure/${portfolioId}/${measure}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                riskContent.innerHTML = `<div style="text-align: center; padding: 2rem; color: #dc3545;"><i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem;"></i><p>Error: ${data.error}</p></div>`;
+            } else {
+                // Display the risk measure with proper formatting
+                const measureName = measure.toUpperCase().replace('_', ' ');
+                const value = data.value !== null && data.value !== undefined ? data.value.toFixed(4) : 'N/A';
+                
+                // Get explanation text for each measure
+                let explanation = '';
+                if (measure === 'std_dev') {
+                    explanation = 'Standard Deviation measures how much your portfolio returns vary from the average. Lower values indicate more stable returns.';
+                } else if (measure === 'var') {
+                    explanation = 'Value at Risk (VaR) shows the maximum expected loss over a given time period with 95% confidence. It tells you the worst-case scenario for your portfolio.';
+                } else if (measure === 'cvar') {
+                    explanation = 'Conditional Value at Risk (CVaR) shows the expected loss beyond the VaR threshold. It represents the average loss in the worst 5% of scenarios.';
+                }
+                
+                riskContent.innerHTML = `
+                    <div style="padding: 1.5rem; background: var(--bg-secondary); border-radius: var(--radius-md);">
+                        <h4>${measureName} Analysis</h4>
+                        <div style="margin-bottom: 1.5rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--bg-card); border-radius: var(--radius-sm); border-left: 4px solid var(--primary-red);">
+                                <div>
+                                    <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">${measureName}</div>
+                                    <div style="font-size: 14px; color: var(--text-secondary);">Portfolio risk measure</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-size: 2rem; font-weight: 700; color: var(--primary-red);">${value}</div>
+                                    <div style="font-size: 12px; color: var(--text-muted);">${measure === 'std_dev' ? 'Standard Deviation' : measure === 'var' ? 'Value at Risk (95%)' : 'Conditional VaR (95%)'}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 1.5rem; padding: 1rem; background: var(--bg-card); border-radius: var(--radius-sm); border-left: 4px solid #6c757d;">
+                            <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">
+                                <i class="fas fa-info-circle" style="color: #6c757d; margin-right: 0.5rem;"></i>
+                                What does this mean?
+                            </div>
+                            <div style="font-size: 14px; color: var(--text-secondary); line-height: 1.5;">${explanation}</div>
+                        </div>
+                        
+                        ${data.chart_data && data.chart_data.length > 0 ? `
+                        <div>
+                            <div style="margin-bottom: 1rem;">
+                                <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">
+                                    <i class="fas fa-chart-bar" style="color: var(--primary-red); margin-right: 0.5rem;"></i>
+                                    Risk Comparison Chart
+                                </div>
+                                <div style="font-size: 14px; color: var(--text-secondary);">
+                                    Your portfolio risk compared to different investment strategies and risk levels.
+                                </div>
+                            </div>
+                            <div id="risk-chart" style="height: 400px;"></div>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+                
+                // Create chart if we have chart data
+                if (data.chart_data && data.chart_data.length > 0) {
+                    // Add modern styling to the layout
+                    const modernLayout = {
+                        ...data.layout,
+                        paper_bgcolor: 'rgba(0,0,0,0)',
+                        plot_bgcolor: 'rgba(0,0,0,0)',
+                        font: { color: '#2c3e50' },
+                        xaxis: {
+                            ...data.layout.xaxis,
+                            gridcolor: '#e9ecef',
+                            zeroline: false
+                        },
+                        yaxis: {
+                            ...data.layout.yaxis,
+                            gridcolor: '#e9ecef',
+                            zeroline: false
+                        }
+                    };
+                    
+                    Plotly.newPlot('risk-chart', data.chart_data, modernLayout, {responsive: true});
+                }
+            }
+        })
+        .catch(error => {
+            riskContent.innerHTML = `<div style="text-align: center; padding: 2rem; color: #dc3545;"><i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem;"></i><p>Error loading risk analysis: ${error.message}</p></div>`;
+        });
+}
+
+function runMonteCarloSimulation(portfolioId) {
+    const resultsDiv = document.getElementById('monte-carlo-results');
+    resultsDiv.style.display = 'block';
+    
+    fetch(`/monte-carlo-risk/${portfolioId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                resultsDiv.innerHTML = `<div style="text-align: center; padding: 2rem; color: #dc3545;"><i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem;"></i><p>Error: ${data.error}</p></div>`;
+                return;
+            }
+            
+            resultsDiv.innerHTML = `
+                <div style="padding: 1.5rem; background: var(--bg-secondary); border-radius: var(--radius-md);">
+                    <h4>Monte Carlo Results</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                        <div style="text-align: center; padding: 1rem; background: var(--bg-card); border-radius: var(--radius-sm);">
+                            <div style="font-weight: 600; color: var(--text-primary);">VaR</div>
+                            <div style="font-size: 1.25rem; font-weight: 700; color: var(--primary-red);">${data.VaR_pct || 'N/A'}%</div>
+                        </div>
+                        <div style="text-align: center; padding: 1rem; background: var(--bg-card); border-radius: var(--radius-sm);">
+                            <div style="font-weight: 600; color: var(--text-primary);">CVaR</div>
+                            <div style="font-size: 1.25rem; font-weight: 700; color: var(--primary-red);">${data.CVaR_pct || 'N/A'}%</div>
+                        </div>
+                        <div style="text-align: center; padding: 1rem; background: var(--bg-card); border-radius: var(--radius-sm);">
+                            <div style="font-weight: 600; color: var(--text-primary);">Mean Return</div>
+                            <div style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary);">${data.mean_return_pct || 'N/A'}%</div>
+                        </div>
+                        <div style="text-align: center; padding: 1rem; background: var(--bg-card); border-radius: var(--radius-sm);">
+                            <div style="font-weight: 600; color: var(--text-primary);">Std Dev</div>
+                            <div style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary);">${data.std_dev_return_pct || 'N/A'}%</div>
+                        </div>
+                    </div>
+                    ${data.simulation_data ? `
+                    <div style="margin-top: 1.5rem;">
+                        <div id="monte-carlo-chart" style="height: 300px;"></div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            // Create chart if we have simulation data
+            if (data.simulation_data) {
+                const chartData = [{
+                    x: data.simulation_data.x,
+                    y: data.simulation_data.y,
+                    type: 'histogram',
+                    name: 'Portfolio Returns',
+                    marker: {
+                        color: '#fe5757',
+                        opacity: 0.7
+                    }
+                }];
+                
+                const layout = {
+                    title: {
+                        text: 'Monte Carlo Simulation Results',
+                        font: { size: 14, color: '#2c3e50' }
+                    },
+                    xaxis: {
+                        title: 'Portfolio Return (%)',
+                        gridcolor: '#e9ecef'
+                    },
+                    yaxis: {
+                        title: 'Frequency',
+                        gridcolor: '#e9ecef'
+                    },
+                    margin: {t: 40, b: 40, l: 40, r: 40},
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)'
+                };
+                
+                Plotly.newPlot('monte-carlo-chart', chartData, layout, {responsive: true});
+            }
+        })
+        .catch(error => {
+            resultsDiv.innerHTML = `<div style="text-align: center; padding: 2rem; color: #dc3545;"><i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem;"></i><p>Error running Monte Carlo simulation: ${error.message}</p></div>`;
+        });
+}
+
+function loadTreasuryYieldData(portfolioId) {
+    const resultsDiv = document.getElementById('treasury-yield-results');
+    resultsDiv.style.display = 'block';
+    
+    fetch(`/fetch-treasury-yield/${portfolioId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                resultsDiv.innerHTML = `<div style="text-align: center; padding: 2rem; color: #dc3545;"><i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem;"></i><p>Error: ${data.error}</p></div>`;
+                return;
+            }
+            
+            // Handle the actual data structure returned by the API
+            const latestValue = data.values && data.values.length > 0 ? data.values[data.values.length - 1] : 'N/A';
+            const latestDate = data.labels && data.labels.length > 0 ? data.labels[data.labels.length - 1] : 'N/A';
+            
+            resultsDiv.innerHTML = `
+                <div style="padding: 1.5rem; background: var(--bg-secondary); border-radius: var(--radius-md);">
+                    <h4>Treasury Yield Data</h4>
+                    <div style="margin-top: 1rem;">
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem; border-bottom: 1px solid var(--border-light);">
+                            <span style="font-weight: 600;">Latest Treasury Yield:</span>
+                            <span>${latestValue}%</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem; border-bottom: 1px solid var(--border-light);">
+                            <span style="font-weight: 600;">Data Points:</span>
+                            <span>${data.values ? data.values.length : 0} entries</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem;">
+                            <span style="font-weight: 600;">Last Updated:</span>
+                            <span>${latestDate}</span>
+                        </div>
+                        ${data.values && data.values.length > 0 ? `
+                        <div style="margin-top: 1rem;">
+                            <div id="treasury-chart" style="height: 300px;"></div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            
+            // Create chart if we have data
+            if (data.values && data.values.length > 0) {
+                const chartData = [{
+                    x: data.labels,
+                    y: data.values,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Treasury Yield',
+                    line: {
+                        color: '#fe5757',
+                        width: 2
+                    },
+                    marker: {
+                        color: '#fe5757',
+                        size: 4
+                    }
+                }];
+                
+                const layout = {
+                    title: {
+                        text: 'Treasury Yield Over Time',
+                        font: { size: 14, color: '#2c3e50' }
+                    },
+                    xaxis: {
+                        title: 'Date',
+                        gridcolor: '#e9ecef'
+                    },
+                    yaxis: {
+                        title: 'Yield (%)',
+                        gridcolor: '#e9ecef'
+                    },
+                    margin: {t: 40, b: 40, l: 40, r: 40},
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)'
+                };
+                
+                Plotly.newPlot('treasury-chart', chartData, layout, {responsive: true});
+            }
+        })
+        .catch(error => {
+            resultsDiv.innerHTML = `<div style="text-align: center; padding: 2rem; color: #dc3545;"><i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem;"></i><p>Error loading treasury yield data: ${error.message}</p></div>`;
+        });
+}
+
+function loadCurrencyRates(portfolioId) {
+    const resultsDiv = document.getElementById('currency-rates-results');
+    resultsDiv.style.display = 'block';
+    
+    fetch(`/fetch-currency-rates/${portfolioId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                resultsDiv.innerHTML = `<div style="text-align: center; padding: 2rem; color: #dc3545;"><i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem;"></i><p>Error: ${data.error}</p></div>`;
+                return;
+            }
+            
+            let ratesHtml = '<div style="padding: 1.5rem; background: var(--bg-secondary); border-radius: var(--radius-md);"><h4>Currency Exchange Rates</h4><div style="margin-top: 1rem;">';
+            
+            if (data.exchange_rates && Object.keys(data.exchange_rates).length > 0) {
+                for (const [currency, rate] of Object.entries(data.exchange_rates)) {
+                    ratesHtml += `<div style="display: flex; justify-content: space-between; padding: 0.5rem; border-bottom: 1px solid var(--border-light);"><span style="font-weight: 600;">${currency}:</span><span>${rate}</span></div>`;
+                }
+            } else {
+                ratesHtml += '<div style="text-align: center; padding: 2rem; color: var(--text-muted);"><i class="fas fa-globe" style="font-size: 2rem; margin-bottom: 1rem;"></i><p>No currency data available</p></div>';
+            }
+            
+            ratesHtml += '</div></div>';
+            resultsDiv.innerHTML = ratesHtml;
+        })
+        .catch(error => {
+            resultsDiv.innerHTML = `<div style="text-align: center; padding: 2rem; color: #dc3545;"><i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem;"></i><p>Error loading currency rates: ${error.message}</p></div>`;
+        });
+}
+
+function loadNewsSentiment(portfolioId) {
+    const resultsDiv = document.getElementById('news-sentiment-results');
+    resultsDiv.style.display = 'block';
+    
+    fetch(`/analyze/${portfolioId}/fetch-news/`)
+        .then(response => response.json())
+        .then(data => {
+            let newsHtml = '<div style="padding: 1.5rem; background: var(--bg-secondary); border-radius: var(--radius-md);"><h4>Market News Sentiment</h4><div style="margin-top: 1rem;">';
+            if (data.news && data.news.length > 0) {
+                data.news.slice(0, 5).forEach(item => {
+                    newsHtml += `<div style="padding: 1rem; margin-bottom: 1rem; background: var(--bg-card); border-radius: var(--radius-sm); border-left: 4px solid var(--primary-red);">
+                        <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">${item.title}</div>
+                        <div style="font-size: 14px; color: var(--text-secondary);">${item.summary}</div>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 0.5rem;">${item.time_published}</div>
+                    </div>`;
+                });
+            } else {
+                newsHtml += '<div style="text-align: center; padding: 2rem; color: var(--text-muted);"><i class="fas fa-newspaper" style="font-size: 2rem; margin-bottom: 1rem;"></i><p>No news data available</p></div>';
+            }
+            newsHtml += '</div></div>';
+            resultsDiv.innerHTML = newsHtml;
+        })
+        .catch(error => {
+            resultsDiv.innerHTML = `<div style="text-align: center; padding: 2rem; color: #dc3545;"><i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem;"></i><p>Error loading news sentiment</p></div>`;
+        });
+}
+
+function loadPortfolioValueChart() {
+    const portfolioValueData = JSON.parse(document.getElementById('portfolio-container').dataset.portfolioValue || '[]');
+    if (portfolioValueData.length > 0) {
+        const data = [{
+            x: portfolioValueData.map(d => d.x),
+            y: portfolioValueData.map(d => d.y),
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'Portfolio Value',
+            line: {
+                color: '#fe5757',
+                width: 3
+            },
+            marker: {
+                color: '#fe5757',
+                size: 6
+            }
+        }];
+        
+        const layout = {
+            title: {
+                text: 'Portfolio Value Over Time',
+                font: { size: 16, color: '#2c3e50' }
+            },
+            xaxis: {
+                title: 'Date',
+                gridcolor: '#e9ecef'
+            },
+            yaxis: {
+                title: 'Portfolio Value ($)',
+                gridcolor: '#e9ecef'
+            },
+            margin: {t: 50, b: 50, l: 50, r: 50},
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)'
+        };
+        
+        Plotly.newPlot('portfolio-valueoveryears-chart', data, layout, {responsive: true});
+    }
+}
+</script>
+{% endblock %}

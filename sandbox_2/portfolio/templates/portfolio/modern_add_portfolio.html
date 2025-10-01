@@ -1,0 +1,81 @@
+{% extends 'portfolio/modern_base.html' %}
+{% load static %}
+
+{% block title %}Add Portfolio - Portfolio Manager{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <h1>Create New Portfolio</h1>
+    <p>Build your investment portfolio with advanced analytics and risk management</p>
+</div>
+
+<!-- Add Portfolio Form -->
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+    <div class="card-header">
+        <h3 class="card-title">Portfolio Details</h3>
+        <p class="card-subtitle">Enter the details for your new investment portfolio</p>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="{{ form.name.id_for_label }}" class="form-label">{{ form.name.label }}</label>
+                <input type="text" name="{{ form.name.html_name }}" id="{{ form.name.id_for_label }}" class="form-control" placeholder="Enter portfolio name" required>
+                {% if form.name.errors %}
+                    <div style="color: #dc3545; font-size: 12px; margin-top: 0.25rem;">{{ form.name.errors.0 }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+                <textarea name="{{ form.description.html_name }}" id="{{ form.description.id_for_label }}" class="form-control" rows="3" placeholder="Enter portfolio description (optional)"></textarea>
+                {% if form.description.errors %}
+                    <div style="color: #dc3545; font-size: 12px; margin-top: 0.25rem;">{{ form.description.errors.0 }}</div>
+                {% endif %}
+            </div>
+            
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                <button type="submit" class="btn btn-primary" style="flex: 1;">
+                    <i class="fas fa-plus"></i>
+                    Create Portfolio
+                </button>
+                <a href="{% url 'portfolio_list' %}" class="btn btn-secondary" style="flex: 1;">
+                    <i class="fas fa-arrow-left"></i>
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Features Preview -->
+<div style="margin-top: 3rem;">
+    <h3 style="text-align: center; margin-bottom: 2rem; color: var(--text-primary);">What You'll Get</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+        <div class="card">
+            <div class="card-body" style="text-align: center;">
+                <i class="fas fa-chart-line" style="font-size: 2rem; color: var(--primary-red); margin-bottom: 1rem;"></i>
+                <h4 style="color: var(--text-primary); margin-bottom: 0.5rem;">Real-time Analytics</h4>
+                <p style="color: var(--text-secondary); font-size: 14px;">Track performance with live market data and advanced metrics</p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-body" style="text-align: center;">
+                <i class="fas fa-shield-alt" style="font-size: 2rem; color: var(--primary-red); margin-bottom: 1rem;"></i>
+                <h4 style="color: var(--text-primary); margin-bottom: 0.5rem;">Risk Management</h4>
+                <p style="color: var(--text-secondary); font-size: 14px;">Comprehensive risk analysis and portfolio optimization</p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-body" style="text-align: center;">
+                <i class="fas fa-robot" style="font-size: 2rem; color: var(--primary-red); margin-bottom: 1rem;"></i>
+                <h4 style="color: var(--text-primary); margin-bottom: 0.5rem;">AI Insights</h4>
+                <p style="color: var(--text-secondary); font-size: 14px;">Get personalized recommendations and market insights</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
