@@ -45,7 +45,7 @@ def custom_login(request):
         return redirect("/dashboard/")
     print("🟡 Login page loaded")
 
-    return render(request, 'portfolio/modern_login.html', {
+    return render(request, 'portfolio/login.html', {
         'timestamp': datetime.now().timestamp(),
         'form': form,
         'news_data': news_data,
@@ -70,7 +70,7 @@ def index(request):
 @fund_manager_required
 def portfolio_list(request):
     portfolios = Portfolio.objects.filter(fund_manager__user=request.user)
-    return render(request, 'portfolio/modern_portfolio_list.html', {'portfolios': portfolios})
+    return render(request, 'portfolio/portfolio_list.html', {'portfolios': portfolios})
 
 
 
@@ -87,31 +87,29 @@ def add_portfolio(request):
             try:
                 portfolio.fund_manager = FundManager.objects.get(user=request.user)
                 portfolio.save()  # Now save to the database
-                return redirect('portfolio_list')
+                messages.success(request, f'Portfolio "{portfolio.name}" created successfully! Now add some stocks to get started.')
+                return redirect('add_stock', portfolio_id=portfolio.id)
             except FundManager.DoesNotExist:
                 return render(request, 'portfolio/error.html', {'message': 'No FundManager associated with this user.'})
     else:
         form = PortfolioForm()
-    return render(request, 'portfolio/modern_add_portfolio.html', {'form': form})
+    return render(request, 'portfolio/add_portfolio.html', {'form': form})
 
 
 
 
 
 @login_required
-def add_stock(request):
-    portfolios = Portfolio.objects.filter(fund_manager__user=request.user)
+def add_stock(request, portfolio_id):
+    portfolio = get_object_or_404(Portfolio, id=portfolio_id, fund_manager__user=request.user)
     if request.method == "POST":
         form = StockForm(request.POST)
+        print(f"Form data: {request.POST}")
+        print(f"Form is valid: {form.is_valid()}")
         if form.is_valid():
             stock_data = form.save(commit=False)
-            portfolio_id = request.POST.get("portfolio_id")
-            if not portfolio_id:
-                messages.error(request, "Please select a portfolio!")
-                return render(request, "portfolio/modern_add_stock.html", {"form": form, "portfolios": portfolios})
-
-            portfolio = get_object_or_404(Portfolio, id=portfolio_id, fund_manager__user=request.user)
             stock_data.portfolio = portfolio
+            print(f"Stock data: {stock_data.symbol}, {stock_data.name}, {stock_data.quantity}, {stock_data.price}")
 
             existing_stock = portfolio.stocks.filter(symbol=stock_data.symbol).first()
             if existing_stock:
@@ -126,16 +124,22 @@ def add_stock(request):
                 messages.success(request, f"Updated {stock_data.symbol} in {portfolio.name}")
             else:
                 stock_data.save()
-                if stock_data.fetch_and_store_historical_data():
-                    messages.success(request, f"Added {stock_data.symbol} to {portfolio.name} with Alpha Vantage data")
-                else:
-                    messages.warning(request, f"Added {stock_data.symbol} to {portfolio.name}, but failed to fetch Alpha Vantage data")
+                print(f"Stock saved with ID: {stock_data.id}")
+                print(f"Portfolio stocks count: {portfolio.stocks.count()}")
+                messages.success(request, f"Added {stock_data.symbol} to {portfolio.name}")
+                # Try to fetch historical data, but don't fail if it doesn't work
+                try:
+                    stock_data.fetch_and_store_historical_data()
+                except Exception as e:
+                    print(f"Historical data fetch failed: {e}")
+                    # Don't show error to user, just log it
             return redirect("analyze_portfolio",portfolio_id=portfolio.id)
         else:
-            messages.error(request, "Invalid stock data. Please check the form.")
+            print(f"Form errors: {form.errors}")
+            messages.error(request, f"Invalid stock data. Please check the form. Errors: {form.errors}")
     else:
         form = StockForm()
-    return render(request, "portfolio/modern_add_stock.html", {"form": form, "portfolios": portfolios})
+    return render(request, "portfolio/add_stock.html", {"form": form, "portfolio": portfolio})
 
 
 
@@ -192,7 +196,7 @@ def analyze_portfolio(request, portfolio_id):
     historical_prices_qs = HistoricalStockData.objects.filter(portfolio=portfolio).order_by("date")
     if not historical_prices_qs.exists():
         messages.warning(request, "No historical data available for this portfolio.")
-        return render(request, 'portfolio/modern_analyze_portfolio.html', {
+        return render(request, 'portfolio/analyze_portfolio.html', {
             'portfolio': portfolio,
             'stocks': stocks,
             'stock_data': stock_data,
@@ -228,7 +232,7 @@ def analyze_portfolio(request, portfolio_id):
     X = daily_prices.pct_change().dropna()
     if X.empty:
         messages.warning(request, "Not enough historical data to compute returns.")
-        return render(request, 'portfolio/modern_analyze_portfolio.html', {
+        return render(request, 'portfolio/analyze_portfolio.html', {
             'portfolio': portfolio,
             'stocks': stocks,
             'stock_data': stock_data,
@@ -247,7 +251,7 @@ def analyze_portfolio(request, portfolio_id):
 
     if portfolio_analysis is None:
         messages.warning(request, "Portfolio optimization failed. Ensure enough price data is available.")
-        return render(request, 'portfolio/modern_analyze_portfolio.html', {
+        return render(request, 'portfolio/analyze_portfolio.html', {
             'portfolio': portfolio,
             'stocks': stocks,
             'stock_data': stock_data,
@@ -283,7 +287,7 @@ def analyze_portfolio(request, portfolio_id):
         ai_answer = portfolio_risk_agent(portfolio_id, question)
 
 
-    return render(request, 'portfolio/modern_analyze_portfolio.html', {
+    return render(request, 'portfolio/analyze_portfolio.html', {
         'portfolio': portfolio,
         'stocks': stocks,
         'stock_data': stock_data,
@@ -316,7 +320,7 @@ def portfolio_risk(request, portfolio_id):
     historical_prices_qs = HistoricalStockData.objects.filter(portfolio=portfolio).order_by("date")
     if not historical_prices_qs.exists():
         messages.warning(request, "No historical data available to calculate portfolio risk.")
-        return render(request, "portfolio/modern_portfolio_risk.html", {
+        return render(request, "portfolio/portfolio_risk.html", {
             "portfolio": portfolio,
         })
 
@@ -329,7 +333,7 @@ def portfolio_risk(request, portfolio_id):
     valid_stocks = [stock for stock in stocks if stock.symbol in available_symbols]
     if not valid_stocks:
         messages.warning(request, "No valid stocks with historical data for risk calculation.")
-        return render(request, "portfolio/modern_portfolio_risk.html", {
+        return render(request, "portfolio/portfolio_risk.html", {
             "portfolio": portfolio,
         })
 
@@ -337,7 +341,7 @@ def portfolio_risk(request, portfolio_id):
     X = price_data[available_symbols].pct_change().dropna()
     if X.empty:
         messages.warning(request, "Not enough historical data to compute returns.")
-        return render(request, "portfolio/modern_portfolio_risk.html", {
+        return render(request, "portfolio/portfolio_risk.html", {
             "portfolio": portfolio,
         })
 
@@ -373,7 +377,7 @@ def portfolio_risk(request, portfolio_id):
         "portfolio_value_json": json.dumps(portfolio_value_json),
     }
 
-    return render(request, "portfolio/modern_portfolio_risk.html", context)
+    return render(request, "portfolio/portfolio_risk.html", context)
 
 
 
@@ -576,7 +580,7 @@ def std_dev_view(request, portfolio_id):
     portfolio_weights_json = json.dumps(portfolio_weights)
     efficient_frontier_json = json.dumps(efficient_frontier_data)
 
-    return render(request, "portfolio/modern_analyze_portfolio.html", {
+    return render(request, "portfolio/analyze_portfolio.html", {
         "portfolio_weights_json": portfolio_weights_json,
         "efficient_frontier_json": efficient_frontier_json,
     })
@@ -620,7 +624,7 @@ def ask_ai_view(request, portfolio_id):
     if request.method == "POST":
         question = request.POST.get("question")
         answer = portfolio_risk_agent(portfolio_id, question)
-    return render(request, "portfolio/modern_ask_ai.html", {"answer": answer, "portfolio": portfolio})
+    return render(request, "portfolio/ask_ai.html", {"answer": answer, "portfolio": portfolio})
 
 
 # views.py
@@ -1000,11 +1004,11 @@ def modern_dashboard(request):
             'avg_return': f"{avg_return:.1f}",
         }
         
-        return render(request, 'portfolio/modern_dashboard.html', context)
+        return render(request, 'portfolio/dashboard.html', context)
         
     except Exception as e:
         messages.error(request, f"Error loading dashboard: {str(e)}")
-        return render(request, 'portfolio/modern_dashboard.html', {
+        return render(request, 'portfolio/dashboard.html', {
             'portfolios': [],
             'total_value': "0.00",
             'total_profit': "0.00",
@@ -1022,13 +1026,13 @@ def modern_portfolio_list(request):
         fund_manager = request.user.fundmanager
         portfolios = Portfolio.objects.filter(fund_manager=fund_manager)
         
-        return render(request, 'portfolio/modern_portfolio_list.html', {
+        return render(request, 'portfolio/portfolio_list.html', {
             'portfolios': portfolios
         })
         
     except Exception as e:
         messages.error(request, f"Error loading portfolios: {str(e)}")
-        return render(request, 'portfolio/modern_portfolio_list.html', {
+        return render(request, 'portfolio/portfolio_list.html', {
             'portfolios': []
         })
 
@@ -1042,7 +1046,7 @@ def modern_login(request):
         login(request, user)
         return redirect("/dashboard/")
     
-    return render(request, 'portfolio/modern_login.html', {
+    return render(request, 'portfolio/login.html', {
         'form': form
     })
 
@@ -1099,11 +1103,11 @@ def modern_analytics(request):
             'avg_return': avg_return,
         }
         
-        return render(request, 'portfolio/modern_analytics.html', context)
+        return render(request, 'portfolio/analytics.html', context)
         
     except Exception as e:
         messages.error(request, f"Error loading analytics: {str(e)}")
-        return render(request, 'portfolio/modern_analytics.html', {
+        return render(request, 'portfolio/analytics.html', {
             'total_portfolios': 0,
             'total_stocks': 0,
             'portfolio_performance': [],
@@ -1153,11 +1157,11 @@ def modern_risk_analysis(request):
             'portfolio_risks': portfolio_risks,
         }
         
-        return render(request, 'portfolio/modern_risk.html', context)
+        return render(request, 'portfolio/risk.html', context)
         
     except Exception as e:
         messages.error(request, f"Error loading risk analysis: {str(e)}")
-        return render(request, 'portfolio/modern_risk.html', {
+        return render(request, 'portfolio/risk.html', {
             'portfolios': [],
             'portfolio_risks': [],
         })
@@ -1175,11 +1179,11 @@ def modern_settings(request):
             'fund_manager': fund_manager,
         }
         
-        return render(request, 'portfolio/modern_settings.html', context)
+        return render(request, 'portfolio/settings.html', context)
         
     except Exception as e:
         messages.error(request, f"Error loading settings: {str(e)}")
-        return render(request, 'portfolio/modern_settings.html', {
+        return render(request, 'portfolio/settings.html', {
             'user': request.user,
             'fund_manager': None,
         })

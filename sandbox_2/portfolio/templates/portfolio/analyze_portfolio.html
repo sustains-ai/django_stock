@@ -1,529 +1,260 @@
 {% extends 'portfolio/base.html' %}
-
-{% block title %}
-    Analyze Portfolio: {{ portfolio.name }}
-{% endblock %}
-
-{% load custom_filters %}
 {% load static %}
 
-{% block extra_styles %}
-    <link rel="stylesheet" href="{% static 'css/analyze_portfolio.css' %}">
-{% endblock %}
+{% block title %}Analyze Portfolio - Portfolio Manager{% endblock %}
 
 {% block content %}
-    <div class="sidebar-layout"> {# This container handles sidebar and main content area layout #}
-        <!-- Sidebar (Keep your existing sidebar HTML here) -->
-        <aside class="sidebar">
-            <ul>
-                <li><a href="#holdings">Holdings</a></li>
-                <li><a href="#distribution">Distribution</a></li>
-                <li><a href="#fluctuations">Fluctuations</a></li>
-                <li><a href="#key-metrics">Key Metrics</a></li> {# Renamed for dashboard context #}
-                <li><a href="#stock-risks">Stock Risks</a></li> {# Renamed for dashboard context #}
-                <li><a href="#optimal-allocation">Optimal Allocation</a></li>
-                <li><a href="#portfolio-performance">Performance</a></li>
-                <li><a href="#ai-agent">AI Agent</a></li>
-                <li><a href="#latest-insights">Latest Insights</a></li>
-                <li><a href="#exchange-rate-card">Exchange Rates</a></li>
-                <li><a href="#treasury-yield-chart-card">Treasury Yield</a></li>
-                <li><a href="#monte-carlo-risk-section">Monte Carlo Simulation</a></li>
-                <li><a href="#analysis-tools-hub">Advanced tools</a></li>
-                
-            </ul>
-        </aside>
-
-        <!-- Main Content Area - This will be our CSS Grid Container -->
-        <div class="page-content-area dashboard-grid">
-
-            {# CARD 1: Current Portfolio Holdings (Likely a wider card) #}
-            <section id="holdings" class="dashboard-card">
-                <h2 class="card-title">Current Portfolio Holdings</h2>
-                <div class="card-content card-content-scrollable"> {# Added generic .card-content #}
-                    <div style="overflow-x: auto; width: 100%;">
-                            <table id="Total-portfolio-table" class="data-table"> {# Generic table class #}
-                                <thead>
-                                    <tr>
-                                        <th>Stock Name</th>
-                                        <th>Symbol</th>
-                                        <th>Quantity</th>
-                                        <th>Manual Price</th>
-                                        <th>Live Price</th>
-                                        <th>Total Value</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for stock in stock_data %}
-                                        <tr>
-                                            <td>{{ stock.name }}</td>
-                                            <td>{{ stock.symbol }}</td>
-                                            <td>{{ stock.quantity }}</td>
-                                            <td>
-                                                {% if stock.manual_price %}
-                                                    ${{ stock.manual_price|floatformat:2 }}
-                                                {% else %}
-                                                    <em class="text-muted">Not Set</em> {# Added .text-muted #}
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                {% if stock.live_price %}
-                                                    ${{ stock.live_price|floatformat:2 }}
-                                                {% else %}
-                                                    <em class="text-muted">Unavailable</em> {# Added .text-muted #}
-                                                {% endif %}
-                                            </td>
-                                            <td>${{ stock.total_value|floatformat:2 }}</td>
-                                            <td>
-                                                <form method="POST" action="{% url 'delete_stock' portfolio.id stock.symbol %}" onsubmit="return confirm('Are you sure you want to delete {{ stock.symbol }}?');">
-                                                    {% csrf_token %}
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button> {# Changed to outline #}
-                                                </form>
-                                            </td>
-                                        </tr>
-                                    {% empty %}
-                                        <tr>
-                                            <td colspan="7" class="text-center text-muted">No stocks in this portfolio yet.</td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                    </div>
-                </div>
-                <div class="card-footer text-end"> {# Standardized card footer #}
-                    <a href="{% url 'add_stock' %}" class="btn btn-primary btn-sm">Add Stock</a> {# Primary action color #}
+<!-- Page Header -->
+<div class="page-header">
+    <h1>Portfolio Analysis</h1>
+    <p>Detailed analysis and insights for {{ portfolio.name }}</p>
                 </div>
             
-            
-            </section>
-
-            {# CARD 2: Portfolio Distribution #}
-            <section id="distribution" class="dashboard-card">
-                <h2 class="card-title">Portfolio Distribution</h2>
-                <div class="card-content chart-wrapper"> {# Added generic .card-content & .chart-wrapper #}
-                    <canvas id="portfolioChart"
-                            data-labels='[{% for stock in stock_data %}"{{ stock.name }}"{% if not forloop.last %}, {% endif %}{% endfor %}]'
-                            data-values='[{% for stock in stock_data %}{{ stock.total_value }}{% if not forloop.last %}, {% endif %}{% endfor %}]'>
-                    </canvas>
+<!-- Portfolio Overview -->
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-icon">
+            <i class="fas fa-dollar-sign"></i>
                 </div>
-            </section>
-        
-            {# CARD 3: Stock Price Fluctuations (Line Chart - Likely a medium to wide card) #}
-            <section id="fluctuations" class="dashboard-card">
-                <h2 class="card-title">Stock Price Fluctuations</h2>
-                <div class="card-content chart-wrapper">
-                    <canvas id="stockChart" data-historical='{{ historical_data|safe }}'></canvas>
+        <div class="kpi-title">Total Value</div>
+        <div class="kpi-value">${{ total_value|default:"0.00" }}</div>
+        <div class="kpi-subtitle">Current portfolio value</div>
                 </div>
-            </section>
-
-        
-        
-                    
-                        <!-----------------------------------------------------------------------
-                CARD 4: Key Portfolio Metrics (Enhanced)
-                Displays a comprehensive set of performance and risk metrics
-                for the portfolio. Data is fetched dynamically via JavaScript.
-            ------------------------------------------------------------------------>
-            <section id="key-metrics" class="dashboard-card">
-                <h2 class="card-title">Key Portfolio Metrics</h2>
-            
-                {# The main content area, using a CSS grid for layout #}
-                <div class="card-content stats-grid card-content-scrollable">
-            
-                    <!-- Group 1: Core Performance Metrics -->
-                    <div class="stat-item">
-                        <span class="stat-label">Total Buying Price</span>
-                        <span class="stat-value currency" id="total-buying-price-value">--</span>
+    
+    <div class="kpi-card">
+        <div class="kpi-icon">
+            <i class="fas fa-chart-line"></i>
                     </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Current Market Value</span>
-                        <span class="stat-value currency" id="current-market-value-value">--</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Total Profit/Loss</span>
-                        <span class="stat-value currency" id="profit-loss-value">--</span> {# Will show +/- and color based on value #}
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Cumulative Return</span>
-                        <span class="stat-value percentage" id="cumulative-return-value">--</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Number of Holdings</span>
-                        <span class="stat-value" id="num-holdings-value">--</span>
+        <div class="kpi-title">Total Return</div>
+        <div class="kpi-value">+{{ total_return|default:"0.0" }}%</div>
+        <div class="kpi-subtitle">Portfolio performance</div>
                     </div>
             
-                    <!-- Group 2: Risk & Return Analysis Metrics -->
-                    <div class="stat-item">
-                        <span class="stat-label">Mean Daily Return (MC)</span>
-                        <span class="stat-value percentage" id="mean-return-value">--</span> {# From Monte Carlo simulation #}
+    <div class="kpi-card">
+        <div class="kpi-icon">
+            <i class="fas fa-shield-alt"></i>
                     </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Portfolio Std Dev (Historic)</span>
-                        <span class="stat-value percentage" id="portfolio-std-dev-value">--</span>
+        <div class="kpi-title">Risk Score</div>
+        <div class="kpi-value">{{ risk_score|default:"6.5" }}/10</div>
+        <div class="kpi-subtitle">Portfolio risk level</div>
                     </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Sharpe Ratio</span>
-                        <span class="stat-value" id="sharpe-ratio-value">--</span>
+    
+    <div class="kpi-card">
+        <div class="kpi-icon">
+            <i class="fas fa-briefcase"></i>
                     </div>
-{#                    <div class="stat-item">#}
-{#                        <span class="stat-label">Portfolio Beta</span>#}
-{#                        <span class="stat-value" id="portfolio-beta-value">--</span>#}
-{#                    </div>#}
-                    <div class="stat-item">
-                        <span class="stat-label">Max Drawdown</span>
-                        <span class="stat-value percentage" id="max-drawdown-value">--</span>
-                    </div>
-{#                    <div class="stat-item">#}
-{#                        <span class="stat-label">Risk-Free Rate</span>#}
-{#                        <span class="stat-value percentage" id="risk-free-rate-value">--</span> {# Typically Treasury Yield #}
-{#                    </div>#}
-            
-                    <!-- Group 3: Specific Risk Measures (VaR, CVaR from different sources) -->
-                    <div class="stat-item">
-                        <span class="stat-label">Historic VaR (95%)</span>
-                        <span class="stat-value percentage" id="historic-var-value">--</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Historic CVaR (95%)</span>
-                        <span class="stat-value percentage" id="historic-cvar-value">--</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Monte Carlo VaR (95%)</span>
-                        <span class="stat-value percentage" id="mc-var-keymetric-value">--</span> {# For display in this key metrics card #}
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Monte Carlo CVaR (95%)</span>
-                        <span class="stat-value percentage" id="mc-cvar-keymetric-value">--</span> {# For display in this key metrics card #}
+        <div class="kpi-title">Holdings</div>
+        <div class="kpi-value">{{ stock_count|default:"0" }}</div>
+        <div class="kpi-subtitle">Number of positions</div>
                     </div>
                 </div>
             
-                {# Card footer with a button to refresh all these metrics #}
-                <div class="card-footer text-center">
-                     <button id="load-all-key-metrics-btn" class="btn btn-secondary btn-sm">Refresh All Metrics</button>
+<!-- Portfolio Holdings -->
+<div class="card" style="margin-top: 2rem;">
+    <div class="card-header">
+        <h3 class="card-title">Current Holdings</h3>
+        <p class="card-subtitle">Your portfolio positions and performance</p>
                 </div>
-            </section>
-
-        
-        
-        
-            {# CARD 5: Individual Stock Risk Measures (Table - Likely wider) #}
-            <section id="stock-risks" class="dashboard-card">
-                <h2 class="card-title">Individual Stock Risks</h2>
-                <div class="card-content card-content-scrollable">
-                    {% if risk_measures %}
-                        <table id="stock-wise-risk" class="data-table">
+    <div class="card-body">
+        {% if stocks %}
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
                             <thead>
-                                <tr>
-                                    <th>Symbol</th>
-                                    <th>MAD</th>
-                                    <th>Volatility</th>
-                                    <th>VaR (95%)</th>
-                                    <th>CVaR (95%)</th>
-                                    <th>Max Drawdown</th>
+                    <tr style="background: var(--bg-secondary);">
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary);">Stock</th>
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary);">Symbol</th>
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary);">Quantity</th>
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary);">Price</th>
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary);">Value</th>
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary);">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for symbol, measures in risk_measures.items %}
-                                    <tr>
-                                        <td>{{ symbol }}</td>
-                                        <td>{{ measures.MAD|floatformat:4 }}</td>
-                                        <td>{{ measures.Volatility|floatformat:4 }}</td>
-                                        <td>{{ measures.VaR_95|floatformat:4 }}</td>
-                                        <td>{{ measures.CVaR_95|floatformat:4 }}</td>
-                                        <td>{{ measures.Max_Drawdown|floatformat:4 }}</td>
-                                    </tr>
-                                {% empty %}
-                                    <tr>
-                                        <td colspan="6" class="text-center text-muted">No individual stock risk measures available.</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    {% else %}
-                        <p class="text-center text-muted card-placeholder">Risk measures are being calculated or are unavailable.</p> {# Generic placeholder text #}
-                    {% endif %}
-                </div>
-            </section>
-
-        
-        
-        
-            {# CARD 6: Optimal Portfolio Allocation (Table & 3 Pie Charts - Large, complex card) #}
-            <section id="optimal-allocation" class="dashboard-card">
-                <h2 class="card-title">Optimal Portfolio Allocations</h2>
-                <div class="card-content"> {# Main content wrapper for this complex card #}
-                    {% if optimal_table %}
-                        <div class="optimal-allocation-container">
-                            <div class="optimal-table-wrapper card-content-scrollable">
-                                <table id="portfolio-optimization-results" class="data-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Stock Symbol</th>
-                                            <th>MV Weight</th>
-                                            <th>CVaR Weight</th>
-                                            <th>ERC Weight</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for symbol, weight in optimal_table.mean_variance.items %}
-                                            <tr>
-                                                <td>{{ symbol }}</td>
-                                                <td>{{ weight|floatformat:4 }}</td>
-                                                <td>{{ optimal_table.cvar|get_item:symbol|floatformat:4 }}</td>
-                                                <td>{{ optimal_table.erc|get_item:symbol|floatformat:4 }}</td>
-                                            </tr>
-                                        {% empty %}
-                                            <tr>
-                                                <td colspan="4" class="text-center text-muted">No optimization data calculated.</td>
+                    {% for stock in stocks %}
+                    <tr style="border-bottom: 1px solid var(--border-light);">
+                        <td style="padding: 1rem; font-weight: 500; color: var(--text-primary);">{{ stock.name }}</td>
+                        <td style="padding: 1rem; color: var(--text-secondary);">{{ stock.symbol }}</td>
+                        <td style="padding: 1rem; color: var(--text-primary);">{{ stock.quantity }}</td>
+                        <td style="padding: 1rem; color: var(--text-primary);">${{ stock.price|default:"0.00" }}</td>
+                        <td style="padding: 1rem; color: var(--text-primary); font-weight: 600;">${{ stock.total_value|default:"0.00" }}</td>
+                        <td style="padding: 1rem;">
+                            <a href="{% url 'delete_stock' portfolio.id stock.symbol %}" class="btn btn-secondary btn-sm" style="background: #dc3545; border-color: #dc3545;" onclick="return confirm('Are you sure you want to delete {{ stock.symbol }}?')">
+                                <i class="fas fa-trash"></i>
+                                Delete
+                            </a>
+                        </td>
                                             </tr>
                                         {% endfor %}
                                     </tbody>
                                 </table>
                             </div>
-
-                            <div id="allocation-pie-charts-grid" class="pie-charts-grid">
-                                <div class="pie-chart-item">
-                                    <h4 class="pie-chart-title">Mean-Variance</h4>
-                                    <div class="chart-wrapper-small">
-                                        <canvas id="mvPieChart" data-mv='{{ portfolio_analysis.mean_variance|safe }}'></canvas>
+        {% else %}
+        <div style="text-align: center; padding: 3rem;">
+            <i class="fas fa-chart-line" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+            <h3 style="color: var(--text-secondary); margin-bottom: 1rem;">No Holdings Yet</h3>
+            <p style="color: var(--text-muted); margin-bottom: 2rem;">Add stocks to start building your portfolio</p>
+            <a href="{% url 'add_stock' portfolio.id %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i>
+                Add Stock
+            </a>
                                     </div>
-                                </div>
-                                <div class="pie-chart-item">
-                                    <h4 class="pie-chart-title">CVaR</h4>
-                                    <div class="chart-wrapper-small">
-                                        <canvas id="cvarPieChart" data-cvar='{{ portfolio_analysis.cvar|safe }}'></canvas>
-                                    </div>
-                                </div>
-                                <div class="pie-chart-item">
-                                    <h4 class="pie-chart-title">ERC</h4>
-                                    <div class="chart-wrapper-small">
-                                        <canvas id="ercPieChart" data-erc='{{ portfolio_analysis.erc|safe }}'></canvas>
-                                    </div>
-                                </div>
+        {% endif %}
                             </div>
                         </div>
 
-                        <div id="ai-explanation-container" class="ai-insights-box">
-                            <div id="ai-explanation">
-                                <h4 class="ai-title">AI Insights (Coming Soon)</h4>
-                                <p class="text-muted">Automated analysis of portfolio allocations will appear here.</p>
+<!-- Portfolio Distribution Chart -->
+<div class="card" style="margin-top: 2rem;">
+    <div class="card-header">
+        <h3 class="card-title">Portfolio Distribution</h3>
+        <p class="card-subtitle">Asset allocation and diversification</p>
                             </div>
-                        </div>
-                    {% else %}
-                        <p class="text-center text-danger card-placeholder">Optimal allocation analysis is unavailable for this portfolio.</p>
-                    {% endif %}
-                </div>
-            </section>
-
-        
-        
-        
-        
-            {# CARD 7: Portfolio Performance (2 Plotly Charts - Value Over Time & Efficient Frontier) #}
-            {# This will likely be a wider card, potentially spanning full width or a large portion #}
-            <section id="portfolio-performance" class="dashboard-card">
-                <h2 class="card-title">Portfolio Performance</h2>
-                <div class="card-content-scrollable">
-                    <div class="performance-charts-container"> {# Container for the two Plotly charts #}
-                        <div class="plotly-chart-item">
-                            <h3 class="plotly-chart-title">Value Over Time</h3>
-                            <div class="plotly-wrapper"> {# Plotly needs a specific wrapper sometimes #}
-                                <div id="portfolio-valueoveryears-chart" class="plotly-chart"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Hidden data container for Plotly, essential for passing data -->
-                <div id="portfolio-container"
-                     data-portfolio-id="{{ portfolio.id }}"
-                     data-portfolio-value='{{ portfolio_value_json|safe }}' style="display:none;">
-                </div>
-            </section>
-        
-        <!-- CARD 8: Ask AI Agent -->
-            <section id="ai-agent" class="dashboard-card" >
-                <h2 class="card-title">Ask the Portfolio AI Agent</h2>
-                <div class="card-content-scrollable">
-                    <form method="POST">
-                        {% csrf_token %}
-                        <div class="form-group">
-                            <input type="text" name="ai_question" placeholder="Ask a question about your portfolio..." class="form-control" style="width: 100%; padding: 10px;" required>
-                        </div>
-                        <div class="text-end mt-2">
-                            <button type="submit" class="btn btn-primary btn-sm">Ask</button>
-                        </div>
-                    </form>
+    <div class="card-body">
+        {% if stocks %}
+        <div id="portfolio-chart" style="height: 400px;"></div>
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+        <script>
+            // Portfolio distribution data
+            var labels = [
+                {% for stock in stocks %}'{{ stock.symbol }}'{% if not forloop.last %},{% endif %}{% endfor %}
+            ];
+            var values = [
+                {% for stock in stocks %}{{ stock.quantity|default:1 }}{% if not forloop.last %},{% endif %}{% endfor %}
+            ];
+            var colors = ['#fe5757', '#96ab9d', '#599dff', '#00a254', '#ff6b6b'];
             
-                    {% if ai_answer %}
-                        <div class="ai-response-box mt-3">
-                            <h4 class="ai-title">AI Response</h4>
-                            <p>{{ ai_answer }}</p>
+            var data = [{
+                values: values,
+                labels: labels,
+                type: 'pie',
+                marker: {
+                    colors: colors.slice(0, labels.length)
+                },
+                textinfo: 'label+percent',
+                textposition: 'outside'
+            }];
+            
+            var layout = {
+                title: {
+                    text: 'Portfolio Distribution',
+                    font: { size: 16, color: '#2c3e50' }
+                },
+                showlegend: true,
+                legend: {
+                    orientation: 'h',
+                    y: -0.1,
+                    x: 0.5,
+                    xanchor: 'center'
+                },
+                margin: {t: 50, b: 50, l: 50, r: 50},
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)'
+            };
+            
+            Plotly.newPlot('portfolio-chart', data, layout, {responsive: true});
+        </script>
+        {% else %}
+        <div style="height: 300px; display: flex; align-items: center; justify-content: center; background: var(--bg-secondary); border-radius: var(--radius-md);">
+            <div style="text-align: center;">
+                <i class="fas fa-chart-pie" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+                <p style="color: var(--text-secondary);">Add stocks to see portfolio distribution</p>
+            </div>
                         </div>
                     {% endif %}
                 </div>
-            </section>
-
-                            <!-- CARD 9: Latest News -->
-                <!-- CARD 9: Latest Market News -->
-            <section id="latest-insights" class="dashboard-card">
-                <h2 class="card-title">Latest News</h2>
-                <div class="card-content card-content-scrollable" id="news-container" data-url="{% url 'fetch_news' portfolio.id %}">
-                    <p class="text-muted">Loading news...</p>
                 </div>
-            </section>
 
-
-
-                    <!-- CARD 10: Currency Exchange Rates -->
-            <section id="exchange-rate-card" class="dashboard-card">
-                <h2 class="card-title">Currency Exchange Rates</h2>
-                <div id="exchange-rate-container"
-                     class="card-content card-content-scrollable"
-                     data-url="{% url 'fetch_currency_rates' portfolio.id %}">
-                    <p class="text-muted">Loading exchange rates...</p>
+<!-- Portfolio Performance Chart -->
+{% if portfolio_value_json %}
+<div class="card" style="margin-top: 2rem;">
+    <div class="card-header">
+        <h3 class="card-title">Portfolio Performance</h3>
+        <p class="card-subtitle">Portfolio value over time</p>
                 </div>
-            </section>
-        
-        
-                           <!-- CARD: 10-Year Treasury Yield Line Chart -->
-            <section id="treasury-yield-chart-card" class="dashboard-card" style="grid-column: span 12; max-height: 450px; overflow-y: auto;">
-                <h2 class="card-title">10-Year US Treasury Yield (Last 3 Years)</h2>
-                <canvas id="treasuryYieldChart" style="max-height: 300px;"></canvas>
-            </section>
-        
-        
-            <section id="treasury-yield-section" class="dashboard-card">
-                <h2 class="card-title">Treasury Yield Rates</h2>
-                <div id="treasury-yield-container" class="card-content card-content-scrollable">
-                    <div class="grid-2col">
-                        <div class="stat-item"><span class="stat-label">3 Month:</span> <span class="stat-value" id="yield-3m">--</span>%</div>
-                        <div class="stat-item"><span class="stat-label">2 Year:</span> <span class="stat-value" id="yield-2y">--</span>%</div>
-                        <div class="stat-item"><span class="stat-label">5 Year:</span> <span class="stat-value" id="yield-5y">--</span>%</div>
-                        <div class="stat-item"><span class="stat-label">7 Year:</span> <span class="stat-value" id="yield-7y">--</span>%</div>
-                        <div class="stat-item"><span class="stat-label">10 Year:</span> <span class="stat-value" id="yield-10y">--</span>%</div>
-                        <div class="stat-item"><span class="stat-label">30 Year:</span> <span class="stat-value" id="yield-30y">--</span>%</div>
+    <div class="card-body">
+        <div id="performance-chart" style="height: 400px;"></div>
+        <script>
+            var performanceData = {{ portfolio_value_json|safe }};
+            
+            var data = [{
+                x: performanceData.map(d => d.x),
+                y: performanceData.map(d => d.y),
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Portfolio Value',
+                line: {
+                    color: '#fe5757',
+                    width: 3
+                },
+                marker: {
+                    color: '#fe5757',
+                    size: 6
+                }
+            }];
+            
+            var layout = {
+                title: {
+                    text: 'Portfolio Value Over Time',
+                    font: { size: 16, color: '#2c3e50' }
+                },
+                xaxis: {
+                    title: 'Date',
+                    gridcolor: '#e9ecef'
+                },
+                yaxis: {
+                    title: 'Portfolio Value ($)',
+                    gridcolor: '#e9ecef'
+                },
+                margin: {t: 50, b: 50, l: 50, r: 50},
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)'
+            };
+            
+            Plotly.newPlot('performance-chart', data, layout, {responsive: true});
+        </script>
                     </div>
                 </div>
-            </section>
+{% endif %}
 
-        
-        <span style="display:none;" data-montecarlo-id="{{ portfolio.id }}"></span>
-        
-
-
-                           <!-- CARD 11: Monte Carlo Simulation (Portfolio-Level Risk) -->
-                <section id="monte-carlo-risk-section" class="dashboard-card">
-                    <h2 class="card-title">Portfolio Risk Distribution (Monte Carlo)</h2>
-                    <div class="card-content">
-                        <div class="monte-carlo-chart-container">
-                            <canvas id="monteCarloChart"></canvas>  <!-- <<<< THIS MUST EXIST -->
-                        </div>
-                        <div class="stats-display-horizontal">
-                            <div class="stat-item">
-                                <span class="stat-label">VaR (95%)</span>
-                                <span class="stat-value" id="monte-carlo-var">Loading...</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">CVaR (95%)</span>
-                                <span class="stat-value" id="monte-carlo-cvar">Loading...</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">Mean Daily Return</span>
-                                <span class="stat-value" id="monte-carlo-mean">Loading...</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">Daily Volatility</span>
-                                <span class="stat-value" id="monte-carlo-stddev">Loading...</span>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-        
-        
-        {# CARD: Analysis & Tools Hub #}
-                    <section id="analysis-tools-hub" class="dashboard-card">
-                        <h2 class="card-title">Analysis & Tools Hub</h2>
-                        <div class="card-content">
-                            <div class="tabs-container">
-                                <div class="tabs-nav">
-                                    <button class="tab-link active" data-tab="esg">ESG Analytics</button>
-                                    <button class="tab-link" data-tab="adv-risk">Advanced Risk</button>
-                                    <button class="tab-link" data-tab="ml">ML Strategies</button>
-                                    <button class="tab-link" data-tab="stress">Stress Testing</button>
-                                    <button class="tab-link" data-tab="backtest">Backtesting</button>
-                                    <button class="tab-link" data-tab="rebalance">Rebalance Insights</button>
-                                    <button class="tab-link" data-tab="report">Download Report</button>
+<!-- Quick Actions -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 2rem;">
+    <a href="{% url 'add_stock' portfolio.id %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i>
+        Add Stock
+    </a>
+    <a href="{% url 'portfolio_risk' portfolio.id %}" class="btn btn-secondary">
+        <i class="fas fa-shield-alt"></i>
+        Risk Analysis
+    </a>
+    <a href="#" class="btn btn-secondary">
+        <i class="fas fa-chart-bar"></i>
+        Advanced Analytics
+    </a>
+    <a href="#" class="btn btn-secondary">
+        <i class="fas fa-download"></i>
+        Export Report
+    </a>
                                 </div>
                     
-                                <div class="tabs-content">
-                                    <div id="tab-esg" class="tab-pane active">
-                                        <h4>ESG Analytics</h4>
-                                        <p>Explore Environmental, Social, and Governance factors impacting your portfolio.</p>
-                                        <a href="{% url 'esg_analytics' portfolio.id %}" class="btn btn-secondary btn-launch-tool">Launch ESG Analyzer</a>
+<!-- AI Assistant -->
+<div class="ai-assistant" style="margin-top: 2rem;">
+    <div class="ai-header">
+        <div class="ai-icon">
+            <i class="fas fa-robot"></i>
                                     </div>
-                                    <div id="tab-adv-risk" class="tab-pane">
-                                        <h4>Advanced Risk Modeling</h4>
-                                        <p>Deep dive into sophisticated risk metrics and scenario analysis beyond standard VaR/CVaR.</p>
-                                        <a href="{% url 'advanced_risk' portfolio.id %}" class="btn btn-secondary btn-launch-tool">Explore Advanced Risk</a>
-                                    </div>
-                                    <div id="tab-ml" class="tab-pane">
-                                        <h4>Machine Learning Strategies</h4>
-                                        <p>Leverage AI-driven insights for predictive modeling and strategy optimization.</p>
-                                        <a href="{% url 'ml_strategies' portfolio.id %}" class="btn btn-secondary btn-launch-tool">View ML Strategies</a>
-                                    </div>
-                                    <div id="tab-stress" class="tab-pane">
-                                        <h4>Stress Testing Scenarios</h4>
-                                        <p>Simulate portfolio performance under various extreme market conditions.</p>
-                                        <a href="{% url 'stress_testing' portfolio.id %}" class="btn btn-secondary btn-launch-tool">Run Stress Tests</a>
-                                    </div>
-                                    <div id="tab-backtest" class="tab-pane">
-                                        <h4>Strategy Backtesting</h4>
-                                        <p>Evaluate historical performance of custom investment strategies.</p>
-                                        <a href="{% url 'backtesting' portfolio.id %}" class="btn btn-secondary btn-launch-tool">Perform Backtest</a>
-                                    </div>
-                                    <div id="tab-rebalance" class="tab-pane">
-                                        <h4>Rebalancing Insights</h4>
-                                        <p>Optimize portfolio allocation with intelligent rebalancing suggestions.</p>
-                                        <a href="{% url 'rebalance_insights' portfolio.id %}" class="btn btn-secondary btn-launch-tool">Get Rebalance Insights</a>
-                                    </div>
-                                    <div id="tab-report" class="tab-pane">
-                                        <h4>Comprehensive Report</h4>
-                                        <p>Generate a detailed PDF report of your portfolio's current status and analysis.</p>
-                                        <a href="{% url 'generate_report' portfolio.id %}" class="btn btn-secondary btn-launch-tool">Download Report</a>
+        <div>
+            <div class="ai-title">AI Portfolio Assistant</div>
+            <div class="ai-description">Get personalized insights and recommendations for this portfolio</div>
                                     </div>
                                 </div>
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div class="ai-status">
+            <i class="fas fa-check"></i>
+            AI READY
+        </div>
+        <button class="ai-button">
+            <i class="fas fa-comments"></i>
+            Ask AI Assistant
+        </button>
                             </div>
                         </div>
-                    </section>
-
-        
-        
-        
-        
-        
-        </div> <!-- End .page-content-area.dashboard-grid -->
-    </div> <!-- End .sidebar-layout -->
-
-    
-    
-    
-    
-    
-  <!-- Scripts -->
-    <!-- Load Plotly first if it's used independently -->
-    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
-
-    <!-- 1. Load the specific Chart.js version you intend to use -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-
-    <!-- 2. Load the Chart.js Annotation Plugin (depends on Chart.js) -->
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0/dist/chartjs-plugin-annotation.min.js"></script>
-
-    <!-- 3. Now load your custom scripts that use these libraries -->
-    <script src="{% static 'js/portfolio_risks.js' %}"></script>
-    <script src="{% static 'js/portfolio_plotly.js' %}"></script>
-    <script src="{% static 'js/portfolio_charts.js' %}"></script>
-
-    {# REMOVE THE DUPLICATE Chart.js from here if it was at the end #}
-    {# <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> #}
 {% endblock %}

@@ -9,7 +9,28 @@ from .models import Stock, Portfolio, FundManager
 class StockForm(forms.ModelForm):
     class Meta:
         model = Stock
-        fields = ['portfolio', 'symbol', 'name', 'quantity', 'price']
+        fields = ['symbol', 'name', 'quantity', 'price']
+        widgets = {
+            'symbol': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., AAPL, GOOGL, MSFT'
+            }),
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., Apple Inc., Google, Microsoft'
+            }),
+            'quantity': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Number of shares',
+                'min': '1'
+            }),
+            'price': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Price per share (optional)',
+                'step': '0.01',
+                'min': '0'
+            })
+        }
 
 
 class PortfolioForm(forms.ModelForm):
