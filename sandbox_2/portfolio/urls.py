@@ -7,6 +7,7 @@ from . import views
 urlpatterns = [
     # Authentication
     path('', views.custom_login, name='login'),
+    path('test/', views.test_view, name='test'),
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
     
     # Modern UI Routes

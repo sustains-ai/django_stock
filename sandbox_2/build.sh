@@ -2,14 +2,20 @@
 # exit on error
 set -o errexit
 
-# Navigate to the correct directory
-cd /opt/render/project/src
-
 # Install dependencies
 pip install -r requirements.txt
 
-# Collect static files
-python manage.py collectstatic --noinput
+# Create staticfiles directory if it doesn't exist
+mkdir -p staticfiles
+
+# Collect static files with verbose output
+python manage.py collectstatic --noinput --clear --verbosity=2
+
+# List collected static files for debugging
+echo "=== Static files collected ==="
+ls -la staticfiles/
+echo "=== CSS files ==="
+ls -la staticfiles/css/ || echo "No CSS directory found"
 
 # Run migrations
 python manage.py migrate

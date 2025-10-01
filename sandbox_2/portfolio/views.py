@@ -39,24 +39,24 @@ load_dotenv()  # Ensures .env is loaded if not already
 
 
 
+def test_view(request):
+    return HttpResponse("Test view works!")
+
 def custom_login(request):
-    form = AuthenticationForm(data=request.POST or None)
-    news_data = fetch_news_sentiment()
-    news_fetch_success = bool(news_data)  # True if news_data is not empty, False otherwise
-    print("✅ News fetch success:", news_fetch_success)
-
-    if request.method == "POST" and form.is_valid():
-        user = form.get_user()
-        login(request, user)
-        return redirect("/dashboard/")
-    print("🟡 Login page loaded")
-
-    return render(request, 'portfolio/login.html', {
-        'timestamp': datetime.now().timestamp(),
-        'form': form,
-        'news_data': news_data,
-        'news_fetch_success': news_fetch_success
-    })
+    from django.contrib.auth.forms import AuthenticationForm
+    from django.contrib.auth import login
+    from django.shortcuts import render, redirect
+    
+    if request.method == "POST":
+        form = AuthenticationForm(data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            return redirect("/dashboard/")
+    else:
+        form = AuthenticationForm()
+    
+    return render(request, 'portfolio/login.html', {'form': form})
 
 
 

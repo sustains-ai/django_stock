@@ -142,6 +142,10 @@ STATICFILES_DIRS = [
 # ✅ Add WhiteNoise for serving static files in production
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
+# WhiteNoise configuration for better static file serving
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_AUTOREFRESH = True
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
