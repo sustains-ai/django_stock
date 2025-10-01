@@ -256,15 +256,18 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Apply the saved theme
     if (currentTheme === 'dark') {
-        themeCSS.href = '{% static "css/modern-dark.css" %}';
+        themeCSS.href = '{% static "css/modern-dark.css" %}?v=' + Date.now();
         themeIcon.className = 'fas fa-sun';
         themeToggleText.textContent = 'Switch to Light';
         currentThemeText.textContent = 'Dark Theme';
+        // Force dark theme application
+        document.body.classList.add('dark-theme');
     } else {
-        themeCSS.href = '{% static "css/modern-light.css" %}';
+        themeCSS.href = '{% static "css/modern-light.css" %}?v=' + Date.now();
         themeIcon.className = 'fas fa-moon';
         themeToggleText.textContent = 'Switch to Dark';
         currentThemeText.textContent = 'Light Theme';
+        document.body.classList.remove('dark-theme');
     }
     
     // Theme toggle functionality
@@ -278,11 +281,13 @@ document.addEventListener('DOMContentLoaded', function() {
             themeIcon.className = 'fas fa-sun';
             themeToggleText.textContent = 'Switch to Light';
             currentThemeText.textContent = 'Dark Theme';
+            document.body.classList.add('dark-theme');
         } else {
             themeCSS.href = '{% static "css/modern-light.css" %}?v=' + Date.now();
             themeIcon.className = 'fas fa-moon';
             themeToggleText.textContent = 'Switch to Dark';
             currentThemeText.textContent = 'Light Theme';
+            document.body.classList.remove('dark-theme');
         }
         
         // Save preference
