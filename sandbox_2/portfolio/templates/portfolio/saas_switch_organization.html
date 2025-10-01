@@ -1,0 +1,240 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Switch Organization - Portfolio Manager</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="{% static 'css/modern-light.css' %}">
+    
+    <style>
+        .switch-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, #f8f9fa 100%);
+        }
+        
+        .switch-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-lg);
+            padding: 3rem;
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid var(--border-light);
+        }
+        
+        .switch-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .switch-logo {
+            width: 60px;
+            height: 60px;
+            background: var(--primary-red);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            color: var(--text-white);
+            font-size: 24px;
+        }
+        
+        .switch-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .switch-subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
+        .organization-list {
+            margin-bottom: 2rem;
+        }
+        
+        .organization-item {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .organization-item:hover {
+            border-color: var(--primary-red);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .organization-item.selected {
+            border-color: var(--primary-red);
+            background: rgba(254, 87, 87, 0.05);
+        }
+        
+        .organization-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .organization-role {
+            color: var(--text-secondary);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .role-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+        
+        .role-icon.admin {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .role-icon.fund-manager {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+        
+        .role-icon.client {
+            background: #e8f5e8;
+            color: #388e3c;
+        }
+        
+        .switch-button {
+            width: 100%;
+            padding: 1rem;
+            background: var(--primary-red);
+            color: var(--text-white);
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .switch-button:hover {
+            background: #e04a4a;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .switch-button:disabled {
+            background: var(--text-secondary);
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            margin-bottom: 1rem;
+            font-size: 14px;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="switch-container">
+        <div class="switch-card">
+            <div class="switch-header">
+                <div class="switch-logo">
+                    <i class="fas fa-building"></i>
+                </div>
+                <h1 class="switch-title">Select Organization</h1>
+                <p class="switch-subtitle">Choose which organization to access</p>
+            </div>
+            
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                You have access to multiple organizations. Select one to continue.
+            </div>
+            
+            <form method="post" id="organizationForm">
+                {% csrf_token %}
+                <div class="organization-list">
+                    {% for org in organizations %}
+                        <div class="organization-item" onclick="selectOrganization('{{ org.id }}')">
+                            <div class="organization-name">{{ org.name }}</div>
+                            <div class="organization-role">
+                                <div class="role-icon {{ org.role }}">
+                                    {% if org.role == 'admin' %}
+                                        <i class="fas fa-user-shield"></i>
+                                    {% elif org.role == 'fund_manager' %}
+                                        <i class="fas fa-chart-line"></i>
+                                    {% else %}
+                                        <i class="fas fa-user"></i>
+                                    {% endif %}
+                                </div>
+                                {{ org.role|title|replace:"_":" " }}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <input type="hidden" name="organization_id" id="selectedOrganization" value="">
+                
+                <button type="submit" class="switch-button" id="switchButton" disabled>
+                    <i class="fas fa-sign-in-alt"></i>
+                    Access Organization
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        function selectOrganization(orgId) {
+            // Remove selected class from all items
+            document.querySelectorAll('.organization-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked item
+            event.currentTarget.classList.add('selected');
+            
+            // Set hidden input value
+            document.getElementById('selectedOrganization').value = orgId;
+            
+            // Enable button
+            document.getElementById('switchButton').disabled = false;
+        }
+    </script>
+</body>
+</html>

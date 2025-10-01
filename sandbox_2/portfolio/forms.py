@@ -1,12 +1,76 @@
+# Consolidated Forms for Portfolio Management Application
+
 from django import forms
-from .models import Stock, Portfolio
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
+from .models import Stock, Portfolio, FundManager
+
 
 class StockForm(forms.ModelForm):
     class Meta:
         model = Stock
-        fields = ['portfolio', 'symbol', 'name','quantity','price']
+        fields = ['portfolio', 'symbol', 'name', 'quantity', 'price']
+
 
 class PortfolioForm(forms.ModelForm):
     class Meta:
         model = Portfolio
         fields = ['name', 'description']
+
+
+# Additional Forms for User Management
+class UserRegistrationForm(UserCreationForm):
+    """Extended user registration form"""
+    
+    email = forms.EmailField(required=True)
+    first_name = forms.CharField(max_length=30, required=True)
+    last_name = forms.CharField(max_length=30, required=True)
+    
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'first_name', 'last_name', 'password1', 'password2')
+        widgets = {
+            'username': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Choose a username'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'your@email.com'
+            }),
+            'first_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'First Name'
+            }),
+            'last_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Last Name'
+            }),
+            'password1': forms.PasswordInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Password'
+            }),
+            'password2': forms.PasswordInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Confirm Password'
+            })
+        }
+    
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError("A user with this email already exists.")
+        return email
+
+
+class UserProfileForm(forms.ModelForm):
+    """Form for updating user profile"""
+    
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email']
+        widgets = {
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'})
+        }

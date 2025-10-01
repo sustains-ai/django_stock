@@ -22,9 +22,7 @@ from django.urls import path,include
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    # Modern UI routes (primary)
-    path('', include('portfolio.urls_modern')),
-    # Legacy routes (for existing functionality)
-    path('legacy/', include('portfolio.urls')),
+    # Portfolio management routes
+    path('', include('portfolio.urls')),
     path('', include('advanced_analytics.urls')),
 ]

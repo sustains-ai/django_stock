@@ -1,69 +1,34 @@
-from datetime import datetime
+# Consolidated Views for Portfolio Management Application
 
-from .models import Portfolio, FundManager,HistoricalStockData
-from .forms import StockForm, PortfolioForm
-from django.contrib.auth import logout
+from datetime import datetime
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import JsonResponse, HttpResponse, HttpResponseServerError
+from django.contrib.auth import logout, login, authenticate
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib import messages
 from django.views.decorators.cache import cache_page
+from django.views.decorators.http import require_POST
 from django.core.cache import cache
-import pandas as pd
-import json
-from django.shortcuts import render, get_object_or_404
-from django.http import JsonResponse
-from .models import Portfolio, HistoricalStockData, Stock
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, get_object_or_404
-from django.contrib import messages
+from django.utils.timezone import now
+from dotenv import load_dotenv
+import os
+import requests
 import json
 import pandas as pd
-from .models import Portfolio, Stock, HistoricalStockData
-from .risk_analysis import perform_risk_analysis, calculate_risk_measures
-import json
-from django.shortcuts import render
-from django.shortcuts import redirect
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404
-from django.contrib import messages
-from .risk_analysis import calculate_risk_measures
-from django.http import JsonResponse
 import numpy as np
 import riskfolio as rp
-from django.shortcuts import render, get_object_or_404, redirect
-from .models import Portfolio, Stock, HistoricalStockData
-from .forms import StockForm
+from collections import defaultdict
+from redis.exceptions import RedisError
 
-from .risk_analysis import calculate_portfolio_risk
-from django.shortcuts import render, get_object_or_404
-import pandas as pd
-from .models import Portfolio, HistoricalStockData
-from .risk_analysis import perform_risk_analysis  # Import new function
-
-from django.contrib.auth import authenticate, login
-from django.shortcuts import render, redirect
-from django.contrib.auth.forms import AuthenticationForm
-
+from .models import Portfolio, FundManager, HistoricalStockData, Stock
+from .forms import StockForm, PortfolioForm
 from .decorators import fund_manager_required
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import redirect
-from django.contrib.auth.decorators import login_required
-
-import os
-import requests
-from django.shortcuts import render, redirect
-from django.contrib.auth import login
-from django.contrib.auth.forms import AuthenticationForm
-from dotenv import load_dotenv
+from .risk_analysis import perform_risk_analysis, calculate_risk_measures, calculate_portfolio_risk
+from .utils import fetch_news_sentiment, global_open_closed_status, get_market_returns, get_treasury_yields, monte_carlo_portfolio_var_cvar
+from .ai_agent import portfolio_risk_agent
 
 load_dotenv()  # Ensures .env is loaded if not already
-
-import os
-import requests
-from django.contrib.auth.forms import AuthenticationForm
-from django.contrib.auth import login
-from django.shortcuts import render, redirect
-from django.utils.timezone import now
-
-from .utils import fetch_news_sentiment,global_open_closed_status
-from .ai_agent import portfolio_risk_agent
 
 
 
@@ -77,7 +42,7 @@ def custom_login(request):
     if request.method == "POST" and form.is_valid():
         user = form.get_user()
         login(request, user)
-        return redirect("/portfolio_list/")
+        return redirect("/dashboard/")
     print("🟡 Login page loaded")
 
     return render(request, 'portfolio/modern_login.html', {
@@ -651,6 +616,7 @@ from .ai_agent import portfolio_risk_agent
 
 def ask_ai_view(request, portfolio_id):
     answer = ""
+    portfolio = get_object_or_404(Portfolio, id=portfolio_id)
     if request.method == "POST":
         question = request.POST.get("question")
         answer = portfolio_risk_agent(portfolio_id, question)
@@ -988,3 +954,247 @@ def test_redis_cache(request):
             f"<p style='color: red;'>An unexpected error occurred: <strong>{e}</strong></p>"
         )
         return HttpResponseServerError(error_message)
+
+
+# Modern Views for Clean UI
+@login_required
+@fund_manager_required
+def modern_dashboard(request):
+    """Modern dashboard with clean UI"""
+    try:
+        fund_manager = request.user.fundmanager
+        portfolios = Portfolio.objects.filter(fund_manager=fund_manager)
+        
+        # Calculate dashboard metrics from real data
+        total_value = 0
+        total_profit = 0
+        profitable_portfolios = 0
+        
+        for portfolio in portfolios:
+            # Calculate real portfolio value from stocks
+            portfolio_value = 0
+            portfolio_profit = 0
+            
+            for stock in portfolio.stocks.all():
+                if stock.price and stock.quantity:
+                    stock_value = stock.price * stock.quantity
+                    portfolio_value += stock_value
+                    # Calculate profit based on current vs initial price
+                    if hasattr(stock, 'initial_price') and stock.initial_price:
+                        profit = (stock.price - stock.initial_price) * stock.quantity
+                        portfolio_profit += profit
+            
+            total_value += portfolio_value
+            total_profit += portfolio_profit
+            if portfolio_profit > 0:
+                profitable_portfolios += 1
+        
+        avg_return = (total_profit / total_value * 100) if total_value > 0 else 0
+        
+        context = {
+            'portfolios': portfolios,
+            'total_value': f"{total_value:,.2f}",
+            'total_profit': f"{total_profit:,.2f}",
+            'portfolio_count': portfolios.count(),
+            'profitable_portfolios': profitable_portfolios,
+            'avg_return': f"{avg_return:.1f}",
+        }
+        
+        return render(request, 'portfolio/modern_dashboard.html', context)
+        
+    except Exception as e:
+        messages.error(request, f"Error loading dashboard: {str(e)}")
+        return render(request, 'portfolio/modern_dashboard.html', {
+            'portfolios': [],
+            'total_value': "0.00",
+            'total_profit': "0.00",
+            'portfolio_count': 0,
+            'profitable_portfolios': 0,
+            'avg_return': "0.0",
+        })
+
+
+@login_required
+@fund_manager_required
+def modern_portfolio_list(request):
+    """Modern portfolio list with clean UI"""
+    try:
+        fund_manager = request.user.fundmanager
+        portfolios = Portfolio.objects.filter(fund_manager=fund_manager)
+        
+        return render(request, 'portfolio/modern_portfolio_list.html', {
+            'portfolios': portfolios
+        })
+        
+    except Exception as e:
+        messages.error(request, f"Error loading portfolios: {str(e)}")
+        return render(request, 'portfolio/modern_portfolio_list.html', {
+            'portfolios': []
+        })
+
+
+def modern_login(request):
+    """Modern login page with clean UI"""
+    form = AuthenticationForm(data=request.POST or None)
+    
+    if request.method == "POST" and form.is_valid():
+        user = form.get_user()
+        login(request, user)
+        return redirect("/dashboard/")
+    
+    return render(request, 'portfolio/modern_login.html', {
+        'form': form
+    })
+
+
+@login_required
+@fund_manager_required
+def modern_analytics(request):
+    """Modern analytics page with comprehensive data"""
+    try:
+        fund_manager = request.user.fundmanager
+        portfolios = Portfolio.objects.filter(fund_manager=fund_manager)
+        
+        # Calculate analytics metrics
+        total_portfolios = portfolios.count()
+        total_stocks = sum(portfolio.stocks.count() for portfolio in portfolios)
+        
+        # Calculate real portfolio performance
+        portfolio_performance = []
+        for portfolio in portfolios:
+            # Calculate real portfolio value
+            portfolio_value = 0
+            portfolio_profit = 0
+            
+            for stock in portfolio.stocks.all():
+                if stock.price and stock.quantity:
+                    stock_value = stock.price * stock.quantity
+                    portfolio_value += stock_value
+                    if hasattr(stock, 'initial_price') and stock.initial_price:
+                        profit = (stock.price - stock.initial_price) * stock.quantity
+                        portfolio_profit += profit
+            
+            # Calculate return percentage
+            return_pct = (portfolio_profit / portfolio_value * 100) if portfolio_value > 0 else 0
+            
+            performance = {
+                'portfolio': portfolio,
+                'name': portfolio.name,
+                'value': portfolio_value,
+                'return': return_pct,
+                'profit': portfolio_profit,
+            }
+            portfolio_performance.append(performance)
+        
+        # Calculate average return across all portfolios
+        avg_return = 0
+        if portfolio_performance:
+            total_return = sum(perf['return'] for perf in portfolio_performance)
+            avg_return = total_return / len(portfolio_performance)
+        
+        context = {
+            'total_portfolios': total_portfolios,
+            'total_stocks': total_stocks,
+            'portfolio_performance': portfolio_performance,
+            'avg_return': avg_return,
+        }
+        
+        return render(request, 'portfolio/modern_analytics.html', context)
+        
+    except Exception as e:
+        messages.error(request, f"Error loading analytics: {str(e)}")
+        return render(request, 'portfolio/modern_analytics.html', {
+            'total_portfolios': 0,
+            'total_stocks': 0,
+            'portfolio_performance': [],
+        })
+
+
+@login_required
+@fund_manager_required
+def modern_risk_analysis(request):
+    """Modern risk analysis overview page"""
+    try:
+        fund_manager = request.user.fundmanager
+        portfolios = Portfolio.objects.filter(fund_manager=fund_manager)
+        
+        # Calculate real risk metrics for each portfolio
+        portfolio_risks = []
+        for portfolio in portfolios:
+            stock_count = portfolio.stocks.count()
+            
+            # Simple risk calculation based on number of stocks and diversification
+            if stock_count == 0:
+                risk_score = 0
+                volatility = 0
+            elif stock_count == 1:
+                risk_score = 8  # High risk - no diversification
+                volatility = 15
+            elif stock_count <= 3:
+                risk_score = 6  # Medium-high risk - limited diversification
+                volatility = 12
+            elif stock_count <= 10:
+                risk_score = 4  # Medium risk - good diversification
+                volatility = 8
+            else:
+                risk_score = 2  # Low risk - well diversified
+                volatility = 5
+            
+            risk_data = {
+                'portfolio': portfolio,
+                'stock_count': stock_count,
+                'risk_score': risk_score,
+                'volatility': volatility,
+            }
+            portfolio_risks.append(risk_data)
+        
+        context = {
+            'portfolios': portfolios,
+            'portfolio_risks': portfolio_risks,
+        }
+        
+        return render(request, 'portfolio/modern_risk.html', context)
+        
+    except Exception as e:
+        messages.error(request, f"Error loading risk analysis: {str(e)}")
+        return render(request, 'portfolio/modern_risk.html', {
+            'portfolios': [],
+            'portfolio_risks': [],
+        })
+
+
+@login_required
+@fund_manager_required
+def modern_settings(request):
+    """Modern settings page"""
+    try:
+        fund_manager = request.user.fundmanager
+        
+        context = {
+            'user': request.user,
+            'fund_manager': fund_manager,
+        }
+        
+        return render(request, 'portfolio/modern_settings.html', context)
+        
+    except Exception as e:
+        messages.error(request, f"Error loading settings: {str(e)}")
+        return render(request, 'portfolio/modern_settings.html', {
+            'user': request.user,
+            'fund_manager': None,
+        })
+
+
+def modern_logout(request):
+    """Modern logout with redirect to login"""
+    logout(request)
+    return redirect('login')
+
+
+# Additional utility views
+@login_required
+def dashboard_redirect(request):
+    """
+    Redirect to dashboard view.
+    """
+    return redirect('dashboard')

@@ -1,0 +1,39 @@
+{% extends 'portfolio/modern_base.html' %}
+{% load static %}
+
+{% block title %}Settings - Portfolio Manager{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <h1>Application Settings</h1>
+    <p>Configure your portfolio management preferences</p>
+</div>
+
+<!-- Settings Content -->
+<div class="settings-content">
+    <div class="settings-section">
+        <div class="settings-header">
+            <h3>User Profile</h3>
+            <p>Manage your account information and preferences</p>
+        </div>
+        <button class="btn btn-primary">Edit Profile</button>
+    </div>
+
+    <div class="settings-section">
+        <div class="settings-header">
+            <h3>Notifications</h3>
+            <p>Configure email and system notifications</p>
+        </div>
+        <button class="btn btn-primary">Configure Notifications</button>
+    </div>
+
+    <div class="settings-section">
+        <div class="settings-header">
+            <h3>Data & Privacy</h3>
+            <p>Manage your data and privacy settings</p>
+        </div>
+        <button class="btn btn-primary">Privacy Settings</button>
+    </div>
+</div>
+{% endblock %}
