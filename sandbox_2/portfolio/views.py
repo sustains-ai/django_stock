@@ -21,9 +21,15 @@ import riskfolio as rp
 from collections import defaultdict
 from redis.exceptions import RedisError
 
-from .models import Portfolio, FundManager, HistoricalStockData, Stock
+from .models import Portfolio, FundManager, HistoricalStockData, Stock, InstituteRole
 from .forms import StockForm, PortfolioForm
-from .decorators import fund_manager_required
+from .permissions import (
+    fund_manager_required, 
+    analyst_or_higher_required, 
+    can_manage_portfolio, 
+    can_view_portfolio,
+    get_user_institutes
+)
 from .risk_analysis import perform_risk_analysis, calculate_risk_measures, calculate_portfolio_risk
 from .utils import fetch_news_sentiment, global_open_closed_status, get_market_returns, get_treasury_yields, monte_carlo_portfolio_var_cvar
 from .ai_agent import portfolio_risk_agent

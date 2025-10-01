@@ -18,12 +18,41 @@ class Institute(models.Model):
         return self.name
 
 
+class InstituteRole(models.Model):
+    ROLE_CHOICES = [
+        ('admin', 'Institute Admin'),
+        ('manager', 'Fund Manager'),
+        ('analyst', 'Analyst'),
+    ]
+    
+    institute = models.ForeignKey(Institute, on_delete=models.CASCADE, related_name="roles")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="institute_roles")
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ['institute', 'user']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.get_role_display()} at {self.institute.name}"
+
+
 class FundManager(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    institute = models.ForeignKey(Institute, on_delete=models.CASCADE, related_name="fund_managers")
+    institute = models.ForeignKey(Institute, on_delete=models.CASCADE, related_name="fund_managers", default=1)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.user.username
+        return f"{self.user.username} ({self.institute.name})"
+    
+    def get_role(self):
+        """Get the user's role in their institute"""
+        try:
+            role = InstituteRole.objects.get(user=self.user, institute=self.institute)
+            return role.role
+        except InstituteRole.DoesNotExist:
+            return None
 
 
 class Portfolio(models.Model):
