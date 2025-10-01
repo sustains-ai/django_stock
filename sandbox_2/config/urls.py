@@ -20,10 +20,17 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import HttpResponse
+from django.views.generic import TemplateView
+
+
+def robots_txt(request):
+    return HttpResponse("User-agent: *\nAllow: /\nSitemap: https://www.sustains.co/sitemap.xml", content_type="text/plain")
 
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("robots.txt", robots_txt),
     # Portfolio management routes
     path('', include('portfolio.urls')),
     path('', include('advanced_analytics.urls')),
