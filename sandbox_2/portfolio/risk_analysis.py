@@ -86,52 +86,101 @@ def calculate_risk_measures(returns, stock_symbols):
     return risk_measures
 
 
-def calculate_efficient_frontier(X, num_points=20):
+def calculate_efficient_frontier(X, num_points=100):
     """
-    Calculate the efficient frontier with multiple portfolio combinations.
-    Optimized version with better memory management and vectorized operations.
+    Calculate the efficient frontier using CVaR as the risk measure.
+    Uses riskfolio-lib to generate optimal portfolio allocations.
 
     Parameters:
     - X (pd.DataFrame): Daily returns of assets
     - num_points (int): Number of points to calculate on the frontier
 
     Returns:
-    - dict: Contains risks, returns, and sharpe ratios for each point
+    - dict: Contains risks (CVaR), returns, and sharpe ratios for each point
     """
     if X.empty or len(X.columns) < 2:
+        print(f"Not enough stocks for efficient frontier. Columns: {len(X.columns) if not X.empty else 0}")
         return None
 
     try:
-        # Create Portfolio object
+        # Create Portfolio object with the original data first
         port = rp.Portfolio(returns=X)
 
         # Set estimation methods
         method_mu = 'hist'
         method_cov = 'hist'
         port.assets_stats(method_mu=method_mu, method_cov=method_cov)
-
-        # Calculate efficient frontier
+        
+        # Calculate efficient frontier using Standard Deviation (Volatility)
+        rm = 'MV'  # Use Mean-Variance (Standard Deviation) as risk measure
         points = num_points
-        frontier = port.efficient_frontier(model='Classic', rm='MV', points=points, rf=0, hist=True)
 
-        if frontier is None or frontier.empty:
+        # Generate efficient frontier weights
+        frontier_weights = port.efficient_frontier(model='Classic', rm=rm, points=points, rf=0, hist=True)
+
+        if frontier_weights is None or frontier_weights.empty:
             return None
 
-        # Vectorized calculations for better performance
-        weights_array = frontier.values
-        mu_array = port.mu.values.flatten()
-        cov_matrix = port.cov.values
+        # Calculate risk and return for each portfolio on the frontier
+        portfolio_returns = []
+        portfolio_risks = []
 
-        # Calculate portfolio returns (annualized) - vectorized
-        portfolio_returns = np.dot(weights_array.T, mu_array) * 252
+        # Check for extreme outliers that might cause unrealistic values
+        max_return = X.abs().max().max()
+        
+        # Filter out extreme outliers (daily returns > 10% are typically data errors)
+        outlier_threshold = 0.10  # 10% daily return threshold
+        extreme_returns = X.abs() > outlier_threshold
+        
+        if extreme_returns.any().any():
+            # Replace extreme values with NaN (they'll be dropped)
+            X_filtered = X.copy()
+            X_filtered[extreme_returns] = np.nan
+            
+            # Drop rows with any extreme values
+            X = X_filtered.dropna()
+            
+            # Check if we still have enough data
+            if X.empty or len(X) < 30:  # Need at least 30 days of data
+                return None
+            
+            # Recreate Portfolio object with filtered data
+            port = rp.Portfolio(returns=X)
+            port.assets_stats(method_mu=method_mu, method_cov=method_cov)
+            
+            # Regenerate efficient frontier weights with filtered data
+            frontier_weights = port.efficient_frontier(model='Classic', rm=rm, points=points, rf=0, hist=True)
+            
+            if frontier_weights is None or frontier_weights.empty:
+                return None
+            
+        # Check if returns are already in percentage form (values > 1)
+        if max_return > 1:
+            X = X / 100  # Convert from percentage to decimal
 
-        # Calculate portfolio risks (annualized volatility) - vectorized
-        portfolio_variances = np.sum(
-            weights_array * np.dot(cov_matrix, weights_array), axis=0
-        )
-        portfolio_risks = np.sqrt(portfolio_variances) * np.sqrt(252)
+        for i in range(frontier_weights.shape[1]):
+            weights = frontier_weights.iloc[:, i].values.reshape(-1, 1)
 
-        # Calculate Sharpe ratios - vectorized
+            # Calculate expected return (annualized using t_factor=252)
+            # port.mu now contains daily expected returns from filtered data
+            expected_return = np.dot(weights.T, port.mu.values.reshape(-1, 1))[0, 0] * 252
+            portfolio_returns.append(expected_return * 100)  # Convert to percentage
+
+            # Calculate Standard Deviation (Volatility) for the portfolio
+            portfolio_daily_returns = (X.values @ weights).flatten()
+            
+            # Calculate daily standard deviation
+            daily_std = np.std(portfolio_daily_returns)
+            
+            # Annualize standard deviation by multiplying by sqrt(252)
+            annualized_std = daily_std * np.sqrt(252) * 100  # Convert to percentage
+            
+            portfolio_risks.append(annualized_std)
+
+        portfolio_returns = np.array(portfolio_returns)
+        portfolio_risks = np.array(portfolio_risks)
+
+        # Calculate Sharpe ratios
         sharpe_ratios = np.divide(
             portfolio_returns,
             portfolio_risks,
@@ -147,6 +196,8 @@ def calculate_efficient_frontier(X, num_points=20):
 
     except Exception as e:
         print(f"Error calculating efficient frontier: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 

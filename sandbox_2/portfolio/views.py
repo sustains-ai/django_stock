@@ -600,7 +600,21 @@ def add_stock(request, portfolio_id):
             messages.error(request, f"Invalid stock data. Please check the form. Errors: {form.errors}")
     else:
         form = StockForm()
-    return render(request, "portfolio/add_stock.html", {"form": form, "portfolio": portfolio})
+
+    # Prepare stock data with calculated values
+    stocks_with_values = []
+    for stock in portfolio.stocks.all():
+        total_value = (float(stock.price) * stock.quantity) if stock.price else 0
+        stocks_with_values.append({
+            'stock': stock,
+            'total_value': total_value
+        })
+
+    return render(request, "portfolio/add_stock.html", {
+        "form": form,
+        "portfolio": portfolio,
+        "stocks_with_values": stocks_with_values
+    })
 
 
 
@@ -680,6 +694,11 @@ def analyze_portfolio(request, portfolio_id):
     available_symbols = daily_prices.columns.tolist()
     stock_symbols = [stock.symbol for stock in stocks if stock.symbol in available_symbols]
 
+    print(f"DEBUG: Total stocks in portfolio: {stocks.count()}")
+    print(f"DEBUG: Stocks with historical data after dropna: {len(available_symbols)}")
+    print(f"DEBUG: Available symbols: {available_symbols}")
+    print(f"DEBUG: Daily prices shape: {daily_prices.shape}")
+
     # Build historical data for template
     historical_data = {}
     for symbol in stock_symbols:
@@ -691,6 +710,9 @@ def analyze_portfolio(request, portfolio_id):
 
     # Compute daily returns
     X = daily_prices.pct_change().dropna()
+    print(f"DEBUG: Returns dataframe shape after pct_change: {X.shape}")
+    print(f"DEBUG: Returns dataframe columns: {X.columns.tolist()}")
+
     if X.empty:
         messages.warning(request, "Not enough historical data to compute returns.")
         return render(request, 'portfolio/analyze_portfolio.html', {
@@ -710,9 +732,9 @@ def analyze_portfolio(request, portfolio_id):
     portfolio_analysis = perform_risk_analysis(X)
     risk_measures = calculate_risk_measures(X, stock_symbols)
 
-    # Calculate efficient frontier
+    # Calculate efficient frontier with 100 points for smoother curve
     from portfolio.risk_analysis import calculate_efficient_frontier
-    efficient_frontier = calculate_efficient_frontier(X, num_points=20)
+    efficient_frontier = calculate_efficient_frontier(X, num_points=100)
 
     if portfolio_analysis is None:
         messages.warning(request, "Portfolio optimization failed. Ensure enough price data is available.")

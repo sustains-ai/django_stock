@@ -70,13 +70,13 @@
                                 </tr>
                             </thead>
                             <tbody>
-                    {% for stock in stocks %}
+                    {% for stock in stock_data %}
                     <tr style="border-bottom: 1px solid var(--border-light);">
                         <td style="padding: 1rem; font-weight: 500; color: var(--text-primary);">{{ stock.name }}</td>
                         <td style="padding: 1rem; color: var(--text-secondary);">{{ stock.symbol }}</td>
                         <td style="padding: 1rem; color: var(--text-primary);">{{ stock.quantity }}</td>
-                        <td style="padding: 1rem; color: var(--text-primary);">${{ stock.price|default:"0.00" }}</td>
-                        <td style="padding: 1rem; color: var(--text-primary); font-weight: 600;">${{ stock.total_value|default:"0.00" }}</td>
+                        <td style="padding: 1rem; color: var(--text-primary);">${{ stock.manual_price|default:stock.live_price|default:"0.00"|floatformat:2 }}</td>
+                        <td style="padding: 1rem; color: var(--text-primary); font-weight: 600;">${{ stock.total_value|floatformat:2 }}</td>
                         <td style="padding: 1rem;">
                             <a href="{% url 'delete_stock' portfolio.id stock.symbol %}" class="btn btn-secondary btn-sm" style="background: #dc3545; border-color: #dc3545;" onclick="return confirm('Are you sure you want to delete {{ stock.symbol }}?')">
                                 <i class="fas fa-trash"></i>
@@ -115,10 +115,10 @@
         <script>
             // Portfolio distribution data
             var labels = [
-                {% for stock in stocks %}'{{ stock.symbol }}'{% if not forloop.last %},{% endif %}{% endfor %}
+                {% for stock in stock_data %}'{{ stock.symbol }}'{% if not forloop.last %},{% endif %}{% endfor %}
             ];
             var values = [
-                {% for stock in stocks %}{{ stock.quantity|default:1 }}{% if not forloop.last %},{% endif %}{% endfor %}
+                {% for stock in stock_data %}{{ stock.total_value|default:0 }}{% if not forloop.last %},{% endif %}{% endfor %}
             ];
             var colors = ['#fe5757', '#96ab9d', '#599dff', '#00a254', '#ff6b6b'];
             
@@ -228,10 +228,10 @@
             var frontierData = {{ efficient_frontier|safe }};
 
             if (frontierData && frontierData.risks && frontierData.returns) {
-                // Create hover text with Sharpe ratios
+                // Create hover text with Sharpe ratios (values already in percentage)
                 var hoverText = frontierData.risks.map((risk, i) =>
-                    `Risk: ${(risk * 100).toFixed(2)}%<br>` +
-                    `Return: ${(frontierData.returns[i] * 100).toFixed(2)}%<br>` +
+                    `Risk (CVaR): ${risk.toFixed(2)}%<br>` +
+                    `Return: ${frontierData.returns[i].toFixed(2)}%<br>` +
                     `Sharpe Ratio: ${frontierData.sharpe_ratios[i].toFixed(3)}`
                 );
 
@@ -240,8 +240,8 @@
 
                 var data = [
                     {
-                        x: frontierData.risks.map(r => r * 100),
-                        y: frontierData.returns.map(r => r * 100),
+                        x: frontierData.risks,
+                        y: frontierData.returns,
                         type: 'scatter',
                         mode: 'lines+markers',
                         name: 'Efficient Frontier',
@@ -252,18 +252,18 @@
                         },
                         marker: {
                             color: '#599dff',
-                            size: 8,
+                            size: 6,
                             line: {
                                 color: '#ffffff',
-                                width: 2
+                                width: 1
                             }
                         },
                         hovertext: hoverText,
                         hoverinfo: 'text'
                     },
                     {
-                        x: [frontierData.risks[maxSharpeIndex] * 100],
-                        y: [frontierData.returns[maxSharpeIndex] * 100],
+                        x: [frontierData.risks[maxSharpeIndex]],
+                        y: [frontierData.returns[maxSharpeIndex]],
                         type: 'scatter',
                         mode: 'markers',
                         name: 'Optimal Portfolio',
@@ -283,12 +283,12 @@
 
                 var layout = {
                     title: {
-                        text: 'Efficient Frontier Analysis',
+                        text: 'Efficient Frontier Analysis (Volatility Risk)',
                         font: { size: 18, color: 'var(--text-primary)', weight: 600 }
                     },
                     xaxis: {
                         title: {
-                            text: 'Risk (Volatility %)',
+                            text: 'Risk - Volatility (%)',
                             font: { size: 14, color: 'var(--text-secondary)' }
                         },
                         gridcolor: 'var(--border-light)',
@@ -297,7 +297,7 @@
                     },
                     yaxis: {
                         title: {
-                            text: 'Expected Return (%)',
+                            text: 'Expected Annual Return (%)',
                             font: { size: 14, color: 'var(--text-secondary)' }
                         },
                         gridcolor: 'var(--border-light)',
@@ -315,10 +315,18 @@
                         bordercolor: 'var(--border-light)',
                         borderwidth: 1
                     },
-                    hovermode: 'closest'
+                    hovermode: 'closest',
+                    dragmode: false
                 };
 
-                Plotly.newPlot('efficient-frontier-chart', data, layout, {responsive: true});
+                var config = {
+                    responsive: true,
+                    displayModeBar: true,
+                    modeBarButtonsToRemove: ['zoom2d', 'pan2d', 'select2d', 'lasso2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d'],
+                    displaylogo: false
+                };
+
+                Plotly.newPlot('efficient-frontier-chart', data, layout, config);
             }
         </script>
 
@@ -335,13 +343,13 @@
                 <div>
                     <p style="color: var(--text-secondary); font-size: 12px; margin-bottom: 0.25rem;">Min Risk</p>
                     <p style="color: var(--primary-green); font-size: 18px; font-weight: 600; margin: 0;">
-                        <script>document.write(frontierData ? (Math.min(...frontierData.risks) * 100).toFixed(2) + '%' : 'N/A');</script>
+                        <script>document.write(frontierData ? Math.min(...frontierData.risks).toFixed(2) + '%' : 'N/A');</script>
                     </p>
                 </div>
                 <div>
                     <p style="color: var(--text-secondary); font-size: 12px; margin-bottom: 0.25rem;">Max Return</p>
                     <p style="color: var(--primary-red); font-size: 18px; font-weight: 600; margin: 0;">
-                        <script>document.write(frontierData ? (Math.max(...frontierData.returns) * 100).toFixed(2) + '%' : 'N/A');</script>
+                        <script>document.write(frontierData ? Math.max(...frontierData.returns).toFixed(2) + '%' : 'N/A');</script>
                     </p>
                 </div>
                 <div>
@@ -360,10 +368,10 @@
             </div>
             <h3 style="color: var(--text-primary); margin-bottom: 1rem; font-size: 20px;">Efficient Frontier Not Available</h3>
             <p style="color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 14px;">
-                The efficient frontier requires at least <strong>2 stocks</strong> to calculate optimal portfolio allocations.
+                The efficient frontier requires at least <strong>2 stocks with overlapping historical data</strong> to calculate optimal portfolio allocations.
             </p>
             <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 14px;">
-                Current portfolio has <strong>{{ stock_count }}</strong> stock{{ stock_count|pluralize }}.
+                Current portfolio has <strong>{{ stock_count }}</strong> stock{{ stock_count|pluralize }}. Historical data may still be loading or stocks may not have overlapping dates.
             </p>
             <div style="background: var(--bg-secondary); border-radius: var(--radius-md); padding: 1.5rem; margin: 2rem auto; max-width: 500px; border: 2px solid var(--border-light);">
                 <h4 style="color: var(--text-primary); margin-bottom: 1rem; font-size: 16px;">
