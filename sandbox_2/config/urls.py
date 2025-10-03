@@ -29,7 +29,8 @@ def robots_txt(request):
 
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    # Django admin disabled for security - using custom admin system
+    # path("admin/", admin.site.urls),  # DISABLED
     path("robots.txt", robots_txt),
     # Portfolio management routes
     path('', include('portfolio.urls')),

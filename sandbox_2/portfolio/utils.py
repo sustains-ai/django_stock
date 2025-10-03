@@ -478,3 +478,98 @@ def get_treasury_yields():  # Renamed from fetch_treasury_yields for consistency
         f"Set cache for {overall_cache_key} (overall_treasury_yields) for {overall_cache_timeout}s. Data: {yields_result}")
 
     return yields_result
+
+
+# ============================================================================
+# PERFORMANCE OPTIMIZATION UTILITIES
+# ============================================================================
+
+class PortfolioDataOptimizer:
+    """Optimized data fetching and processing for portfolios"""
+
+    @staticmethod
+    def get_optimized_portfolio(portfolio_id, user):
+        """Fetch portfolio with optimized queries using select_related and prefetch_related"""
+        from portfolio.models import Portfolio, Stock
+
+        return Portfolio.objects.select_related(
+            'fund_manager',
+            'fund_manager__user',
+            'fund_manager__institute'
+        ).prefetch_related(
+            Prefetch('stocks', queryset=Stock.objects.order_by('-added_at'))
+        ).get(id=portfolio_id, fund_manager__user=user)
+
+    @staticmethod
+    def get_portfolio_stocks_data(portfolio):
+        """Calculate stock data with optimized queries"""
+        from decimal import Decimal
+
+        stocks = portfolio.stocks.select_related('portfolio').all()
+        stock_data = []
+        total_value = Decimal('0.00')
+
+        for stock in stocks:
+            manual_price = stock.price
+            live_price = stock.get_live_price()
+            price = manual_price if manual_price else (Decimal(str(live_price)) if live_price else None)
+
+            if price:
+                stock_total = price * stock.quantity
+                total_value += stock_total
+                stock_data.append({
+                    'name': stock.name,
+                    'symbol': stock.symbol,
+                    'quantity': stock.quantity,
+                    'manual_price': float(manual_price) if manual_price else None,
+                    'live_price': live_price,
+                    'total_value': float(stock_total),
+                })
+
+        return stock_data, float(total_value)
+
+    @staticmethod
+    def get_historical_data_cached(portfolio_id):
+        """Get historical data with caching"""
+        cache_key = f'historical_data_portfolio_{portfolio_id}'
+        cached_data = cache.get(cache_key)
+
+        if cached_data:
+            return cached_data
+
+        from portfolio.models import HistoricalStockData
+
+        historical_prices_qs = HistoricalStockData.objects.filter(
+            portfolio_id=portfolio_id
+        ).values('date', 'symbol', 'adjusted_close').order_by('date')
+
+        if historical_prices_qs.exists():
+            df = pd.DataFrame.from_records(historical_prices_qs)
+            cache_data = {'dataframe': df, 'exists': True}
+        else:
+            cache_data = {'dataframe': pd.DataFrame(), 'exists': False}
+
+        cache.set(cache_key, cache_data, timeout=60 * 15)
+        return cache_data
+
+
+class CacheManager:
+    """Centralized cache management"""
+
+    TIMEOUTS = {
+        'historical_data': 60 * 15,
+        'efficient_frontier': 60 * 30,
+        'live_price': 60 * 60,
+        'portfolio_analysis': 60 * 10,
+        'dashboard_data': 60 * 5,
+    }
+
+    @staticmethod
+    def invalidate_portfolio_cache(portfolio_id):
+        """Invalidate all caches related to a portfolio"""
+        keys = [
+            f'historical_data_portfolio_{portfolio_id}',
+            f'efficient_frontier_portfolio_{portfolio_id}',
+            f'portfolio_analysis_{portfolio_id}',
+        ]
+        cache.delete_many(keys)

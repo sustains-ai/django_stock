@@ -21,14 +21,21 @@ import riskfolio as rp
 from collections import defaultdict
 from redis.exceptions import RedisError
 
-from .models import Portfolio, FundManager, HistoricalStockData, Stock, InstituteRole
-from .forms import StockForm, PortfolioForm
+from .models import Portfolio, FundManager, HistoricalStockData, Stock, InstituteRole, UserProfile, Institute, InstituteSettings, UserInvitation
+from django.contrib.auth.models import User
+from .forms import StockForm, PortfolioForm, UserCreationForm, UserInvitationForm, PasswordChangeForm, UserProfileForm
 from .permissions import (
     fund_manager_required, 
     analyst_or_higher_required, 
     can_manage_portfolio, 
     can_view_portfolio,
-    get_user_institutes
+    get_user_institutes,
+    get_user_role,
+    admin_required,
+    manager_required,
+    analyst_required,
+    superadmin_required,
+    is_superadmin
 )
 from .risk_analysis import perform_risk_analysis, calculate_risk_measures, calculate_portfolio_risk
 from .utils import fetch_news_sentiment, global_open_closed_status, get_market_returns, get_treasury_yields, monte_carlo_portfolio_var_cvar
@@ -42,6 +49,428 @@ load_dotenv()  # Ensures .env is loaded if not already
 def test_view(request):
     return HttpResponse("Test view works!")
 
+
+def admin_redirect(request):
+    """Custom admin redirect - replaces Django admin"""
+    if request.user.is_authenticated:
+        if request.user.is_superuser:
+            return redirect('superadmin_dashboard')
+        else:
+            return redirect('dashboard')
+    else:
+        return redirect('login')
+
+
+@login_required
+@superadmin_required
+def onboard_company(request):
+    """Onboard a new company with admin and manager users"""
+    if request.method == 'POST':
+        try:
+            # Create the institute
+            institute = Institute.objects.create(
+                name=request.POST.get('company_name'),
+                domain=request.POST.get('domain'),
+                subscription_plan=request.POST.get('subscription_plan', 'basic'),
+                max_users=int(request.POST.get('max_users', 10)),
+                primary_color=request.POST.get('primary_color', '#007bff'),
+                is_active=True
+            )
+            
+            # Create institute settings
+            InstituteSettings.objects.create(
+                institute=institute,
+                allow_analytics=True,
+                allow_risk_analysis=True,
+                allow_ai_features=True,
+                max_portfolios_per_manager=50
+            )
+            
+            # Create admin user
+            admin_username = request.POST.get('admin_username')
+            admin_email = request.POST.get('admin_email')
+            admin_first_name = request.POST.get('admin_first_name')
+            admin_last_name = request.POST.get('admin_last_name')
+            admin_password = request.POST.get('admin_password')
+            
+            if admin_username and admin_email:
+                admin_user = User.objects.create_user(
+                    username=admin_username,
+                    email=admin_email,
+                    password=admin_password,
+                    first_name=admin_first_name,
+                    last_name=admin_last_name
+                )
+                
+                # Create admin profile and role
+                UserProfile.objects.create(
+                    user=admin_user,
+                    institute=institute,
+                    is_active=True
+                )
+                
+                InstituteRole.objects.create(
+                    user=admin_user,
+                    institute=institute,
+                    role='admin'
+                )
+            
+            # Create manager user (optional)
+            manager_username = request.POST.get('manager_username')
+            manager_email = request.POST.get('manager_email')
+            manager_first_name = request.POST.get('manager_first_name')
+            manager_last_name = request.POST.get('manager_last_name')
+            manager_password = request.POST.get('manager_password')
+            
+            if manager_username and manager_email and manager_password:
+                manager_user = User.objects.create_user(
+                    username=manager_username,
+                    email=manager_email,
+                    password=manager_password,
+                    first_name=manager_first_name,
+                    last_name=manager_last_name
+                )
+                
+                # Create manager profile and role
+                UserProfile.objects.create(
+                    user=manager_user,
+                    institute=institute,
+                    is_active=True
+                )
+                
+                InstituteRole.objects.create(
+                    user=manager_user,
+                    institute=institute,
+                    role='manager'
+                )
+                
+                # Create fund manager
+                FundManager.objects.create(
+                    user=manager_user,
+                    institute=institute
+                )
+            
+            messages.success(request, f"Company '{institute.name}' onboarded successfully!")
+            return redirect('superadmin_dashboard')
+            
+        except Exception as e:
+            messages.error(request, f"Error onboarding company: {str(e)}")
+            return redirect('superadmin_dashboard')
+    
+    return redirect('superadmin_dashboard')
+
+
+# ===== DASHBOARD ROUTER =====
+@login_required
+def dashboard_router(request):
+    """Route users to appropriate dashboard based on their role"""
+    print(f"Dashboard router called for user: {request.user.username}")
+    
+    # Check if user is superadmin first
+    if request.user.is_superuser:
+        print("User is superuser, redirecting to superadmin dashboard")
+        return redirect('superadmin_dashboard')
+    
+    try:
+        user_profile = request.user.userprofile
+        role = user_profile.get_role()
+        print(f"User profile found, role: {role}")
+        
+        if role == 'admin':
+            print("Redirecting to admin dashboard")
+            return redirect('admin_dashboard')
+        elif role == 'manager':
+            print("Redirecting to manager dashboard")
+            return redirect('manager_dashboard')
+        elif role == 'analyst':
+            print("Redirecting to analyst dashboard")
+            return redirect('analyst_dashboard')
+        else:
+            print(f"Invalid role: {role}")
+            messages.error(request, "No valid role assigned. Please contact your administrator.")
+            return redirect('login')
+    except UserProfile.DoesNotExist:
+        print("UserProfile does not exist, creating default profile")
+        # Handle users without profiles - create a default profile
+        try:
+            # Get the first institute (or create a default one)
+            institute = Institute.objects.first()
+            if not institute:
+                print("Creating default institute")
+                institute = Institute.objects.create(
+                    name="Default Institute",
+                    domain="default.com",
+                    subscription_plan='basic',
+                    max_users=10,
+                    is_active=True
+                )
+                
+                # Create institute settings
+                InstituteSettings.objects.create(
+                    institute=institute,
+                    allow_analytics=True,
+                    allow_risk_analysis=True,
+                    allow_ai_features=True,
+                    max_portfolios_per_manager=50
+                )
+            
+            print(f"Creating user profile for {request.user.username}")
+            # Create a default user profile with manager role
+            user_profile = UserProfile.objects.create(
+                user=request.user,
+                institute=institute,
+                is_active=True
+            )
+            
+            # Create role
+            InstituteRole.objects.create(
+                user=request.user,
+                institute=institute,
+                role='manager'
+            )
+            
+            # Create fund manager if needed
+            if not FundManager.objects.filter(user=request.user).exists():
+                FundManager.objects.create(
+                    user=request.user,
+                    institute=institute
+                )
+            
+            print("User profile created successfully, redirecting to manager dashboard")
+            messages.success(request, "Your account has been set up with default access. You can now use the system.")
+            return redirect('manager_dashboard')
+            
+        except Exception as e:
+            # Debug: Print the error to console
+            print(f"Error creating user profile: {str(e)}")
+            messages.error(request, f"Error setting up your account: {str(e)}. Please contact your administrator.")
+            return redirect('login')
+
+
+# ===== SUPERADMIN DASHBOARD =====
+@login_required
+@superadmin_required
+def superadmin_dashboard(request):
+    """System-wide dashboard for superadmins"""
+    try:
+        # System-wide metrics
+        total_institutes = Institute.objects.count()
+        total_users = User.objects.count()
+        total_portfolios = Portfolio.objects.count()
+        total_stocks = Stock.objects.count()
+        
+        # Calculate total system value
+        total_value = 0
+        for portfolio in Portfolio.objects.all():
+            for stock in portfolio.stocks.all():
+                if stock.price and stock.quantity:
+                    total_value += stock.price * stock.quantity
+        
+        # Recent activity across all institutes
+        recent_portfolios = Portfolio.objects.order_by('-created_at')[:10]
+        recent_institutes = Institute.objects.order_by('-created_at')[:5]
+        
+        # Get all institutes with their stats
+        institutes_with_stats = []
+        for institute in Institute.objects.all():
+            institute_stats = {
+                'institute': institute,
+                'user_count': UserProfile.objects.filter(institute=institute).count(),
+                'portfolio_count': Portfolio.objects.filter(fund_manager__institute=institute).count(),
+                'total_value': 0
+            }
+            
+            # Calculate institute value
+            for portfolio in Portfolio.objects.filter(fund_manager__institute=institute):
+                for stock in portfolio.stocks.all():
+                    if stock.price and stock.quantity:
+                        institute_stats['total_value'] += stock.price * stock.quantity
+            
+            institutes_with_stats.append(institute_stats)
+        
+        context = {
+            'total_institutes': total_institutes,
+            'total_users': total_users,
+            'total_portfolios': total_portfolios,
+            'total_stocks': total_stocks,
+            'total_value': f"{total_value:,.2f}",
+            'recent_portfolios': recent_portfolios,
+            'recent_institutes': recent_institutes,
+            'institutes_with_stats': institutes_with_stats,
+        }
+        
+        return render(request, 'portfolio/dashboards/superadmin_dashboard.html', context)
+        
+    except Exception as e:
+        messages.error(request, f"Error loading superadmin dashboard: {str(e)}")
+        return redirect('login')
+
+
+# ===== ADMIN DASHBOARD =====
+@login_required
+def admin_dashboard(request):
+    """Company-wide dashboard for institute admins"""
+    print(f"Admin dashboard called for user: {request.user.username}")
+    
+    try:
+        user_profile = request.user.userprofile
+        institute = user_profile.institute
+        print(f"User profile found: {user_profile}, Institute: {institute}")
+        
+        # Company metrics
+        total_users = UserProfile.objects.filter(institute=institute, is_active=True).count()
+        active_managers = FundManager.objects.filter(institute=institute, is_active=True).count()
+        total_portfolios = Portfolio.objects.filter(fund_manager__institute=institute).count()
+        
+        # Calculate total portfolio value
+        total_value = 0
+        for portfolio in Portfolio.objects.filter(fund_manager__institute=institute):
+            for stock in portfolio.stocks.all():
+                if stock.price and stock.quantity:
+                    total_value += stock.price * stock.quantity
+        
+        # Recent activity with portfolio values
+        recent_portfolios_qs = Portfolio.objects.filter(
+            fund_manager__institute=institute
+        ).order_by('-created_at')[:5]
+
+        recent_portfolios = []
+        for portfolio in recent_portfolios_qs:
+            portfolio_value = 0
+            for stock in portfolio.stocks.all():
+                if stock.price and stock.quantity:
+                    portfolio_value += stock.price * stock.quantity
+
+            recent_portfolios.append({
+                'portfolio': portfolio,
+                'value': f"{portfolio_value:,.2f}"
+            })
+        
+        # User management
+        pending_invitations = UserInvitation.objects.filter(
+            institute=institute, 
+            status='pending'
+        )
+        
+        # Get all users in the institute
+        institute_users = UserProfile.objects.filter(institute=institute).select_related('user')
+        
+        context = {
+            'institute': institute,
+            'total_users': total_users,
+            'active_managers': active_managers,
+            'total_portfolios': total_portfolios,
+            'total_value': f"{total_value:,.2f}",
+            'recent_portfolios': recent_portfolios,
+            'pending_invitations': pending_invitations,
+            'institute_users': institute_users,
+        }
+        
+        print("Rendering admin dashboard template")
+        return render(request, 'portfolio/dashboards/admin_dashboard.html', context)
+        
+    except Exception as e:
+        print(f"Error in admin dashboard: {str(e)}")
+        messages.error(request, f"Error loading admin dashboard: {str(e)}")
+        return redirect('login')
+
+
+# ===== MANAGER DASHBOARD =====
+@login_required
+@manager_required
+def manager_dashboard(request):
+    """Enhanced dashboard for fund managers"""
+    try:
+        fund_manager = request.user.fundmanager
+        portfolios = Portfolio.objects.filter(fund_manager=fund_manager)
+        
+        # Enhanced metrics
+        total_value = 0
+        total_profit = 0
+        profitable_portfolios = 0
+        
+        for portfolio in portfolios:
+            portfolio_value = 0
+            portfolio_profit = 0
+            
+            for stock in portfolio.stocks.all():
+                if stock.price and stock.quantity:
+                    stock_value = stock.price * stock.quantity
+                    portfolio_value += stock_value
+                    # Calculate profit based on current vs initial price
+                    if hasattr(stock, 'initial_price') and stock.initial_price:
+                        profit = (stock.price - stock.initial_price) * stock.quantity
+                        portfolio_profit += profit
+            
+            total_value += portfolio_value
+            total_profit += portfolio_profit
+            if portfolio_profit > 0:
+                profitable_portfolios += 1
+        
+        avg_return = (total_profit / total_value * 100) if total_value > 0 else 0
+        
+        context = {
+            'portfolios': portfolios,
+            'total_value': f"{total_value:,.2f}",
+            'total_profit': f"{total_profit:,.2f}",
+            'portfolio_count': portfolios.count(),
+            'profitable_portfolios': profitable_portfolios,
+            'avg_return': f"{avg_return:.1f}",
+        }
+        
+        return render(request, 'portfolio/dashboards/manager_dashboard.html', context)
+        
+    except Exception as e:
+        messages.error(request, f"Error loading manager dashboard: {str(e)}")
+        return redirect('login')
+
+
+# ===== ANALYST DASHBOARD =====
+@login_required
+@analyst_required
+def analyst_dashboard(request):
+    """Read-only dashboard for analysts"""
+    try:
+        user_profile = request.user.userprofile
+        institute = user_profile.institute
+        
+        # Institute-wide analytics
+        all_portfolios = Portfolio.objects.filter(
+            fund_manager__institute=institute
+        )
+        
+        # Calculate institute-wide metrics
+        total_value = 0
+        total_portfolios = all_portfolios.count()
+        total_stocks = 0
+        
+        for portfolio in all_portfolios:
+            for stock in portfolio.stocks.all():
+                if stock.price and stock.quantity:
+                    total_value += stock.price * stock.quantity
+                    total_stocks += 1
+        
+        # Recent portfolios
+        recent_portfolios = all_portfolios.order_by('-created_at')[:10]
+        
+        # Top performing portfolios (mock data for now)
+        top_portfolios = all_portfolios[:5]
+        
+        context = {
+            'institute': institute,
+            'total_value': f"{total_value:,.2f}",
+            'total_portfolios': total_portfolios,
+            'total_stocks': total_stocks,
+            'recent_portfolios': recent_portfolios,
+            'top_portfolios': top_portfolios,
+        }
+        
+        return render(request, 'portfolio/dashboards/analyst_dashboard.html', context)
+        
+    except Exception as e:
+        messages.error(request, f"Error loading analyst dashboard: {str(e)}")
+        return redirect('login')
+
 def custom_login(request):
     from django.contrib.auth.forms import AuthenticationForm
     from django.contrib.auth import login
@@ -52,7 +481,33 @@ def custom_login(request):
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-            return redirect("/dashboard/")
+            print(f"User {user.username} logged in successfully")
+            
+            # Provide role-specific feedback
+            if user.is_superuser:
+                messages.success(request, f"Welcome back, Superadmin! You have full system access.")
+                print("User is superuser")
+            else:
+                try:
+                    user_profile = user.userprofile
+                    role = user_profile.get_role()
+                    institute_name = user_profile.institute.name
+                    print(f"User profile found: role={role}, institute={institute_name}")
+                    
+                    if role == 'admin':
+                        messages.success(request, f"Welcome back, {user.get_full_name() or user.username}! You're logged in as an Admin of {institute_name}.")
+                    elif role == 'manager':
+                        messages.success(request, f"Welcome back, {user.get_full_name() or user.username}! You're logged in as a Fund Manager of {institute_name}.")
+                    elif role == 'analyst':
+                        messages.success(request, f"Welcome back, {user.get_full_name() or user.username}! You're logged in as an Analyst of {institute_name}.")
+                    else:
+                        messages.info(request, f"Welcome back, {user.get_full_name() or user.username}! Your role is being verified.")
+                except UserProfile.DoesNotExist:
+                    print("UserProfile does not exist")
+                    messages.info(request, f"Welcome back, {user.get_full_name() or user.username}! Setting up your account...")
+            
+            print("Redirecting to dashboard")
+            return redirect("dashboard")
     else:
         form = AuthenticationForm()
     
@@ -255,6 +710,10 @@ def analyze_portfolio(request, portfolio_id):
     portfolio_analysis = perform_risk_analysis(X)
     risk_measures = calculate_risk_measures(X, stock_symbols)
 
+    # Calculate efficient frontier
+    from portfolio.risk_analysis import calculate_efficient_frontier
+    efficient_frontier = calculate_efficient_frontier(X, num_points=20)
+
     if portfolio_analysis is None:
         messages.warning(request, "Portfolio optimization failed. Ensure enough price data is available.")
         return render(request, 'portfolio/analyze_portfolio.html', {
@@ -306,6 +765,7 @@ def analyze_portfolio(request, portfolio_id):
         'optimal_table': portfolio_analysis,
         'risk_measures': risk_measures,
         'portfolio_value_json': json.dumps(portfolio_value_json or []),
+        'efficient_frontier': json.dumps(efficient_frontier) if efficient_frontier else None,
         'ai_answer': ai_answer,
         'timestamp': int(datetime.now().timestamp())
     })
@@ -1208,3 +1668,232 @@ def dashboard_redirect(request):
     Redirect to dashboard view.
     """
     return redirect('dashboard')
+
+
+# User Management Views
+@login_required
+@admin_required
+def create_user(request):
+    """Create a new user (Admin only)"""
+    try:
+        user_profile = request.user.userprofile
+        institute = user_profile.institute
+        
+        if request.method == 'POST':
+            form = UserCreationForm(request.POST, institute=institute)
+            if form.is_valid():
+                # Create the user
+                user = User.objects.create_user(
+                    username=form.cleaned_data['username'],
+                    email=form.cleaned_data['email'],
+                    password=form.cleaned_data['temporary_password'],
+                    first_name=form.cleaned_data['first_name'],
+                    last_name=form.cleaned_data['last_name']
+                )
+                
+                # Create user profile
+                UserProfile.objects.create(
+                    user=user,
+                    institute=institute,
+                    is_active=True
+                )
+                
+                # Create role
+                InstituteRole.objects.create(
+                    user=user,
+                    institute=institute,
+                    role=form.cleaned_data['role']
+                )
+                
+                # Create fund manager if role is manager
+                if form.cleaned_data['role'] == 'manager':
+                    FundManager.objects.create(
+                        user=user,
+                        institute=institute
+                    )
+                
+                messages.success(request, f"User {user.username} created successfully with {form.cleaned_data['role']} role.")
+                return redirect('admin_dashboard')
+        else:
+            form = UserCreationForm(institute=institute)
+        
+        context = {
+            'form': form,
+            'institute': institute
+        }
+        return render(request, 'portfolio/admin/create_user.html', context)
+        
+    except Exception as e:
+        messages.error(request, f"Error creating user: {str(e)}")
+        return redirect('admin_dashboard')
+
+
+@login_required
+@admin_required
+def invite_user(request):
+    """Send user invitation (Admin only)"""
+    try:
+        user_profile = request.user.userprofile
+        institute = user_profile.institute
+        
+        if request.method == 'POST':
+            form = UserInvitationForm(request.POST, institute=institute)
+            if form.is_valid():
+                # Create invitation
+                import uuid
+                from django.utils import timezone
+                from datetime import timedelta
+                
+                invitation = UserInvitation.objects.create(
+                    institute=institute,
+                    email=form.cleaned_data['email'],
+                    role=form.cleaned_data['role'],
+                    invited_by=request.user,
+                    token=str(uuid.uuid4()),
+                    expires_at=timezone.now() + timedelta(days=7)
+                )
+                
+                # TODO: Send email invitation
+                # For now, just show the invitation link
+                invitation_url = f"{request.build_absolute_uri('/')}accept-invitation/{invitation.token}/"
+                
+                messages.success(request, f"Invitation sent to {form.cleaned_data['email']}. Invitation link: {invitation_url}")
+                return redirect('admin_dashboard')
+        else:
+            form = UserInvitationForm(institute=institute)
+        
+        context = {
+            'form': form,
+            'institute': institute
+        }
+        return render(request, 'portfolio/admin/invite_user.html', context)
+        
+    except Exception as e:
+        messages.error(request, f"Error sending invitation: {str(e)}")
+        return redirect('admin_dashboard')
+
+
+@login_required
+def change_password(request):
+    """Change user password"""
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = request.user
+            user.set_password(form.cleaned_data['new_password1'])
+            user.save()
+            
+            # Re-login the user
+            from django.contrib.auth import login
+            login(request, user)
+            
+            messages.success(request, "Your password has been changed successfully.")
+            return redirect('dashboard')
+    else:
+        form = PasswordChangeForm(request.user)
+    
+    context = {
+        'form': form
+    }
+    return render(request, 'portfolio/user/change_password.html', context)
+
+
+@login_required
+def user_profile(request):
+    """View and edit user profile"""
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Your profile has been updated successfully.")
+            return redirect('user_profile')
+    else:
+        form = UserProfileForm(instance=request.user)
+    
+    try:
+        user_profile = request.user.userprofile
+        role = user_profile.get_role()
+        institute = user_profile.institute
+    except UserProfile.DoesNotExist:
+        role = None
+        institute = None
+    
+    context = {
+        'form': form,
+        'user_profile': user_profile if 'user_profile' in locals() else None,
+        'role': role,
+        'institute': institute
+    }
+    return render(request, 'portfolio/user/profile.html', context)
+
+
+@login_required
+@admin_required
+def manage_users(request):
+    """Manage users in the institute (Admin only)"""
+    try:
+        user_profile = request.user.userprofile
+        institute = user_profile.institute
+        
+        # Get all users in the institute
+        users = UserProfile.objects.filter(institute=institute).select_related('user')
+        
+        # Get pending invitations
+        invitations = UserInvitation.objects.filter(institute=institute, status='pending')
+        
+        context = {
+            'users': users,
+            'invitations': invitations,
+            'institute': institute
+        }
+        return render(request, 'portfolio/admin/manage_users.html', context)
+        
+    except Exception as e:
+        messages.error(request, f"Error loading users: {str(e)}")
+        return redirect('admin_dashboard')
+
+
+def accept_invitation(request, token):
+    """Accept user invitation"""
+    try:
+        invitation = UserInvitation.objects.get(token=token, status='pending')
+        
+        if invitation.is_expired():
+            messages.error(request, "This invitation has expired.")
+            return redirect('login')
+        
+        if request.method == 'POST':
+            # Create user account
+            form = UserCreationForm(request.POST, institute=invitation.institute)
+            if form.is_valid():
+                user = User.objects.create_user(
+                    username=form.cleaned_data['username'],
+                    email=invitation.email,
+                    password=form.cleaned_data['temporary_password'],
+                    first_name=form.cleaned_data['first_name'],
+                    last_name=form.cleaned_data['last_name']
+                )
+                
+                # Accept invitation
+                invitation.accept(user)
+                
+                messages.success(request, "Account created successfully! You can now log in.")
+                return redirect('login')
+        else:
+            form = UserCreationForm(institute=invitation.institute)
+            # Pre-fill email
+            form.fields['email'].initial = invitation.email
+            form.fields['email'].widget.attrs['readonly'] = True
+        
+        context = {
+            'form': form,
+            'invitation': invitation
+        }
+        return render(request, 'portfolio/user/accept_invitation.html', context)
+        
+    except UserInvitation.DoesNotExist:
+        messages.error(request, "Invalid invitation link.")
+        return redirect('login')
+    except Exception as e:
+        messages.error(request, f"Error accepting invitation: {str(e)}")
+        return redirect('login')

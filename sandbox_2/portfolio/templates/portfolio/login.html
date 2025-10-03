@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Portfolio Manager</title>
+    <title>Sandbox - AI-Powered Portfolio Management</title>
     
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -16,22 +16,126 @@
     <link rel="stylesheet" href="{% static 'css/modern-light.css' %}">
     
     <style>
+        /* Login Page Styles - Black & White Minimal */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background: #000000;
+            min-height: 100vh;
+            color: #ffffff;
+        }
+        
         .login-container {
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, var(--bg-secondary) 0%, #f8f9fa 100%);
+            padding: 2rem;
+        }
+        
+        .login-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            max-width: 1200px;
+            width: 100%;
+            align-items: center;
+        }
+        
+        .brand-section {
+            color: #ffffff;
+            text-align: left;
+        }
+        
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .brand-icon {
+            width: 80px;
+            height: 80px;
+            background: #ffffff;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 20px rgba(255, 255, 255, 0.1);
+        }
+        
+        .brand-logo img {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            border-radius: 12px;
+        }
+        
+        .brand-title {
+            font-size: 36px;
+            font-weight: 700;
+            margin: 0;
+            color: #ffffff;
+            letter-spacing: -0.5px;
+        }
+        
+        .brand-subtitle {
+            font-size: 16px;
+            opacity: 0.7;
+            margin: 0;
+            color: #ffffff;
+            font-weight: 400;
+        }
+        
+        .brand-description {
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            opacity: 0.8;
+            color: #ffffff;
+            font-weight: 300;
+        }
+        
+        .features-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .features-list li {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            font-size: 16px;
+            opacity: 0.8;
+            color: #ffffff;
+            font-weight: 300;
+        }
+        
+        .features-list i {
+            width: 20px;
+            height: 20px;
+            background: #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #000000;
         }
         
         .login-card {
-            background: var(--bg-card);
-            border-radius: var(--radius-xl);
-            box-shadow: var(--shadow-lg);
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
             padding: 3rem;
             width: 100%;
             max-width: 400px;
-            border: 1px solid var(--border-light);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         .login-header {
@@ -39,29 +143,17 @@
             margin-bottom: 2rem;
         }
         
-        .login-logo {
-            width: 60px;
-            height: 60px;
-            background: var(--primary-red);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1rem;
-            color: var(--text-white);
-            font-size: 24px;
-        }
-        
         .login-title {
-            font-size: 24px;
+            font-size: 28px;
             font-weight: 700;
-            color: var(--text-primary);
+            color: #000000;
             margin-bottom: 0.5rem;
         }
         
         .login-subtitle {
-            color: var(--text-secondary);
-            font-size: 14px;
+            color: #666666;
+            font-size: 16px;
+            font-weight: 400;
         }
         
         .form-floating {
@@ -71,44 +163,49 @@
         
         .form-floating input {
             width: 100%;
-            padding: 1rem 0.75rem 0.5rem;
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-md);
-            background: var(--bg-card);
+            padding: 1rem 0.75rem;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            background: #f8f9fa;
             font-size: 16px;
             transition: all 0.2s ease;
+            color: #000000;
         }
         
         .form-floating input:focus {
             outline: none;
-            border-color: var(--primary-red);
-            box-shadow: 0 0 0 3px rgba(254, 87, 87, 0.1);
+            border-color: #000000;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
         }
         
         .form-floating label {
             position: absolute;
             top: 1rem;
             left: 0.75rem;
-            color: var(--text-secondary);
+            color: #666666;
             transition: all 0.2s ease;
             pointer-events: none;
             font-size: 14px;
+            background: #f8f9fa;
+            padding: 0 0.25rem;
         }
         
         .form-floating input:focus + label,
         .form-floating input:not(:placeholder-shown) + label {
-            top: 0.25rem;
+            top: -0.5rem;
             font-size: 12px;
-            color: var(--primary-red);
+            color: #000000;
+            background: #ffffff;
         }
         
         .login-button {
             width: 100%;
             padding: 1rem;
-            background: var(--primary-red);
-            color: var(--text-white);
-            border: none;
-            border-radius: var(--radius-md);
+            background: #000000;
+            color: #ffffff;
+            border: 2px solid #000000;
+            border-radius: 8px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
@@ -120,73 +217,161 @@
         }
         
         .login-button:hover {
-            background: #e04a4a;
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-md);
+            background: #ffffff;
+            color: #000000;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
         }
         
         .alert {
             padding: 1rem;
-            border-radius: var(--radius-md);
+            border-radius: 8px;
             margin-bottom: 1rem;
             font-size: 14px;
         }
         
         .alert-danger {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
         }
         
         .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+            background: #f0fdf4;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+        }
+        
+        .company-info {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e1e5e9;
+            text-align: center;
+        }
+        
+        .company-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .company-name {
+            font-weight: 600;
+            color: #000000;
+        }
+        
+        .company-tagline {
+            font-size: 14px;
+            color: #666666;
+        }
+        
+        @media (max-width: 768px) {
+            .login-wrapper {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            
+            .brand-section {
+                text-align: center;
+            }
         }
     </style>
 </head>
 <body>
     <div class="login-container">
-        <div class="login-card">
-            <div class="login-header">
-                <div class="login-logo">
-                    <i class="fas fa-chart-line"></i>
+        <div class="login-wrapper">
+            <!-- Brand Section -->
+            <div class="brand-section">
+                <div class="brand-logo">
+                    <div class="brand-icon">
+                        <img src="{% static 'portfolio/sandbox_logo.png' %}" alt="Sandbox Logo">
+                    </div>
+                    <div>
+                        <h1 class="brand-title">Sandbox</h1>
+                        <p class="brand-subtitle">by sustains.ai</p>
+                    </div>
                 </div>
-                <h1 class="login-title">Welcome Back</h1>
-                <p class="login-subtitle">Sign in to your portfolio dashboard</p>
+                
+                <p class="brand-description">
+                    AI-powered portfolio management platform designed for modern investment professionals. 
+                    Manage portfolios, analyze risks, and make data-driven investment decisions with cutting-edge technology.
+                </p>
+                
+                <ul class="features-list">
+                    <li>
+                        <i class="fas fa-robot"></i>
+                        <span>AI-powered portfolio analysis and recommendations</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Advanced risk assessment and stress testing</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Real-time market data and performance analytics</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-users"></i>
+                        <span>Multi-company support with role-based access</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-cloud"></i>
+                        <span>Cloud-based platform with enterprise security</span>
+                    </li>
+                </ul>
             </div>
             
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }}">
-                        {{ message }}
+            <!-- Login Form -->
+            <div class="login-card">
+                <div class="login-header">
+                    <h2 class="login-title">Welcome Back</h2>
+                    <p class="login-subtitle">Sign in to your Sandbox account</p>
+                </div>
+
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post">
+                        {% csrf_token %}
+                    <div class="form-floating">
+                        <input type="text" name="{{ form.username.html_name }}" id="{{ form.username.id_for_label }}" required>
+                        <label for="{{ form.username.id_for_label }}">Username or Email</label>
+                        {% if form.username.errors %}
+                            <div style="color: #dc2626; font-size: 12px; margin-top: 0.25rem;">{{ form.username.errors.0 }}</div>
+                        {% endif %}
                     </div>
-                {% endfor %}
-            {% endif %}
-            
-            <form method="post">
-                {% csrf_token %}
-                <div class="form-floating">
-                    <input type="text" name="{{ form.username.html_name }}" id="{{ form.username.id_for_label }}" placeholder="Username" required>
-                    <label for="{{ form.username.id_for_label }}">Username</label>
-                    {% if form.username.errors %}
-                        <div style="color: #dc3545; font-size: 12px; margin-top: 0.25rem;">{{ form.username.errors.0 }}</div>
-                    {% endif %}
-                </div>
+                    
+                    <div class="form-floating">
+                        <input type="password" name="{{ form.password.html_name }}" id="{{ form.password.id_for_label }}" required>
+                        <label for="{{ form.password.id_for_label }}">Password</label>
+                        {% if form.password.errors %}
+                            <div style="color: #dc2626; font-size: 12px; margin-top: 0.25rem;">{{ form.password.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <button type="submit" class="login-button">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Sign In to Sandbox
+                        </button>
+                    </form>
                 
-                <div class="form-floating">
-                    <input type="password" name="{{ form.password.html_name }}" id="{{ form.password.id_for_label }}" placeholder="Password" required>
-                    <label for="{{ form.password.id_for_label }}">Password</label>
-                    {% if form.password.errors %}
-                        <div style="color: #dc3545; font-size: 12px; margin-top: 0.25rem;">{{ form.password.errors.0 }}</div>
-                    {% endif %}
+                <div class="company-info">
+                    <div class="company-logo">
+                        <i class="fas fa-leaf" style="color: #28a745;"></i>
+                        <span class="company-name">sustains.ai</span>
+                    </div>
+                    <p class="company-tagline">
+                        Sustainable AI solutions for the future of finance
+                    </p>
                 </div>
-                
-                <button type="submit" class="login-button">
-                    <i class="fas fa-sign-in-alt"></i>
-                    Sign In
-                </button>
-            </form>
+            </div>
         </div>
     </div>
 </body>

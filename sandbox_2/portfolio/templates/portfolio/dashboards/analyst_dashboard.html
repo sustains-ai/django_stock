@@ -1,0 +1,222 @@
+{% extends 'portfolio/base.html' %}
+{% load static %}
+
+{% block title %}Analyst Dashboard - {{ institute.name }}{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <h1>Analytics Dashboard</h1>
+    <p>Company-wide portfolio analytics and insights for {{ institute.name }}</p>
+</div>
+
+<!-- Company Metrics -->
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-icon">
+            <i class="fas fa-dollar-sign"></i>
+        </div>
+        <div class="kpi-title">Total Assets</div>
+        <div class="kpi-value">${{ total_value }}</div>
+        <div class="kpi-subtitle">Under management</div>
+    </div>
+    
+    <div class="kpi-card">
+        <div class="kpi-icon">
+            <i class="fas fa-chart-pie"></i>
+        </div>
+        <div class="kpi-title">Total Portfolios</div>
+        <div class="kpi-value">{{ total_portfolios }}</div>
+        <div class="kpi-subtitle">Active portfolios</div>
+    </div>
+    
+    <div class="kpi-card">
+        <div class="kpi-icon">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="kpi-title">Total Stocks</div>
+        <div class="kpi-value">{{ total_stocks }}</div>
+        <div class="kpi-subtitle">Individual holdings</div>
+    </div>
+    
+    <div class="kpi-card">
+        <div class="kpi-icon">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="kpi-title">Active Managers</div>
+        <div class="kpi-value">{{ institute.get_fund_managers_count }}</div>
+        <div class="kpi-subtitle">Fund managers</div>
+    </div>
+</div>
+
+<!-- Portfolio Performance Overview -->
+<div class="card" style="margin-top: 2rem;">
+    <div class="card-header">
+        <h3 class="card-title">Portfolio Performance Overview</h3>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <h5>Top Performers</h5>
+                <div class="list-group">
+                    {% for portfolio in top_portfolios %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">{{ portfolio.name }}</h6>
+                            <small class="text-muted">{{ portfolio.fund_manager.user.get_full_name }}</small>
+                        </div>
+                        <span class="badge bg-success rounded-pill">+12.5%</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Portfolio Activity -->
+<div class="card" style="margin-top: 2rem;">
+    <div class="card-header">
+        <h3 class="card-title">Recent Portfolio Activity</h3>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Portfolio</th>
+                        <th>Manager</th>
+                        <th>Created</th>
+                        <th>Stocks</th>
+                        <th>Value</th>
+                        <th>Performance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for portfolio in recent_portfolios %}
+                    <tr>
+                        <td>
+                            <div class="fw-bold">{{ portfolio.name }}</div>
+                            <small class="text-muted">{{ portfolio.description|truncatechars:50 }}</small>
+                        </td>
+                        <td>{{ portfolio.fund_manager.user.get_full_name }}</td>
+                        <td>{{ portfolio.created_at|date:"M d, Y" }}</td>
+                        <td>{{ portfolio.stocks.count }}</td>
+                        <td>
+                            {% with total=0 %}
+                                {% for stock in portfolio.stocks.all %}
+                                    {% if stock.price and stock.quantity %}
+                                        {% with total=total|add:stock.price|mul:stock.quantity %}{% endwith %}
+                                    {% endif %}
+                                {% endfor %}
+                                ${{ total|floatformat:2 }}
+                            {% endwith %}
+                        </td>
+                        <td>
+                            <span class="badge bg-success">+8.2%</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Market Insights -->
+<div class="card" style="margin-top: 2rem;">
+    <div class="card-header">
+        <h3 class="card-title">Market Insights</h3>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h5>Market Status</h5>
+                <div class="d-flex align-items-center mb-3">
+                    <div class="status-indicator bg-success me-2"></div>
+                    <span>Markets are open</span>
+                </div>
+                <div class="d-flex align-items-center mb-3">
+                    <div class="status-indicator bg-warning me-2"></div>
+                    <span>High volatility detected</span>
+                </div>
+                <div class="d-flex align-items-center">
+                    <div class="status-indicator bg-info me-2"></div>
+                    <span>Tech sector showing strength</span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h5>Risk Alerts</h5>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Portfolio Concentration Risk:</strong> 3 portfolios have >40% tech exposure
+                </div>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Diversification Opportunity:</strong> Consider adding international exposure
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Analytics Tools -->
+<div class="card" style="margin-top: 2rem;">
+    <div class="card-header">
+        <h3 class="card-title">Analytics Tools</h3>
+    </div>
+    <div class="card-body">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <a href="#" class="btn btn-primary">
+                <i class="fas fa-chart-line"></i>
+                Performance Analysis
+            </a>
+            <a href="#" class="btn btn-secondary">
+                <i class="fas fa-shield-alt"></i>
+                Risk Assessment
+            </a>
+            <a href="#" class="btn btn-secondary">
+                <i class="fas fa-balance-scale"></i>
+                Portfolio Comparison
+            </a>
+            <a href="#" class="btn btn-secondary">
+                <i class="fas fa-download"></i>
+                Export Reports
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Charts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Performance Chart
+const ctx = document.getElementById('performanceChart').getContext('2d');
+const performanceChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        datasets: [{
+            label: 'Portfolio Performance',
+            data: [12, 19, 3, 5, 2, 3],
+            borderColor: 'rgb(75, 192, 192)',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

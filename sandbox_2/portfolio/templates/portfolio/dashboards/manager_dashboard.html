@@ -1,0 +1,186 @@
+{% extends 'portfolio/base.html' %}
+{% load static %}
+
+{% block title %}Manager Dashboard - Portfolio Manager{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <h1>Portfolio Management Dashboard</h1>
+    <p>Manage your investment portfolios and track performance</p>
+</div>
+
+<!-- KPI Cards -->
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-icon">
+            <i class="fas fa-dollar-sign"></i>
+        </div>
+        <div class="kpi-title">Total Portfolio Value</div>
+        <div class="kpi-value">${{ total_value|default:"0.00" }}</div>
+        <div class="kpi-subtitle">Across all portfolios</div>
+        <div class="kpi-trend">
+            <i class="fas fa-arrow-up"></i>
+            <span>+12.5% vs last month</span>
+        </div>
+    </div>
+    
+    <div class="kpi-card">
+        <div class="kpi-icon">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="kpi-title">Total Profit</div>
+        <div class="kpi-value">${{ total_profit|default:"0.00" }}</div>
+        <div class="kpi-subtitle">Net profit generated</div>
+        <div class="kpi-trend">
+            <i class="fas fa-arrow-up"></i>
+            <span>{{ avg_return }}% return</span>
+        </div>
+    </div>
+    
+    <div class="kpi-card">
+        <div class="kpi-icon">
+            <i class="fas fa-briefcase"></i>
+        </div>
+        <div class="kpi-title">Active Portfolios</div>
+        <div class="kpi-value">{{ portfolio_count|default:"0" }}</div>
+        <div class="kpi-subtitle">Portfolios managed</div>
+        <div class="kpi-trend">
+            <i class="fas fa-check"></i>
+            <span>{{ profitable_portfolios|default:"0" }} profitable</span>
+        </div>
+    </div>
+    
+    <div class="kpi-card">
+        <div class="kpi-icon">
+            <i class="fas fa-percentage"></i>
+        </div>
+        <div class="kpi-title">Average Return</div>
+        <div class="kpi-value">{{ avg_return }}%</div>
+        <div class="kpi-subtitle">Portfolio performance</div>
+        <div class="kpi-trend">
+            <i class="fas fa-arrow-up"></i>
+            <span>Above market</span>
+        </div>
+    </div>
+</div>
+
+<!-- Portfolio Overview -->
+<div class="card" style="margin-top: 2rem;">
+    <div class="card-header">
+        <h3 class="card-title">Your Portfolios</h3>
+        <a href="{% url 'add_portfolio' %}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus"></i>
+            Create Portfolio
+        </a>
+    </div>
+    <div class="card-body">
+        {% if portfolios %}
+        <div class="row">
+            {% for portfolio in portfolios %}
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title">{{ portfolio.name }}</h5>
+                            <span class="badge bg-primary">{{ portfolio.stocks.count }} stocks</span>
+                        </div>
+                        <p class="card-text text-muted">{{ portfolio.description|truncatechars:100 }}</p>
+                        
+                        <!-- Portfolio Value -->
+                        <div class="mb-3">
+                            <div class="fw-bold text-success">View for details</div>
+                            <small class="text-muted">Total Value</small>
+                        </div>
+                        
+                        <!-- Portfolio Actions -->
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'analyze_portfolio' portfolio.id %}" class="btn btn-outline-primary btn-sm flex-fill">
+                                <i class="fas fa-chart-line"></i>
+                                Analyze
+                            </a>
+                            <a href="{% url 'add_stock' portfolio.id %}" class="btn btn-outline-success btn-sm flex-fill">
+                                <i class="fas fa-plus"></i>
+                                Add Stock
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-footer text-muted">
+                        <small>Created {{ portfolio.created_at|date:"M d, Y" }}</small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-briefcase fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">No Portfolios Yet</h4>
+            <p class="text-muted">Create your first portfolio to start managing investments</p>
+            <a href="{% url 'add_portfolio' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i>
+                Create Your First Portfolio
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="card" style="margin-top: 2rem;">
+    <div class="card-header">
+        <h3 class="card-title">Recent Activity</h3>
+    </div>
+    <div class="card-body">
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-marker bg-success"></div>
+                <div class="timeline-content">
+                    <h6>Portfolio "Tech Growth" Updated</h6>
+                    <p class="text-muted">Added 50 shares of AAPL at $150.00</p>
+                    <small class="text-muted">2 hours ago</small>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-marker bg-info"></div>
+                <div class="timeline-content">
+                    <h6>Risk Analysis Completed</h6>
+                    <p class="text-muted">Portfolio "Conservative Mix" risk assessment</p>
+                    <small class="text-muted">1 day ago</small>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-marker bg-warning"></div>
+                <div class="timeline-content">
+                    <h6>New Portfolio Created</h6>
+                    <p class="text-muted">"ESG Focus" portfolio added to your account</p>
+                    <small class="text-muted">3 days ago</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card" style="margin-top: 2rem;">
+    <div class="card-header">
+        <h3 class="card-title">Quick Actions</h3>
+    </div>
+    <div class="card-body">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <a href="{% url 'add_portfolio' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i>
+                Create Portfolio
+            </a>
+            <a href="{% url 'portfolio_list' %}" class="btn btn-secondary">
+                <i class="fas fa-briefcase"></i>
+                View Portfolios
+            </a>
+            <a href="{% url 'settings' %}" class="btn btn-secondary">
+                <i class="fas fa-cog"></i>
+                Settings
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

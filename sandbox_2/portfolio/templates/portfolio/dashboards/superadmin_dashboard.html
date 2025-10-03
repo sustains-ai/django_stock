@@ -1,0 +1,438 @@
+{% extends 'portfolio/base.html' %}
+{% load static %}
+
+{% block title %}Superadmin Dashboard - System Overview{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1>System Administration</h1>
+            <p>Complete system overview and company management</p>
+        </div>
+        <div>
+            <button onclick="openCompanyModal()" class="btn btn-primary" style="display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-plus"></i>
+                Onboard Company
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- System Metrics -->
+<div class="kpi-grid" style="margin-bottom: 2rem;">
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background: var(--primary-red);">
+            <i class="fas fa-building"></i>
+        </div>
+        <div class="kpi-title">Total Companies</div>
+        <div class="kpi-value">{{ total_institutes }}</div>
+        <div class="kpi-subtitle">Active institutes</div>
+    </div>
+    
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background: var(--primary-green);">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="kpi-title">Total Users</div>
+        <div class="kpi-value">{{ total_users }}</div>
+        <div class="kpi-subtitle">System-wide users</div>
+    </div>
+    
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background: var(--primary-blue);">
+            <i class="fas fa-chart-pie"></i>
+        </div>
+        <div class="kpi-title">Total Portfolios</div>
+        <div class="kpi-value">{{ total_portfolios }}</div>
+        <div class="kpi-subtitle">Across all companies</div>
+    </div>
+    
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background: var(--primary-sage);">
+            <i class="fas fa-dollar-sign"></i>
+        </div>
+        <div class="kpi-title">Total Assets</div>
+        <div class="kpi-value">${{ total_value }}</div>
+        <div class="kpi-subtitle">Under management</div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card" style="margin-bottom: 2rem;">
+    <div class="card-header">
+        <h3 class="card-title">Quick Actions</h3>
+    </div>
+    <div class="card-body">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <button onclick="openCompanyModal()" class="btn btn-primary">
+                <i class="fas fa-building"></i>
+                Onboard New Company
+            </button>
+            <button onclick="openUserModal()" class="btn btn-secondary">
+                <i class="fas fa-user-plus"></i>
+                Add System User
+            </button>
+            <button onclick="viewAllCompanies()" class="btn btn-secondary">
+                <i class="fas fa-list"></i>
+                View All Companies
+            </button>
+            <button onclick="systemSettings()" class="btn btn-secondary">
+                <i class="fas fa-cog"></i>
+                System Settings
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Companies Overview -->
+<div class="card">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card-title">Companies Overview</h3>
+        <div>
+            <button onclick="refreshCompanies()" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-sync"></i>
+                Refresh
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if institutes_with_stats %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Company</th>
+                        <th>Domain</th>
+                        <th>Users</th>
+                        <th>Portfolios</th>
+                        <th>Value</th>
+                        <th>Plan</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stats in institutes_with_stats %}
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <div style="width: 40px; height: 40px; background: var(--primary-red); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600;">
+                                    {{ stats.institute.name|first|upper }}
+                                </div>
+                                <div>
+                                    <div style="font-weight: 600; color: var(--text-primary);">{{ stats.institute.name }}</div>
+                                    <div style="font-size: 12px; color: var(--text-secondary);">Created {{ stats.institute.created_at|date:"M d, Y" }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span style="font-family: monospace; background: var(--bg-secondary); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 12px;">
+                                {{ stats.institute.domain }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-primary">{{ stats.user_count }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ stats.portfolio_count }}</span>
+                        </td>
+                        <td>
+                            <span style="font-weight: 600; color: var(--primary-green);">${{ stats.total_value|floatformat:2 }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-{% if stats.institute.subscription_plan == 'enterprise' %}danger{% elif stats.institute.subscription_plan == 'professional' %}warning{% else %}secondary{% endif %}">
+                                {{ stats.institute.get_subscription_plan_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-{% if stats.institute.is_active %}success{% else %}danger{% endif %}">
+                                {% if stats.institute.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary" onclick="viewCompany('{{ stats.institute.id }}')" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="editCompany('{{ stats.institute.id }}')" title="Edit Company">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-outline-{% if stats.institute.is_active %}warning{% else %}success{% endif %}" onclick="toggleCompany('{{ stats.institute.id }}')" title="{% if stats.institute.is_active %}Deactivate{% else %}Activate{% endif %}">
+                                    <i class="fas fa-{% if stats.institute.is_active %}pause{% else %}play{% endif %}"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+            <i class="fas fa-building" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+            <h4>No Companies Yet</h4>
+            <p>Start by onboarding your first company to the system.</p>
+            <button onclick="openCompanyModal()" class="btn btn-primary">
+                <i class="fas fa-plus"></i>
+                Onboard First Company
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Company Onboarding Modal -->
+<div id="companyModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3>Onboard New Company</h3>
+            <span class="close" onclick="closeCompanyModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="companyForm" method="post" action="{% url 'onboard_company' %}">
+                {% csrf_token %}
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div class="form-group">
+                        <label for="company_name">Company Name *</label>
+                        <input type="text" id="company_name" name="company_name" class="form-control" placeholder="e.g., Lotus Capital" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="domain">Domain *</label>
+                        <input type="text" id="domain" name="domain" class="form-control" placeholder="e.g., lotus.com" required>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div class="form-group">
+                        <label for="subscription_plan">Subscription Plan</label>
+                        <select id="subscription_plan" name="subscription_plan" class="form-control">
+                            <option value="basic">Basic</option>
+                            <option value="professional">Professional</option>
+                            <option value="enterprise">Enterprise</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="max_users">Max Users</label>
+                        <input type="number" id="max_users" name="max_users" class="form-control" value="10" min="1">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="primary_color">Brand Color</label>
+                    <input type="color" id="primary_color" name="primary_color" class="form-control" value="#007bff">
+                </div>
+                
+                <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-light);">
+                    <h5>Initial Admin User</h5>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label for="admin_username">Username *</label>
+                            <input type="text" id="admin_username" name="admin_username" class="form-control" placeholder="e.g., ajay" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="admin_email">Email *</label>
+                            <input type="email" id="admin_email" name="admin_email" class="form-control" placeholder="ajay@lotus.com" required>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label for="admin_first_name">First Name *</label>
+                            <input type="text" id="admin_first_name" name="admin_first_name" class="form-control" placeholder="Ajay" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="admin_last_name">Last Name *</label>
+                            <input type="text" id="admin_last_name" name="admin_last_name" class="form-control" placeholder="Sharma" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="admin_password">Temporary Password *</label>
+                        <input type="password" id="admin_password" name="admin_password" class="form-control" placeholder="User will change this on first login" required>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-light);">
+                    <h5>Fund Manager User (Optional)</h5>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label for="manager_username">Username</label>
+                            <input type="text" id="manager_username" name="manager_username" class="form-control" placeholder="e.g., vijay">
+                        </div>
+                        <div class="form-group">
+                            <label for="manager_email">Email</label>
+                            <input type="email" id="manager_email" name="manager_email" class="form-control" placeholder="vijay@lotus.com">
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label for="manager_first_name">First Name</label>
+                            <input type="text" id="manager_first_name" name="manager_first_name" class="form-control" placeholder="Vijay">
+                        </div>
+                        <div class="form-group">
+                            <label for="manager_last_name">Last Name</label>
+                            <input type="text" id="manager_last_name" name="manager_last_name" class="form-control" placeholder="Kumar">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="manager_password">Temporary Password</label>
+                        <input type="password" id="manager_password" name="manager_password" class="form-control" placeholder="User will change this on first login">
+                    </div>
+                </div>
+                
+                <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button type="button" onclick="closeCompanyModal()" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-building"></i>
+                        Onboard Company
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.close {
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    color: var(--text-secondary);
+}
+
+.close:hover {
+    color: var(--text-primary);
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid var(--border-light);
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary-red);
+    box-shadow: 0 0 0 3px rgba(254, 87, 87, 0.1);
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 12px;
+}
+
+.table th {
+    background: var(--bg-secondary);
+    font-weight: 600;
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--border-light);
+}
+
+.table td {
+    vertical-align: middle;
+    padding: 1rem 0.75rem;
+}
+
+.badge {
+    font-size: 11px;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+</style>
+
+<script>
+function openCompanyModal() {
+    document.getElementById('companyModal').style.display = 'flex';
+}
+
+function closeCompanyModal() {
+    document.getElementById('companyModal').style.display = 'none';
+}
+
+function openUserModal() {
+    alert('User management coming soon!');
+}
+
+function viewAllCompanies() {
+    // Scroll to companies table
+    document.querySelector('.card').scrollIntoView({ behavior: 'smooth' });
+}
+
+function systemSettings() {
+    alert('System settings coming soon!');
+}
+
+function refreshCompanies() {
+    location.reload();
+}
+
+function viewCompany(id) {
+    alert('View company details: ' + id);
+}
+
+function editCompany(id) {
+    alert('Edit company: ' + id);
+}
+
+function toggleCompany(id) {
+    if (confirm('Are you sure you want to toggle this company?')) {
+        alert('Company toggled: ' + id);
+    }
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('companyModal');
+    if (event.target === modal) {
+        closeCompanyModal();
+    }
+}
+</script>
+{% endblock %}

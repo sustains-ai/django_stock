@@ -11,11 +11,36 @@ from django.core.cache import cache # <<--- IMPORT THIS AT THE TOP
 # --- Model Definitions ---
 
 class Institute(models.Model):
-    name = models.CharField(max_length=255)
-    created_at = models.DateTimeField(auto_now_add=True)
+    SUBSCRIPTION_PLANS = [
+        ('basic', 'Basic'),
+        ('professional', 'Professional'),
+        ('enterprise', 'Enterprise'),
+    ]
+
+    name = models.CharField(max_length=255, db_index=True)
+    domain = models.CharField(max_length=255, unique=True, help_text="company.com")
+    logo = models.ImageField(upload_to='institutes/logos/', blank=True, null=True)
+    primary_color = models.CharField(max_length=7, default='#007bff', help_text="Brand color in hex format")
+    is_active = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    subscription_plan = models.CharField(max_length=50, choices=SUBSCRIPTION_PLANS, default='basic')
+    max_users = models.IntegerField(default=10)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['is_active', 'created_at']),
+        ]
 
     def __str__(self):
         return self.name
+    
+    def get_active_users_count(self):
+        """Get count of active users in this institute"""
+        return UserProfile.objects.filter(institute=self, is_active=True).count()
+    
+    def get_fund_managers_count(self):
+        """Get count of active fund managers"""
+        return FundManager.objects.filter(institute=self, is_active=True).count()
 
 
 class InstituteRole(models.Model):
@@ -37,6 +62,41 @@ class InstituteRole(models.Model):
         return f"{self.user.username} - {self.get_role_display()} at {self.institute.name}"
 
 
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='userprofile')
+    institute = models.ForeignKey(Institute, on_delete=models.CASCADE, related_name='user_profiles')
+    phone = models.CharField(max_length=20, blank=True)
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
+    timezone = models.CharField(max_length=50, default='UTC')
+    language = models.CharField(max_length=10, default='en')
+    is_active = models.BooleanField(default=True)
+    last_login_ip = models.GenericIPAddressField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.user.get_full_name()} ({self.institute.name})"
+    
+    def get_role(self):
+        """Get the user's role in their institute"""
+        try:
+            role = InstituteRole.objects.get(user=self.user, institute=self.institute)
+            return role.role
+        except InstituteRole.DoesNotExist:
+            return None
+    
+    def is_admin(self):
+        """Check if user is admin of their institute"""
+        return self.get_role() == 'admin'
+    
+    def is_manager(self):
+        """Check if user is manager of their institute"""
+        return self.get_role() == 'manager'
+    
+    def is_analyst(self):
+        """Check if user is analyst of their institute"""
+        return self.get_role() == 'analyst'
+
+
 class FundManager(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     institute = models.ForeignKey(Institute, on_delete=models.CASCADE, related_name="fund_managers", default=1)
@@ -56,12 +116,18 @@ class FundManager(models.Model):
 
 
 class Portfolio(models.Model):
-    name = models.CharField(max_length=255)
-    description = models.TextField(blank=True)  # Optional field
+    name = models.CharField(max_length=255, db_index=True)
+    description = models.TextField(blank=True)
     fund_manager = models.ForeignKey(FundManager, on_delete=models.CASCADE, related_name="portfolios")
-    created_at = models.DateTimeField(auto_now_add=True)
-    # Optional: Add an updated_at field for easier cache invalidation later if needed for portfolio-level caches
-    # updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['fund_manager', 'created_at']),
+            models.Index(fields=['-created_at']),
+        ]
+        ordering = ['-created_at']
 
     def __str__(self):
         return f"{self.name} ({self.fund_manager.user.username})"
@@ -69,13 +135,19 @@ class Portfolio(models.Model):
 
 class Stock(models.Model):
     portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name="stocks")
-    symbol = models.CharField(max_length=10)  # Stock ticker symbol
+    symbol = models.CharField(max_length=10, db_index=True)
     name = models.CharField(max_length=255)
     quantity = models.PositiveIntegerField(default=1)
-    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True) # Manual price
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     added_at = models.DateTimeField(auto_now_add=True)
-    # Optional: Add an updated_at field if needed for fine-grained cache invalidation
-    # updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['portfolio', 'symbol']),
+            models.Index(fields=['symbol', 'added_at']),
+        ]
+        ordering = ['-added_at']
 
     def __str__(self):
         return f"{self.name} ({self.symbol})"
@@ -244,16 +316,93 @@ class Stock(models.Model):
 
 class HistoricalStockData(models.Model):
     portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name="historical_data")
-    symbol = models.CharField(max_length=10)
-    date = models.DateField()
-    adjusted_close = models.FloatField() # Consider DecimalField for precision if needed
+    symbol = models.CharField(max_length=10, db_index=True)
+    date = models.DateField(db_index=True)
+    adjusted_close = models.FloatField()
 
     class Meta:
         unique_together = ('portfolio', 'symbol', 'date')
-        ordering = ['date'] # Good for fetching ordered data
+        ordering = ['date']
+        indexes = [
+            models.Index(fields=['portfolio', 'symbol', 'date']),
+            models.Index(fields=['portfolio', 'date']),
+            models.Index(fields=['symbol', '-date']),
+        ]
 
     def __str__(self):
         return f"{self.portfolio.name} - {self.symbol} - {self.date}: {self.adjusted_close}"
+
+
+class InstituteSettings(models.Model):
+    institute = models.OneToOneField(Institute, on_delete=models.CASCADE, related_name='settings')
+    allow_analytics = models.BooleanField(default=True)
+    allow_risk_analysis = models.BooleanField(default=True)
+    allow_ai_features = models.BooleanField(default=True)
+    max_portfolios_per_manager = models.IntegerField(default=50)
+    data_retention_days = models.IntegerField(default=365)
+    require_two_factor = models.BooleanField(default=False)
+    password_expiry_days = models.IntegerField(default=90)
+    
+    def __str__(self):
+        return f"Settings for {self.institute.name}"
+
+
+class UserInvitation(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('accepted', 'Accepted'),
+        ('expired', 'Expired'),
+        ('cancelled', 'Cancelled'),
+    ]
+    
+    institute = models.ForeignKey(Institute, on_delete=models.CASCADE, related_name='invitations')
+    email = models.EmailField()
+    role = models.CharField(max_length=20, choices=InstituteRole.ROLE_CHOICES)
+    invited_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_invitations')
+    token = models.CharField(max_length=100, unique=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    
+    def __str__(self):
+        return f"Invitation for {self.email} to {self.institute.name}"
+    
+    def is_expired(self):
+        """Check if invitation has expired"""
+        from django.utils import timezone
+        return timezone.now() > self.expires_at
+    
+    def accept(self, user):
+        """Accept the invitation and create user profile"""
+        if self.status != 'pending' or self.is_expired():
+            return False
+        
+        # Create user profile
+        UserProfile.objects.create(
+            user=user,
+            institute=self.institute,
+            is_active=True
+        )
+        
+        # Create role
+        InstituteRole.objects.create(
+            user=user,
+            institute=self.institute,
+            role=self.role
+        )
+        
+        # Create fund manager if role is manager
+        if self.role == 'manager':
+            FundManager.objects.create(
+                user=user,
+                institute=self.institute
+            )
+        
+        # Update invitation status
+        self.status = 'accepted'
+        self.save()
+        
+        return True
 
 
 # --- Standalone Function for News Sentiment ---

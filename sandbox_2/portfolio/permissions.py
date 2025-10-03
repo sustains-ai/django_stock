@@ -4,7 +4,7 @@ from django.shortcuts import redirect
 from django.http import HttpResponseForbidden
 from django.contrib import messages
 from functools import wraps
-from .models import InstituteRole, FundManager, Portfolio
+from .models import InstituteRole, FundManager, Portfolio, UserProfile
 
 
 def get_user_institute_role(user, institute):
@@ -139,3 +139,84 @@ def can_view_portfolio(user, portfolio):
         return has_analyst_permission(user, institute)
     except:
         return False
+
+
+def get_user_role(user):
+    """Get user's primary role from their profile"""
+    # Check if user is superuser (superadmin)
+    if user.is_superuser:
+        return 'superadmin'
+    
+    try:
+        profile = user.userprofile
+        return profile.get_role()
+    except UserProfile.DoesNotExist:
+        return None
+
+
+def is_superadmin(user):
+    """Check if user is a superadmin"""
+    return user.is_superuser or get_user_role(user) == 'superadmin'
+
+
+def superadmin_required(view_func):
+    """Decorator to require superadmin role"""
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        
+        if not is_superadmin(request.user):
+            messages.error(request, "Access denied. Superadmin access required.")
+            return redirect('dashboard')
+        
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+
+def admin_required(view_func):
+    """Decorator to require admin role (or superadmin)"""
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        
+        role = get_user_role(request.user)
+        if role not in ['admin', 'superadmin']:
+            messages.error(request, "Access denied. Admin access required.")
+            return redirect('dashboard')
+        
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+
+def manager_required(view_func):
+    """Decorator to require manager, admin, or superadmin role"""
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        
+        role = get_user_role(request.user)
+        if role not in ['admin', 'manager', 'superadmin']:
+            messages.error(request, "Access denied. Manager access required.")
+            return redirect('dashboard')
+        
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+
+def analyst_required(view_func):
+    """Decorator to require analyst, manager, admin, or superadmin role"""
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        
+        role = get_user_role(request.user)
+        if role not in ['admin', 'manager', 'analyst', 'superadmin']:
+            messages.error(request, "Access denied. Analyst access required.")
+            return redirect('dashboard')
+        
+        return view_func(request, *args, **kwargs)
+    return wrapper

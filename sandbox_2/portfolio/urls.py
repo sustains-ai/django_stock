@@ -10,8 +10,19 @@ urlpatterns = [
     path('test/', views.test_view, name='test'),
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
     
-    # Modern UI Routes
-    path('dashboard/', views.modern_dashboard, name='dashboard'),
+    # Custom admin redirect (replaces Django admin)
+    path('admin/', views.admin_redirect, name='admin_redirect'),
+    
+    # Dashboard Router
+    path('dashboard/', views.dashboard_router, name='dashboard'),
+    
+    # Role-based Dashboards
+    path('superadmin/dashboard/', views.superadmin_dashboard, name='superadmin_dashboard'),
+    path('admin/dashboard/', views.admin_dashboard, name='admin_dashboard'),
+    path('manager/dashboard/', views.manager_dashboard, name='manager_dashboard'),
+    path('analyst/dashboard/', views.analyst_dashboard, name='analyst_dashboard'),
+    
+    # Legacy routes (for backward compatibility)
     path('portfolio_list/', views.portfolio_list, name='portfolio_list'),
     path('analytics/', views.modern_analytics, name='analytics'),
     path('risk/', views.modern_risk_analysis, name='risk'),
@@ -36,7 +47,18 @@ urlpatterns = [
     path('all-yield-data/<int:portfolio_id>/', views.get_all_yield_data, name='all_yield_data'),
     path("load-risk-measure/<int:portfolio_id>/<str:measure>/", views.load_risk_measure, name="load_risk_measure"),
     path("test-redis/", views.test_redis_cache),
-    
+
     # Additional utility routes
     path('dashboard-redirect/', views.dashboard_redirect, name='dashboard_redirect'),
+
+    # User Management Routes
+    path('admin/create-user/', views.create_user, name='create_user'),
+    path('admin/invite-user/', views.invite_user, name='invite_user'),
+    path('admin/manage-users/', views.manage_users, name='manage_users'),
+    path('user/profile/', views.user_profile, name='user_profile'),
+    path('user/change-password/', views.change_password, name='change_password'),
+    path('accept-invitation/<str:token>/', views.accept_invitation, name='accept_invitation'),
+
+    # Company Onboarding (Superadmin only)
+    path('superadmin/onboard-company/', views.onboard_company, name='onboard_company'),
 ]

@@ -174,7 +174,7 @@
         <div id="performance-chart" style="height: 400px;"></div>
         <script>
             var performanceData = {{ portfolio_value_json|safe }};
-            
+
             var data = [{
                 x: performanceData.map(d => d.x),
                 y: performanceData.map(d => d.y),
@@ -190,7 +190,7 @@
                     size: 6
                 }
             }];
-            
+
             var layout = {
                 title: {
                     text: 'Portfolio Value Over Time',
@@ -208,12 +208,185 @@
                 paper_bgcolor: 'rgba(0,0,0,0)',
                 plot_bgcolor: 'rgba(0,0,0,0)'
             };
-            
+
             Plotly.newPlot('performance-chart', data, layout, {responsive: true});
         </script>
                     </div>
                 </div>
 {% endif %}
+
+<!-- Efficient Frontier Chart -->
+<div class="card" style="margin-top: 2rem;">
+    <div class="card-header">
+        <h3 class="card-title">Efficient Frontier</h3>
+        <p class="card-subtitle">Risk-Return optimization for portfolio diversification</p>
+    </div>
+    <div class="card-body">
+        {% if efficient_frontier %}
+        <div id="efficient-frontier-chart" style="height: 500px;"></div>
+        <script>
+            var frontierData = {{ efficient_frontier|safe }};
+
+            if (frontierData && frontierData.risks && frontierData.returns) {
+                // Create hover text with Sharpe ratios
+                var hoverText = frontierData.risks.map((risk, i) =>
+                    `Risk: ${(risk * 100).toFixed(2)}%<br>` +
+                    `Return: ${(frontierData.returns[i] * 100).toFixed(2)}%<br>` +
+                    `Sharpe Ratio: ${frontierData.sharpe_ratios[i].toFixed(3)}`
+                );
+
+                // Find the optimal portfolio (max Sharpe ratio)
+                var maxSharpeIndex = frontierData.sharpe_ratios.indexOf(Math.max(...frontierData.sharpe_ratios));
+
+                var data = [
+                    {
+                        x: frontierData.risks.map(r => r * 100),
+                        y: frontierData.returns.map(r => r * 100),
+                        type: 'scatter',
+                        mode: 'lines+markers',
+                        name: 'Efficient Frontier',
+                        line: {
+                            color: '#599dff',
+                            width: 3,
+                            shape: 'spline'
+                        },
+                        marker: {
+                            color: '#599dff',
+                            size: 8,
+                            line: {
+                                color: '#ffffff',
+                                width: 2
+                            }
+                        },
+                        hovertext: hoverText,
+                        hoverinfo: 'text'
+                    },
+                    {
+                        x: [frontierData.risks[maxSharpeIndex] * 100],
+                        y: [frontierData.returns[maxSharpeIndex] * 100],
+                        type: 'scatter',
+                        mode: 'markers',
+                        name: 'Optimal Portfolio',
+                        marker: {
+                            color: '#00d68f',
+                            size: 16,
+                            symbol: 'star',
+                            line: {
+                                color: '#ffffff',
+                                width: 2
+                            }
+                        },
+                        hovertext: `<b>Optimal Portfolio</b><br>${hoverText[maxSharpeIndex]}`,
+                        hoverinfo: 'text'
+                    }
+                ];
+
+                var layout = {
+                    title: {
+                        text: 'Efficient Frontier Analysis',
+                        font: { size: 18, color: 'var(--text-primary)', weight: 600 }
+                    },
+                    xaxis: {
+                        title: {
+                            text: 'Risk (Volatility %)',
+                            font: { size: 14, color: 'var(--text-secondary)' }
+                        },
+                        gridcolor: 'var(--border-light)',
+                        showgrid: true,
+                        zeroline: false
+                    },
+                    yaxis: {
+                        title: {
+                            text: 'Expected Return (%)',
+                            font: { size: 14, color: 'var(--text-secondary)' }
+                        },
+                        gridcolor: 'var(--border-light)',
+                        showgrid: true,
+                        zeroline: false
+                    },
+                    margin: {t: 60, b: 60, l: 70, r: 50},
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    showlegend: true,
+                    legend: {
+                        x: 0.02,
+                        y: 0.98,
+                        bgcolor: 'rgba(255,255,255,0.8)',
+                        bordercolor: 'var(--border-light)',
+                        borderwidth: 1
+                    },
+                    hovermode: 'closest'
+                };
+
+                Plotly.newPlot('efficient-frontier-chart', data, layout, {responsive: true});
+            }
+        </script>
+
+        <!-- Stats Summary -->
+        <div style="margin-top: 2rem; padding: 1rem; background: var(--bg-secondary); border-radius: var(--radius-md);">
+            <h4 style="color: var(--text-primary); margin-bottom: 1rem; font-size: 16px;">📊 Frontier Statistics</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                <div>
+                    <p style="color: var(--text-secondary); font-size: 12px; margin-bottom: 0.25rem;">Portfolio Points</p>
+                    <p style="color: var(--text-primary); font-size: 18px; font-weight: 600; margin: 0;">
+                        <script>document.write(frontierData ? frontierData.risks.length : '0');</script>
+                    </p>
+                </div>
+                <div>
+                    <p style="color: var(--text-secondary); font-size: 12px; margin-bottom: 0.25rem;">Min Risk</p>
+                    <p style="color: var(--primary-green); font-size: 18px; font-weight: 600; margin: 0;">
+                        <script>document.write(frontierData ? (Math.min(...frontierData.risks) * 100).toFixed(2) + '%' : 'N/A');</script>
+                    </p>
+                </div>
+                <div>
+                    <p style="color: var(--text-secondary); font-size: 12px; margin-bottom: 0.25rem;">Max Return</p>
+                    <p style="color: var(--primary-red); font-size: 18px; font-weight: 600; margin: 0;">
+                        <script>document.write(frontierData ? (Math.max(...frontierData.returns) * 100).toFixed(2) + '%' : 'N/A');</script>
+                    </p>
+                </div>
+                <div>
+                    <p style="color: var(--text-secondary); font-size: 12px; margin-bottom: 0.25rem;">Best Sharpe Ratio</p>
+                    <p style="color: var(--primary-blue); font-size: 18px; font-weight: 600; margin: 0;">
+                        <script>document.write(frontierData ? Math.max(...frontierData.sharpe_ratios).toFixed(3) : 'N/A');</script>
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- Message when efficient frontier can't be calculated -->
+        <div style="text-align: center; padding: 3rem;">
+            <div style="width: 80px; height: 80px; background: linear-gradient(135deg, var(--primary-blue), var(--primary-purple)); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; box-shadow: 0 4px 16px rgba(89, 157, 255, 0.3);">
+                <i class="fas fa-chart-area" style="font-size: 2rem; color: var(--text-white);"></i>
+            </div>
+            <h3 style="color: var(--text-primary); margin-bottom: 1rem; font-size: 20px;">Efficient Frontier Not Available</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 14px;">
+                The efficient frontier requires at least <strong>2 stocks</strong> to calculate optimal portfolio allocations.
+            </p>
+            <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 14px;">
+                Current portfolio has <strong>{{ stock_count }}</strong> stock{{ stock_count|pluralize }}.
+            </p>
+            <div style="background: var(--bg-secondary); border-radius: var(--radius-md); padding: 1.5rem; margin: 2rem auto; max-width: 500px; border: 2px solid var(--border-light);">
+                <h4 style="color: var(--text-primary); margin-bottom: 1rem; font-size: 16px;">
+                    <i class="fas fa-lightbulb" style="color: var(--primary-yellow);"></i> What is the Efficient Frontier?
+                </h4>
+                <p style="color: var(--text-secondary); font-size: 13px; line-height: 1.6; text-align: left;">
+                    The efficient frontier shows the optimal risk-return combinations for different portfolio allocations.
+                    It helps you understand:
+                </p>
+                <ul style="color: var(--text-secondary); font-size: 13px; text-align: left; margin-top: 1rem; padding-left: 1.5rem;">
+                    <li style="margin-bottom: 0.5rem;">How to minimize risk for a target return</li>
+                    <li style="margin-bottom: 0.5rem;">How to maximize return for a given risk level</li>
+                    <li style="margin-bottom: 0.5rem;">The optimal portfolio mix (highest Sharpe ratio)</li>
+                </ul>
+            </div>
+            <a href="{% url 'add_stock' portfolio.id %}" class="btn btn-primary btn-lg" style="margin-top: 1rem;">
+                <i class="fas fa-plus"></i>
+                Add More Stocks
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
 
 <!-- Quick Actions -->
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 2rem;">

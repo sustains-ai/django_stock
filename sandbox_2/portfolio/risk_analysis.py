@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
-import riskfolio as rp  # Assuming you're using riskfolio
+import riskfolio as rp
+from django.core.cache import cache
+from functools import lru_cache
 
 def perform_risk_analysis(X):
     """
@@ -82,6 +84,70 @@ def calculate_risk_measures(returns, stock_symbols):
             "Max_Drawdown": (stock_returns.cumsum().cummax() - stock_returns.cumsum()).max()
         }
     return risk_measures
+
+
+def calculate_efficient_frontier(X, num_points=20):
+    """
+    Calculate the efficient frontier with multiple portfolio combinations.
+    Optimized version with better memory management and vectorized operations.
+
+    Parameters:
+    - X (pd.DataFrame): Daily returns of assets
+    - num_points (int): Number of points to calculate on the frontier
+
+    Returns:
+    - dict: Contains risks, returns, and sharpe ratios for each point
+    """
+    if X.empty or len(X.columns) < 2:
+        return None
+
+    try:
+        # Create Portfolio object
+        port = rp.Portfolio(returns=X)
+
+        # Set estimation methods
+        method_mu = 'hist'
+        method_cov = 'hist'
+        port.assets_stats(method_mu=method_mu, method_cov=method_cov)
+
+        # Calculate efficient frontier
+        points = num_points
+        frontier = port.efficient_frontier(model='Classic', rm='MV', points=points, rf=0, hist=True)
+
+        if frontier is None or frontier.empty:
+            return None
+
+        # Vectorized calculations for better performance
+        weights_array = frontier.values
+        mu_array = port.mu.values.flatten()
+        cov_matrix = port.cov.values
+
+        # Calculate portfolio returns (annualized) - vectorized
+        portfolio_returns = np.dot(weights_array.T, mu_array) * 252
+
+        # Calculate portfolio risks (annualized volatility) - vectorized
+        portfolio_variances = np.sum(
+            weights_array * np.dot(cov_matrix, weights_array), axis=0
+        )
+        portfolio_risks = np.sqrt(portfolio_variances) * np.sqrt(252)
+
+        # Calculate Sharpe ratios - vectorized
+        sharpe_ratios = np.divide(
+            portfolio_returns,
+            portfolio_risks,
+            out=np.zeros_like(portfolio_returns),
+            where=portfolio_risks > 0
+        )
+
+        return {
+            'risks': portfolio_risks.tolist(),
+            'returns': portfolio_returns.tolist(),
+            'sharpe_ratios': sharpe_ratios.tolist()
+        }
+
+    except Exception as e:
+        print(f"Error calculating efficient frontier: {e}")
+        return None
 
 
 def calculate_portfolio_risk(X, weights):
