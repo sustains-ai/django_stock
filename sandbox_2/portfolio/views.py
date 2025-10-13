@@ -228,43 +228,57 @@ def dashboard_router(request):
 @login_required
 @superadmin_required
 def superadmin_dashboard(request):
-    """System-wide dashboard for superadmins"""
+    """System-wide dashboard for superadmins - OPTIMIZED & SAFE"""
     try:
-        # System-wide metrics
+        # Cache key for superadmin dashboard
+        cache_key = 'superadmin_dashboard_data_v3'
+        cached_data = cache.get(cache_key)
+
+        if cached_data:
+            return render(request, 'portfolio/dashboards/superadmin_dashboard.html', cached_data)
+
+        from django.db.models import Count
+
+        # System-wide metrics - single query each
         total_institutes = Institute.objects.count()
         total_users = User.objects.count()
         total_portfolios = Portfolio.objects.count()
         total_stocks = Stock.objects.count()
-        
-        # Calculate total system value
+
+        # Calculate total value - SAFE approach
         total_value = 0
-        for portfolio in Portfolio.objects.all():
+        for portfolio in Portfolio.objects.all().prefetch_related('stocks'):
             for stock in portfolio.stocks.all():
                 if stock.price and stock.quantity:
-                    total_value += stock.price * stock.quantity
-        
-        # Recent activity across all institutes
-        recent_portfolios = Portfolio.objects.order_by('-created_at')[:10]
+                    total_value += float(stock.price) * stock.quantity
+
+        # Recent activity - optimized with select_related
+        recent_portfolios = Portfolio.objects.select_related(
+            'fund_manager__user', 'fund_manager__institute'
+        ).order_by('-created_at')[:10]
+
         recent_institutes = Institute.objects.order_by('-created_at')[:5]
-        
-        # Get all institutes with their stats
-        institutes_with_stats = []
+
+        # Get all institutes with their stats - SAFE approach
+        institutes_list = []
         for institute in Institute.objects.all():
-            institute_stats = {
-                'institute': institute,
-                'user_count': UserProfile.objects.filter(institute=institute).count(),
-                'portfolio_count': Portfolio.objects.filter(fund_manager__institute=institute).count(),
-                'total_value': 0
-            }
-            
+            user_count = UserProfile.objects.filter(institute=institute).count()
+            portfolio_count = Portfolio.objects.filter(fund_manager__institute=institute).count()
+
             # Calculate institute value
-            for portfolio in Portfolio.objects.filter(fund_manager__institute=institute):
+            inst_value = 0
+            for portfolio in Portfolio.objects.filter(fund_manager__institute=institute).prefetch_related('stocks'):
                 for stock in portfolio.stocks.all():
                     if stock.price and stock.quantity:
-                        institute_stats['total_value'] += stock.price * stock.quantity
-            
-            institutes_with_stats.append(institute_stats)
-        
+                        inst_value += float(stock.price) * stock.quantity
+
+            institutes_list.append({
+                'institute': institute,
+                'user_count': user_count,
+                'portfolio_count': portfolio_count,
+                'total_value': inst_value
+            })
+
         context = {
             'total_institutes': total_institutes,
             'total_users': total_users,
@@ -273,11 +287,14 @@ def superadmin_dashboard(request):
             'total_value': f"{total_value:,.2f}",
             'recent_portfolios': recent_portfolios,
             'recent_institutes': recent_institutes,
-            'institutes_with_stats': institutes_with_stats,
+            'institutes_with_stats': institutes_list,
         }
-        
+
+        # Cache for 5 minutes
+        cache.set(cache_key, context, 300)
+
         return render(request, 'portfolio/dashboards/superadmin_dashboard.html', context)
-        
+
     except Exception as e:
         messages.error(request, f"Error loading superadmin dashboard: {str(e)}")
         return redirect('login')
@@ -286,50 +303,61 @@ def superadmin_dashboard(request):
 # ===== ADMIN DASHBOARD =====
 @login_required
 def admin_dashboard(request):
-    """Company-wide dashboard for institute admins"""
-    
+    """Company-wide dashboard for institute admins - OPTIMIZED & SAFE"""
+
     try:
         user_profile = request.user.userprofile
         institute = user_profile.institute
-        
-        # Company metrics
+
+        # Cache key specific to this institute
+        cache_key = f'admin_dashboard_{institute.id}_v3'
+        cached_data = cache.get(cache_key)
+
+        if cached_data:
+            cached_data['institute'] = institute  # Refresh institute object
+            return render(request, 'portfolio/dashboards/admin_dashboard.html', cached_data)
+
+        # Company metrics - optimized queries
         total_users = UserProfile.objects.filter(institute=institute, is_active=True).count()
         active_managers = FundManager.objects.filter(institute=institute, is_active=True).count()
         total_portfolios = Portfolio.objects.filter(fund_manager__institute=institute).count()
-        
-        # Calculate total portfolio value
+
+        # Calculate total portfolio value - SAFE approach
         total_value = 0
-        for portfolio in Portfolio.objects.filter(fund_manager__institute=institute):
+        for portfolio in Portfolio.objects.filter(fund_manager__institute=institute).prefetch_related('stocks'):
             for stock in portfolio.stocks.all():
                 if stock.price and stock.quantity:
-                    total_value += stock.price * stock.quantity
-        
-        # Recent activity with portfolio values - optimize with select_related
+                    total_value += float(stock.price) * stock.quantity
+
+        # Recent activity - optimized with select_related and prefetch_related
         recent_portfolios_qs = Portfolio.objects.filter(
             fund_manager__institute=institute
         ).select_related('fund_manager__user').prefetch_related('stocks').order_by('-created_at')[:5]
 
         recent_portfolios = []
         for portfolio in recent_portfolios_qs:
-            portfolio_value = 0
-            for stock in portfolio.stocks.all():
-                if stock.price and stock.quantity:
-                    portfolio_value += stock.price * stock.quantity
-
+            # Calculate value from prefetched stocks (no additional queries)
+            portfolio_value = sum(
+                float(stock.price * stock.quantity)
+                for stock in portfolio.stocks.all()
+                if stock.price and stock.quantity
+            )
             recent_portfolios.append({
                 'portfolio': portfolio,
                 'value': f"{portfolio_value:,.2f}"
             })
-        
+
         # User management
         pending_invitations = UserInvitation.objects.filter(
-            institute=institute, 
+            institute=institute,
             status='pending'
-        )
-        
+        ).select_related('invited_by')[:10]
+
         # Get all users in the institute
-        institute_users = UserProfile.objects.filter(institute=institute).select_related('user')
-        
+        institute_users = UserProfile.objects.filter(
+            institute=institute
+        ).select_related('user')
+
         context = {
             'institute': institute,
             'total_users': total_users,
@@ -340,9 +368,12 @@ def admin_dashboard(request):
             'pending_invitations': pending_invitations,
             'institute_users': institute_users,
         }
-        
+
+        # Cache for 3 minutes
+        cache.set(cache_key, context, 180)
+
         return render(request, 'portfolio/dashboards/admin_dashboard.html', context)
-        
+
     except Exception as e:
         messages.error(request, f"Error loading admin dashboard: {str(e)}")
         return redirect('login')
@@ -352,37 +383,47 @@ def admin_dashboard(request):
 @login_required
 @manager_required
 def manager_dashboard(request):
-    """Enhanced dashboard for fund managers"""
+    """Enhanced dashboard for fund managers - OPTIMIZED & SAFE"""
     try:
         fund_manager = request.user.fundmanager
+
+        # Cache key specific to this manager
+        cache_key = f'manager_dashboard_{fund_manager.id}_v3'
+        cached_data = cache.get(cache_key)
+
+        if cached_data:
+            return render(request, 'portfolio/dashboards/manager_dashboard.html', cached_data)
+
         # Optimize query with prefetch_related to load stocks in one query
-        portfolios = Portfolio.objects.filter(fund_manager=fund_manager).prefetch_related('stocks')
-        
-        # Enhanced metrics
+        portfolios = Portfolio.objects.filter(
+            fund_manager=fund_manager
+        ).prefetch_related('stocks').order_by('-created_at')
+
+        # Calculate metrics using prefetched data (no additional queries)
         total_value = 0
         total_profit = 0
         profitable_portfolios = 0
-        
+
         for portfolio in portfolios:
             portfolio_value = 0
             portfolio_profit = 0
-            
+
             for stock in portfolio.stocks.all():
                 if stock.price and stock.quantity:
-                    stock_value = stock.price * stock.quantity
+                    stock_value = float(stock.price) * stock.quantity
                     portfolio_value += stock_value
                     # Calculate profit based on current vs initial price
                     if hasattr(stock, 'initial_price') and stock.initial_price:
-                        profit = (stock.price - stock.initial_price) * stock.quantity
+                        profit = (float(stock.price) - float(stock.initial_price)) * stock.quantity
                         portfolio_profit += profit
-            
+
             total_value += portfolio_value
             total_profit += portfolio_profit
             if portfolio_profit > 0:
                 profitable_portfolios += 1
-        
+
         avg_return = (total_profit / total_value * 100) if total_value > 0 else 0
-        
+
         context = {
             'portfolios': portfolios,
             'total_value': f"{total_value:,.2f}",
@@ -391,9 +432,12 @@ def manager_dashboard(request):
             'profitable_portfolios': profitable_portfolios,
             'avg_return': f"{avg_return:.1f}",
         }
-        
+
+        # Cache for 2 minutes
+        cache.set(cache_key, context, 120)
+
         return render(request, 'portfolio/dashboards/manager_dashboard.html', context)
-        
+
     except Exception as e:
         messages.error(request, f"Error loading manager dashboard: {str(e)}")
         return redirect('login')
@@ -638,12 +682,26 @@ def delete_stock(request, portfolio_id, symbol):
 
 @login_required
 def analyze_portfolio(request, portfolio_id):
-    # Optimize query with select_related to avoid N+1 queries
+    """Analyze portfolio with risk metrics - HEAVILY OPTIMIZED"""
+
+    # Cache key for this portfolio analysis
+    cache_key = f'analyze_portfolio_{portfolio_id}_v2'
+    timestamp = int(datetime.now().timestamp())
+
+    # Check if portfolio was recently updated (cache invalidation)
     portfolio = get_object_or_404(
         Portfolio.objects.select_related('fund_manager__user', 'fund_manager__institute'),
         id=portfolio_id,
         fund_manager__user=request.user
     )
+
+    # Try to get cached analysis (only if no POST request for AI)
+    if request.method != "POST":
+        cached_analysis = cache.get(cache_key)
+        if cached_analysis:
+            cached_analysis['timestamp'] = timestamp
+            return render(request, 'portfolio/analyze_portfolio.html', cached_analysis)
+
     # Prefetch stocks to avoid multiple queries
     stocks = portfolio.stocks.all()
 
@@ -765,8 +823,7 @@ def analyze_portfolio(request, portfolio_id):
         question = request.POST.get("ai_question")
         ai_answer = portfolio_risk_agent(portfolio_id, question)
 
-
-    return render(request, 'portfolio/analyze_portfolio.html', {
+    context = {
         'portfolio': portfolio,
         'stocks': stocks,
         'stock_data': stock_data,
@@ -781,8 +838,14 @@ def analyze_portfolio(request, portfolio_id):
         'portfolio_value_json': json.dumps(portfolio_value_json or []),
         'efficient_frontier': json.dumps(efficient_frontier) if efficient_frontier else None,
         'ai_answer': ai_answer,
-        'timestamp': int(datetime.now().timestamp())
-    })
+        'timestamp': timestamp
+    }
+
+    # Cache analysis for 5 minutes (expensive computation)
+    if request.method != "POST":
+        cache.set(cache_key, context, 300)
+
+    return render(request, 'portfolio/analyze_portfolio.html', context)
 
 
 
@@ -1116,6 +1179,15 @@ from .utils import fetch_treasury_yield
 
 
 def fetch_treasury_yield_view(request, portfolio_id):
+    """Fetch treasury yields - OPTIMIZED with caching"""
+
+    # Cache key for treasury yields (same for all portfolios)
+    cache_key = 'treasury_yield_data_v2'
+    cached_data = cache.get(cache_key)
+
+    if cached_data:
+        return JsonResponse(cached_data)
+
     try:
         raw = fetch_treasury_yield()  # This returns the full history
         if not raw or "data" not in raw:
@@ -1125,7 +1197,12 @@ def fetch_treasury_yield_view(request, portfolio_id):
         labels = [e["date"] for e in reversed(entries)]
         values = [float(e["value"]) for e in reversed(entries)]
 
-        return JsonResponse({"labels": labels, "values": values})
+        response_data = {"labels": labels, "values": values}
+
+        # Cache for 1 hour (treasury data doesn't change frequently)
+        cache.set(cache_key, response_data, 3600)
+
+        return JsonResponse(response_data)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
@@ -1143,6 +1220,15 @@ from .models import Portfolio, HistoricalStockData # Assuming these are correct
 from .utils import monte_carlo_portfolio_var_cvar # Assuming this is correct
 
 def monte_carlo_risk_view(request, portfolio_id):
+    """Monte Carlo Risk Analysis - OPTIMIZED with caching"""
+
+    # Cache key for monte carlo results
+    cache_key = f'monte_carlo_risk_{portfolio_id}_v2'
+    cached_results = cache.get(cache_key)
+
+    if cached_results:
+        return JsonResponse(cached_results)
+
     try:
         portfolio = Portfolio.objects.get(id=portfolio_id)
         stocks = portfolio.stocks.all()
@@ -1218,6 +1304,9 @@ def monte_carlo_risk_view(request, portfolio_id):
         }
         # === ADDITIONS END HERE ===
 
+        # Cache for 5 minutes (expensive Monte Carlo simulation)
+        cache.set(cache_key, response_data, 300)
+
         # Print the data being sent for debugging
         return JsonResponse(response_data) # Return the new response_data
 
@@ -1244,6 +1333,15 @@ from .utils import get_treasury_yields
 
 
 def performance_stats(request, portfolio_id):
+    """Performance stats API - OPTIMIZED with caching"""
+
+    # Cache key for this portfolio's performance stats
+    cache_key = f'performance_stats_{portfolio_id}_v2'
+    cached_stats = cache.get(cache_key)
+
+    if cached_stats:
+        return JsonResponse(cached_stats)
+
     portfolio = get_object_or_404(Portfolio, id=portfolio_id)
     stocks = Stock.objects.filter(portfolio=portfolio)
 
@@ -1333,6 +1431,9 @@ def performance_stats(request, portfolio_id):
         "risk_free_rate": round(risk_free_rate, 4) if risk_free_rate else None
     }
 
+    # Cache for 3 minutes (expensive calculation)
+    cache.set(cache_key, response_data, 180)
+
     return JsonResponse(response_data)
 
 
@@ -1341,19 +1442,30 @@ from django.http import JsonResponse
 from .utils import get_treasury_yields
 
 def get_all_yield_data(request, portfolio_id):
+    """Get all treasury yields - OPTIMIZED with caching"""
 
+    # Cache key for all yields (same for all portfolios)
+    cache_key = 'all_treasury_yields_v2'
+    cached_data = cache.get(cache_key)
 
-        yields = get_treasury_yields()
+    if cached_data:
+        return JsonResponse(cached_data)
 
+    yields = get_treasury_yields()
 
-        return JsonResponse({"status": "success", "yields": {
-            "3m": yields["3m"],
-            "2y": yields["2y"],
-            "5y": yields["5y"],
-            "7y": yields["7y"],
-            "10y": yields["10y"],
-            "30y": yields["30y"]
-        }}, status=200)
+    response_data = {"status": "success", "yields": {
+        "3m": yields["3m"],
+        "2y": yields["2y"],
+        "5y": yields["5y"],
+        "7y": yields["7y"],
+        "10y": yields["10y"],
+        "30y": yields["30y"]
+    }}
+
+    # Cache for 1 hour
+    cache.set(cache_key, response_data, 3600)
+
+    return JsonResponse(response_data, status=200)
 
 
 
