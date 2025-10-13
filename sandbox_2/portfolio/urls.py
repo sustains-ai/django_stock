@@ -8,10 +8,7 @@ urlpatterns = [
     # Authentication
     path('', views.custom_login, name='login'),
     path('test/', views.test_view, name='test'),
-    path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
-    
-    # Custom admin redirect (replaces Django admin)
-    path('admin/', views.admin_redirect, name='admin_redirect'),
+    path('logout/', auth_views.LogoutView.as_view(next_page='/'), name='logout'),
     
     # Dashboard Router
     path('dashboard/', views.dashboard_router, name='dashboard'),

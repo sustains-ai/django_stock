@@ -64,7 +64,7 @@ def admin_redirect(request):
 @login_required
 @superadmin_required
 def onboard_company(request):
-    """Onboard a new company with admin and manager users"""
+    """Onboard a new company with multiple users"""
     if request.method == 'POST':
         try:
             # Create the institute
@@ -76,7 +76,7 @@ def onboard_company(request):
                 primary_color=request.POST.get('primary_color', '#007bff'),
                 is_active=True
             )
-            
+
             # Create institute settings
             InstituteSettings.objects.create(
                 institute=institute,
@@ -85,78 +85,68 @@ def onboard_company(request):
                 allow_ai_features=True,
                 max_portfolios_per_manager=50
             )
-            
-            # Create admin user
-            admin_username = request.POST.get('admin_username')
-            admin_email = request.POST.get('admin_email')
-            admin_first_name = request.POST.get('admin_first_name')
-            admin_last_name = request.POST.get('admin_last_name')
-            admin_password = request.POST.get('admin_password')
-            
-            if admin_username and admin_email:
-                admin_user = User.objects.create_user(
-                    username=admin_username,
-                    email=admin_email,
-                    password=admin_password,
-                    first_name=admin_first_name,
-                    last_name=admin_last_name
+
+            users_created = 0
+
+            # Get all user data from POST (supports multiple users)
+            # Format: user_username_0, user_email_0, user_role_0, etc.
+            user_index = 0
+            while True:
+                username = request.POST.get(f'user_username_{user_index}')
+                email = request.POST.get(f'user_email_{user_index}')
+                first_name = request.POST.get(f'user_first_name_{user_index}')
+                last_name = request.POST.get(f'user_last_name_{user_index}')
+                password = request.POST.get(f'user_password_{user_index}')
+                role = request.POST.get(f'user_role_{user_index}', 'analyst')
+
+                # Break if no more users
+                if not username or not email or not password:
+                    break
+
+                # Create the user
+                user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    password=password,
+                    first_name=first_name,
+                    last_name=last_name
                 )
-                
-                # Create admin profile and role
+
+                # Create user profile
                 UserProfile.objects.create(
-                    user=admin_user,
+                    user=user,
                     institute=institute,
                     is_active=True
                 )
-                
+
+                # Create institute role
                 InstituteRole.objects.create(
-                    user=admin_user,
+                    user=user,
                     institute=institute,
-                    role='admin'
+                    role=role
                 )
-            
-            # Create manager user (optional)
-            manager_username = request.POST.get('manager_username')
-            manager_email = request.POST.get('manager_email')
-            manager_first_name = request.POST.get('manager_first_name')
-            manager_last_name = request.POST.get('manager_last_name')
-            manager_password = request.POST.get('manager_password')
-            
-            if manager_username and manager_email and manager_password:
-                manager_user = User.objects.create_user(
-                    username=manager_username,
-                    email=manager_email,
-                    password=manager_password,
-                    first_name=manager_first_name,
-                    last_name=manager_last_name
-                )
-                
-                # Create manager profile and role
-                UserProfile.objects.create(
-                    user=manager_user,
-                    institute=institute,
-                    is_active=True
-                )
-                
-                InstituteRole.objects.create(
-                    user=manager_user,
-                    institute=institute,
-                    role='manager'
-                )
-                
-                # Create fund manager
-                FundManager.objects.create(
-                    user=manager_user,
-                    institute=institute
-                )
-            
-            messages.success(request, f"Company '{institute.name}' onboarded successfully!")
+
+                # Create fund manager if role is manager
+                if role == 'manager':
+                    FundManager.objects.create(
+                        user=user,
+                        institute=institute
+                    )
+
+                users_created += 1
+                user_index += 1
+
+            if users_created > 0:
+                messages.success(request, f"Company '{institute.name}' onboarded successfully with {users_created} user(s)!")
+            else:
+                messages.warning(request, f"Company '{institute.name}' created but no users were added.")
+
             return redirect('superadmin_dashboard')
-            
+
         except Exception as e:
             messages.error(request, f"Error onboarding company: {str(e)}")
             return redirect('superadmin_dashboard')
-    
+
     return redirect('superadmin_dashboard')
 
 
@@ -164,39 +154,29 @@ def onboard_company(request):
 @login_required
 def dashboard_router(request):
     """Route users to appropriate dashboard based on their role"""
-    print(f"Dashboard router called for user: {request.user.username}")
-    
     # Check if user is superadmin first
     if request.user.is_superuser:
-        print("User is superuser, redirecting to superadmin dashboard")
         return redirect('superadmin_dashboard')
-    
+
     try:
         user_profile = request.user.userprofile
         role = user_profile.get_role()
-        print(f"User profile found, role: {role}")
-        
+
         if role == 'admin':
-            print("Redirecting to admin dashboard")
             return redirect('admin_dashboard')
         elif role == 'manager':
-            print("Redirecting to manager dashboard")
             return redirect('manager_dashboard')
         elif role == 'analyst':
-            print("Redirecting to analyst dashboard")
             return redirect('analyst_dashboard')
         else:
-            print(f"Invalid role: {role}")
             messages.error(request, "No valid role assigned. Please contact your administrator.")
             return redirect('login')
     except UserProfile.DoesNotExist:
-        print("UserProfile does not exist, creating default profile")
         # Handle users without profiles - create a default profile
         try:
             # Get the first institute (or create a default one)
             institute = Institute.objects.first()
             if not institute:
-                print("Creating default institute")
                 institute = Institute.objects.create(
                     name="Default Institute",
                     domain="default.com",
@@ -214,7 +194,6 @@ def dashboard_router(request):
                     max_portfolios_per_manager=50
                 )
             
-            print(f"Creating user profile for {request.user.username}")
             # Create a default user profile with manager role
             user_profile = UserProfile.objects.create(
                 user=request.user,
@@ -236,13 +215,11 @@ def dashboard_router(request):
                     institute=institute
                 )
             
-            print("User profile created successfully, redirecting to manager dashboard")
             messages.success(request, "Your account has been set up with default access. You can now use the system.")
             return redirect('manager_dashboard')
             
         except Exception as e:
             # Debug: Print the error to console
-            print(f"Error creating user profile: {str(e)}")
             messages.error(request, f"Error setting up your account: {str(e)}. Please contact your administrator.")
             return redirect('login')
 
@@ -310,12 +287,10 @@ def superadmin_dashboard(request):
 @login_required
 def admin_dashboard(request):
     """Company-wide dashboard for institute admins"""
-    print(f"Admin dashboard called for user: {request.user.username}")
     
     try:
         user_profile = request.user.userprofile
         institute = user_profile.institute
-        print(f"User profile found: {user_profile}, Institute: {institute}")
         
         # Company metrics
         total_users = UserProfile.objects.filter(institute=institute, is_active=True).count()
@@ -329,10 +304,10 @@ def admin_dashboard(request):
                 if stock.price and stock.quantity:
                     total_value += stock.price * stock.quantity
         
-        # Recent activity with portfolio values
+        # Recent activity with portfolio values - optimize with select_related
         recent_portfolios_qs = Portfolio.objects.filter(
             fund_manager__institute=institute
-        ).order_by('-created_at')[:5]
+        ).select_related('fund_manager__user').prefetch_related('stocks').order_by('-created_at')[:5]
 
         recent_portfolios = []
         for portfolio in recent_portfolios_qs:
@@ -366,11 +341,9 @@ def admin_dashboard(request):
             'institute_users': institute_users,
         }
         
-        print("Rendering admin dashboard template")
         return render(request, 'portfolio/dashboards/admin_dashboard.html', context)
         
     except Exception as e:
-        print(f"Error in admin dashboard: {str(e)}")
         messages.error(request, f"Error loading admin dashboard: {str(e)}")
         return redirect('login')
 
@@ -382,7 +355,8 @@ def manager_dashboard(request):
     """Enhanced dashboard for fund managers"""
     try:
         fund_manager = request.user.fundmanager
-        portfolios = Portfolio.objects.filter(fund_manager=fund_manager)
+        # Optimize query with prefetch_related to load stocks in one query
+        portfolios = Portfolio.objects.filter(fund_manager=fund_manager).prefetch_related('stocks')
         
         # Enhanced metrics
         total_value = 0
@@ -481,18 +455,15 @@ def custom_login(request):
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-            print(f"User {user.username} logged in successfully")
             
             # Provide role-specific feedback
             if user.is_superuser:
                 messages.success(request, f"Welcome back, Superadmin! You have full system access.")
-                print("User is superuser")
             else:
                 try:
                     user_profile = user.userprofile
                     role = user_profile.get_role()
                     institute_name = user_profile.institute.name
-                    print(f"User profile found: role={role}, institute={institute_name}")
                     
                     if role == 'admin':
                         messages.success(request, f"Welcome back, {user.get_full_name() or user.username}! You're logged in as an Admin of {institute_name}.")
@@ -503,10 +474,8 @@ def custom_login(request):
                     else:
                         messages.info(request, f"Welcome back, {user.get_full_name() or user.username}! Your role is being verified.")
                 except UserProfile.DoesNotExist:
-                    print("UserProfile does not exist")
                     messages.info(request, f"Welcome back, {user.get_full_name() or user.username}! Setting up your account...")
             
-            print("Redirecting to dashboard")
             return redirect("dashboard")
     else:
         form = AuthenticationForm()
@@ -563,41 +532,65 @@ def add_portfolio(request):
 @login_required
 def add_stock(request, portfolio_id):
     portfolio = get_object_or_404(Portfolio, id=portfolio_id, fund_manager__user=request.user)
+
     if request.method == "POST":
         form = StockForm(request.POST)
-        print(f"Form data: {request.POST}")
-        print(f"Form is valid: {form.is_valid()}")
         if form.is_valid():
-            stock_data = form.save(commit=False)
-            stock_data.portfolio = portfolio
-            print(f"Stock data: {stock_data.symbol}, {stock_data.name}, {stock_data.quantity}, {stock_data.price}")
+            try:
+                stock_data = form.save(commit=False)
+                stock_data.portfolio = portfolio
 
-            existing_stock = portfolio.stocks.filter(symbol=stock_data.symbol).first()
-            if existing_stock:
-                total_quantity = existing_stock.quantity + stock_data.quantity
-                weighted_price = (
-                    (existing_stock.price * existing_stock.quantity) +
-                    (stock_data.price * stock_data.quantity)
-                ) / total_quantity
-                existing_stock.quantity = total_quantity
-                existing_stock.price = weighted_price
-                existing_stock.save()
-                messages.success(request, f"Updated {stock_data.symbol} in {portfolio.name}")
-            else:
-                stock_data.save()
-                print(f"Stock saved with ID: {stock_data.id}")
-                print(f"Portfolio stocks count: {portfolio.stocks.count()}")
-                messages.success(request, f"Added {stock_data.symbol} to {portfolio.name}")
-                # Try to fetch historical data, but don't fail if it doesn't work
-                try:
-                    stock_data.fetch_and_store_historical_data()
-                except Exception as e:
-                    print(f"Historical data fetch failed: {e}")
-                    # Don't show error to user, just log it
-            return redirect("analyze_portfolio",portfolio_id=portfolio.id)
+                # Validate stock symbol format (basic validation)
+                if not stock_data.symbol or len(stock_data.symbol) > 10:
+                    messages.error(request, "Invalid stock symbol. Please enter a valid ticker symbol.")
+                    return render(request, "portfolio/add_stock.html", {
+                        "form": form,
+                        "portfolio": portfolio,
+                        "stocks_with_values": []
+                    })
+
+                existing_stock = portfolio.stocks.filter(symbol=stock_data.symbol).first()
+                if existing_stock:
+                    # Update existing stock
+                    total_quantity = existing_stock.quantity + stock_data.quantity
+                    if existing_stock.price and stock_data.price:
+                        weighted_price = (
+                            (existing_stock.price * existing_stock.quantity) +
+                            (stock_data.price * stock_data.quantity)
+                        ) / total_quantity
+                        existing_stock.price = weighted_price
+                    existing_stock.quantity = total_quantity
+                    existing_stock.save()
+                    messages.success(request, f"✓ Updated {stock_data.symbol}: {total_quantity} shares")
+                else:
+                    # Add new stock
+                    stock_data.save()
+                    messages.success(request, f"✓ Added {stock_data.symbol} to {portfolio.name}")
+
+                    # Try to fetch historical data in background
+                    try:
+                        stock_data.fetch_and_store_historical_data()
+                        messages.info(request, f"Fetching historical data for {stock_data.symbol}...")
+                    except Exception:
+                        # Historical data fetch can fail without blocking the stock addition
+                        messages.warning(request, f"Unable to fetch historical data for {stock_data.symbol}. Risk analysis may be limited.")
+
+                return redirect("analyze_portfolio", portfolio_id=portfolio.id)
+
+            except Exception as e:
+                messages.error(request, f"Error adding stock: {str(e)}. Please try again.")
+                return render(request, "portfolio/add_stock.html", {
+                    "form": form,
+                    "portfolio": portfolio,
+                    "stocks_with_values": []
+                })
         else:
-            print(f"Form errors: {form.errors}")
-            messages.error(request, f"Invalid stock data. Please check the form. Errors: {form.errors}")
+            # Form validation failed
+            error_messages = []
+            for field, errors in form.errors.items():
+                for error in errors:
+                    error_messages.append(f"{field}: {error}")
+            messages.error(request, f"Please correct the following: {', '.join(error_messages)}")
     else:
         form = StockForm()
 
@@ -645,7 +638,13 @@ def delete_stock(request, portfolio_id, symbol):
 
 @login_required
 def analyze_portfolio(request, portfolio_id):
-    portfolio = get_object_or_404(Portfolio, id=portfolio_id, fund_manager__user=request.user)
+    # Optimize query with select_related to avoid N+1 queries
+    portfolio = get_object_or_404(
+        Portfolio.objects.select_related('fund_manager__user', 'fund_manager__institute'),
+        id=portfolio_id,
+        fund_manager__user=request.user
+    )
+    # Prefetch stocks to avoid multiple queries
     stocks = portfolio.stocks.all()
 
     # Calculate stock data and total value
@@ -694,11 +693,6 @@ def analyze_portfolio(request, portfolio_id):
     available_symbols = daily_prices.columns.tolist()
     stock_symbols = [stock.symbol for stock in stocks if stock.symbol in available_symbols]
 
-    print(f"DEBUG: Total stocks in portfolio: {stocks.count()}")
-    print(f"DEBUG: Stocks with historical data after dropna: {len(available_symbols)}")
-    print(f"DEBUG: Available symbols: {available_symbols}")
-    print(f"DEBUG: Daily prices shape: {daily_prices.shape}")
-
     # Build historical data for template
     historical_data = {}
     for symbol in stock_symbols:
@@ -710,8 +704,6 @@ def analyze_portfolio(request, portfolio_id):
 
     # Compute daily returns
     X = daily_prices.pct_change().dropna()
-    print(f"DEBUG: Returns dataframe shape after pct_change: {X.shape}")
-    print(f"DEBUG: Returns dataframe columns: {X.columns.tolist()}")
 
     if X.empty:
         messages.warning(request, "Not enough historical data to compute returns.")
@@ -854,8 +846,6 @@ def portfolio_risk(request, portfolio_id):
 
 
 
-    print("DEBUG: Portfolio Value JSON")
-    print(json.dumps(portfolio_value_json, indent=4))
 
     # Context for template
     context = {
@@ -902,38 +892,27 @@ def calculate_efficient_frontier(X, portfolio_weights):
 
 
 def load_risk_measure(request, portfolio_id, measure):
-    print(f"🔹 Received request for {measure} of portfolio {portfolio_id}")
-
     valid_measures = ["std_dev", "var", "cvar"]
     if measure not in valid_measures:
-        print("❌ Invalid measure requested")
         return JsonResponse({"error": "Invalid measure"}, status=400)
 
     portfolio = get_object_or_404(Portfolio, id=portfolio_id)
 
     historical_prices_qs = HistoricalStockData.objects.filter(portfolio=portfolio).order_by("date")
     if not historical_prices_qs.exists():
-        print("❌ No historical data available")
         return JsonResponse({"error": "No historical data available"}, status=400)
 
     df = pd.DataFrame.from_records(historical_prices_qs.values("date", "symbol", "adjusted_close"))
     price_data = df.pivot(index="date", columns="symbol", values="adjusted_close")
 
-    print("📊 Price Data:")
-    print(price_data.head())  # Print first few rows for debugging
-
     X = price_data.pct_change(fill_method=None).dropna()
-    print("📈 Returns Data:")
-    print(X.head())  # Print first few rows
 
     portfolio_weights = {
         stock.symbol: 1 / len(price_data.columns)  # Placeholder: Equal weights
         for stock in portfolio.stocks.all()
     }
-    print("⚖️ Portfolio Weights:", portfolio_weights)
 
     portfolio_risk_measures = calculate_portfolio_risk(X, portfolio_weights)
-    print("🔢 Portfolio Risk Measures:", portfolio_risk_measures)
 
     # ✅ Select only the requested measure
 
@@ -950,7 +929,6 @@ def load_risk_measure(request, portfolio_id, measure):
     if normalized_key is None:
         return JsonResponse({"error": "Invalid measure requested"}, status=400)
 
-    print(f"🔍 Looking for key: {normalized_key}")  # Debugging
 
     risk_value = portfolio_risk_measures.get(normalized_key, None)
 
@@ -958,7 +936,6 @@ def load_risk_measure(request, portfolio_id, measure):
     if isinstance(risk_value, np.ndarray):
         risk_value = float(risk_value[0, 0])  # Extract the scalar
 
-    print(f"✅ Returning Risk Measure ({measure}): {risk_value}")
     
     # Create chart data for visualization
     chart_data = []
@@ -1097,7 +1074,6 @@ from django.http import JsonResponse
 def market_status_view(request):
         market_data = global_open_closed_status()
         response= JsonResponse(market_data,safe=False)
-        print("Response Content:", response.content.decode('utf-8'))  # Debug output
         return response
 
 
@@ -1168,7 +1144,6 @@ from .utils import monte_carlo_portfolio_var_cvar # Assuming this is correct
 
 def monte_carlo_risk_view(request, portfolio_id):
     try:
-        print(f"🔍 Starting Monte Carlo risk view for portfolio {portfolio_id}")
         portfolio = Portfolio.objects.get(id=portfolio_id)
         stocks = portfolio.stocks.all()
 
@@ -1184,10 +1159,10 @@ def monte_carlo_risk_view(request, portfolio_id):
                 ).set_index("date")
                 price_data.append(df)
             else:
-                print(f"⚠️ Skipping {stock.symbol} due to no data in portfolio {portfolio_id}") # Added portfolio_id for clarity
+                # Handle case where no data is available for this stock
+                pass
 
         if not price_data:
-            print(f"❌ No price data found for any stock in portfolio {portfolio_id}") # Added portfolio_id
             # Consider status 400 for client-side correctable errors if appropriate,
             # or if no data means an issue with the portfolio setup.
             # For now, keeping 500 as per your original code.
@@ -1197,23 +1172,18 @@ def monte_carlo_risk_view(request, portfolio_id):
 
         # Add a check for empty combined_df after join and dropna
         if combined_df.empty or len(combined_df) < 2: # Need at least 2 rows for shift(1)
-            print(f"❌ Combined price data is insufficient after join/dropna for portfolio {portfolio_id}")
             return JsonResponse({"error": "Not enough overlapping/valid price data for analysis"}, status=500) # Or 400
 
-        print(f"📊 Price Data (portfolio {portfolio_id}):\n", combined_df.head()) # Added portfolio_id
 
         log_returns = np.log(combined_df / combined_df.shift(1)).dropna()
 
         # Add a check for empty log_returns
         if log_returns.empty:
-            print(f"❌ Log returns are empty for portfolio {portfolio_id}")
             return JsonResponse({"error": "Could not calculate log returns from available price data"}, status=500) # Or 400
 
-        print(f"📈 Returns Data (portfolio {portfolio_id}):\n", log_returns.tail()) # Added portfolio_id
 
         # Ensure there's at least one column of returns for weighting
         if log_returns.shape[1] == 0:
-            print(f"❌ No valid asset returns columns for portfolio {portfolio_id}")
             return JsonResponse({"error": "No valid asset returns to process"}, status=500) # Or 400
 
         weights = np.array([1.0 / log_returns.shape[1]] * log_returns.shape[1])
@@ -1221,7 +1191,6 @@ def monte_carlo_risk_view(request, portfolio_id):
 
         # Ensure portfolio_log_returns is not empty (e.g., if weights was empty, though unlikely with above check)
         if portfolio_log_returns.empty:
-            print(f"❌ Portfolio log returns series is empty for portfolio {portfolio_id}")
             return JsonResponse({"error": "Could not calculate portfolio log returns"}, status=500) # Or 400
 
 
@@ -1250,15 +1219,12 @@ def monte_carlo_risk_view(request, portfolio_id):
         # === ADDITIONS END HERE ===
 
         # Print the data being sent for debugging
-        print(f"✅ monte_carlo_risk_view for portfolio {portfolio_id} sending data: {response_data}")
         return JsonResponse(response_data) # Return the new response_data
 
     # Your existing exception handling
     except Portfolio.DoesNotExist: # Specific exception first
-        print(f"❌ Portfolio with ID {portfolio_id} not found.")
         return JsonResponse({"error": "Portfolio not found"}, status=404)
     except Exception as e:
-        print(f"❌ Exception occurred in monte_carlo_risk_view for portfolio {portfolio_id}: {e}")
         import traceback # Import traceback here for more detailed error logging
         traceback.print_exc() # This will print the full Python traceback to your console
         return JsonResponse({"error": str(e)}, status=500)

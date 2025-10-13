@@ -4,6 +4,14 @@
 {% block title %}Analyze Portfolio - Portfolio Manager{% endblock %}
 
 {% block content %}
+<!-- Loading Overlay -->
+<div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center;">
+    <div style="text-align: center; color: white;">
+        <i class="fas fa-spinner fa-spin" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+        <p style="font-size: 1.2rem;">Analyzing your portfolio...</p>
+    </div>
+</div>
+
 <!-- Page Header -->
 <div class="page-header">
     <h1>Portfolio Analysis</h1>
@@ -438,4 +446,20 @@
         </button>
                             </div>
                         </div>
+
+<script>
+// Show loading overlay when page loads
+window.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('loadingOverlay').style.display = 'none';
+});
+
+// Show loading when navigating away (optional)
+document.querySelectorAll('a[href*="analyze"]').forEach(link => {
+    link.addEventListener('click', function(e) {
+        if (!this.href.includes('#')) {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+    });
+});
+</script>
 {% endblock %}

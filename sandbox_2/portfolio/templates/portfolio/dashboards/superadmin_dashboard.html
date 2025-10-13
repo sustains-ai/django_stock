@@ -12,10 +12,10 @@
             <p>Complete system overview and company management</p>
         </div>
         <div>
-            <button onclick="openCompanyModal()" class="btn btn-primary" style="display: flex; align-items: center; gap: 0.5rem;">
-                <i class="fas fa-plus"></i>
-                Onboard Company
-            </button>
+            <a href="/admin/" class="btn btn-primary" target="_blank" style="display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-cog"></i>
+                Open Django Admin
+            </a>
         </div>
     </div>
 </div>
@@ -66,22 +66,22 @@
     </div>
     <div class="card-body">
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-            <button onclick="openCompanyModal()" class="btn btn-primary">
+            <a href="/admin/portfolio/institute/add/" target="_blank" class="btn btn-primary">
                 <i class="fas fa-building"></i>
-                Onboard New Company
-            </button>
-            <button onclick="openUserModal()" class="btn btn-secondary">
+                Add New Company
+            </a>
+            <a href="/admin/auth/user/add/" target="_blank" class="btn btn-secondary">
                 <i class="fas fa-user-plus"></i>
-                Add System User
-            </button>
-            <button onclick="viewAllCompanies()" class="btn btn-secondary">
+                Add New User
+            </a>
+            <a href="/admin/portfolio/institute/" target="_blank" class="btn btn-secondary">
                 <i class="fas fa-list"></i>
                 View All Companies
-            </button>
-            <button onclick="systemSettings()" class="btn btn-secondary">
+            </a>
+            <a href="/admin/" target="_blank" class="btn btn-secondary">
                 <i class="fas fa-cog"></i>
-                System Settings
-            </button>
+                Django Admin Panel
+            </a>
         </div>
     </div>
 </div>
@@ -173,196 +173,17 @@
         <div style="text-align: center; padding: 3rem; color: var(--text-secondary);">
             <i class="fas fa-building" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
             <h4>No Companies Yet</h4>
-            <p>Start by onboarding your first company to the system.</p>
-            <button onclick="openCompanyModal()" class="btn btn-primary">
+            <p>Start by adding your first company through Django Admin.</p>
+            <a href="/admin/portfolio/institute/add/" target="_blank" class="btn btn-primary">
                 <i class="fas fa-plus"></i>
-                Onboard First Company
-            </button>
+                Add First Company
+            </a>
         </div>
         {% endif %}
     </div>
 </div>
 
-<!-- Company Onboarding Modal -->
-<div id="companyModal" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 600px;">
-        <div class="modal-header">
-            <h3>Onboard New Company</h3>
-            <span class="close" onclick="closeCompanyModal()">&times;</span>
-        </div>
-        <div class="modal-body">
-            <form id="companyForm" method="post" action="{% url 'onboard_company' %}">
-                {% csrf_token %}
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                    <div class="form-group">
-                        <label for="company_name">Company Name *</label>
-                        <input type="text" id="company_name" name="company_name" class="form-control" placeholder="e.g., Lotus Capital" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="domain">Domain *</label>
-                        <input type="text" id="domain" name="domain" class="form-control" placeholder="e.g., lotus.com" required>
-                    </div>
-                </div>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                    <div class="form-group">
-                        <label for="subscription_plan">Subscription Plan</label>
-                        <select id="subscription_plan" name="subscription_plan" class="form-control">
-                            <option value="basic">Basic</option>
-                            <option value="professional">Professional</option>
-                            <option value="enterprise">Enterprise</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="max_users">Max Users</label>
-                        <input type="number" id="max_users" name="max_users" class="form-control" value="10" min="1">
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="primary_color">Brand Color</label>
-                    <input type="color" id="primary_color" name="primary_color" class="form-control" value="#007bff">
-                </div>
-                
-                <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-light);">
-                    <h5>Initial Admin User</h5>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div class="form-group">
-                            <label for="admin_username">Username *</label>
-                            <input type="text" id="admin_username" name="admin_username" class="form-control" placeholder="e.g., ajay" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="admin_email">Email *</label>
-                            <input type="email" id="admin_email" name="admin_email" class="form-control" placeholder="ajay@lotus.com" required>
-                        </div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div class="form-group">
-                            <label for="admin_first_name">First Name *</label>
-                            <input type="text" id="admin_first_name" name="admin_first_name" class="form-control" placeholder="Ajay" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="admin_last_name">Last Name *</label>
-                            <input type="text" id="admin_last_name" name="admin_last_name" class="form-control" placeholder="Sharma" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="admin_password">Temporary Password *</label>
-                        <input type="password" id="admin_password" name="admin_password" class="form-control" placeholder="User will change this on first login" required>
-                    </div>
-                </div>
-                
-                <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-light);">
-                    <h5>Fund Manager User (Optional)</h5>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div class="form-group">
-                            <label for="manager_username">Username</label>
-                            <input type="text" id="manager_username" name="manager_username" class="form-control" placeholder="e.g., vijay">
-                        </div>
-                        <div class="form-group">
-                            <label for="manager_email">Email</label>
-                            <input type="email" id="manager_email" name="manager_email" class="form-control" placeholder="vijay@lotus.com">
-                        </div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div class="form-group">
-                            <label for="manager_first_name">First Name</label>
-                            <input type="text" id="manager_first_name" name="manager_first_name" class="form-control" placeholder="Vijay">
-                        </div>
-                        <div class="form-group">
-                            <label for="manager_last_name">Last Name</label>
-                            <input type="text" id="manager_last_name" name="manager_last_name" class="form-control" placeholder="Kumar">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="manager_password">Temporary Password</label>
-                        <input type="password" id="manager_password" name="manager_password" class="form-control" placeholder="User will change this on first login">
-                    </div>
-                </div>
-                
-                <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: flex-end;">
-                    <button type="button" onclick="closeCompanyModal()" class="btn btn-secondary">Cancel</button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-building"></i>
-                        Onboard Company
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
 <style>
-.modal {
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.modal-content {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-    max-height: 90vh;
-    overflow-y: auto;
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.5rem;
-    border-bottom: 1px solid var(--border-light);
-}
-
-.modal-body {
-    padding: 1.5rem;
-}
-
-.close {
-    font-size: 24px;
-    font-weight: bold;
-    cursor: pointer;
-    color: var(--text-secondary);
-}
-
-.close:hover {
-    color: var(--text-primary);
-}
-
-.form-group {
-    margin-bottom: 1rem;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.form-control {
-    width: 100%;
-    padding: 0.75rem;
-    border: 2px solid var(--border-light);
-    border-radius: 8px;
-    font-size: 14px;
-    transition: all 0.2s ease;
-}
-
-.form-control:focus {
-    outline: none;
-    border-color: var(--primary-red);
-    box-shadow: 0 0 0 3px rgba(254, 87, 87, 0.1);
-}
-
 .btn-group-sm .btn {
     padding: 0.25rem 0.5rem;
     font-size: 12px;
@@ -388,50 +209,21 @@
 </style>
 
 <script>
-function openCompanyModal() {
-    document.getElementById('companyModal').style.display = 'flex';
-}
-
-function closeCompanyModal() {
-    document.getElementById('companyModal').style.display = 'none';
-}
-
-function openUserModal() {
-    alert('User management coming soon!');
-}
-
-function viewAllCompanies() {
-    // Scroll to companies table
-    document.querySelector('.card').scrollIntoView({ behavior: 'smooth' });
-}
-
-function systemSettings() {
-    alert('System settings coming soon!');
-}
-
 function refreshCompanies() {
     location.reload();
 }
 
 function viewCompany(id) {
-    alert('View company details: ' + id);
+    window.open(`/admin/portfolio/institute/${id}/change/`, '_blank');
 }
 
 function editCompany(id) {
-    alert('Edit company: ' + id);
+    window.open(`/admin/portfolio/institute/${id}/change/`, '_blank');
 }
 
 function toggleCompany(id) {
-    if (confirm('Are you sure you want to toggle this company?')) {
-        alert('Company toggled: ' + id);
-    }
-}
-
-// Close modal when clicking outside
-window.onclick = function(event) {
-    const modal = document.getElementById('companyModal');
-    if (event.target === modal) {
-        closeCompanyModal();
+    if (confirm('Are you sure you want to toggle this company? Use Django Admin to make changes.')) {
+        window.open(`/admin/portfolio/institute/${id}/change/`, '_blank');
     }
 }
 </script>

@@ -21,7 +21,6 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.http import HttpResponse
-from django.views.generic import TemplateView
 
 
 def robots_txt(request):
@@ -29,8 +28,8 @@ def robots_txt(request):
 
 
 urlpatterns = [
-    # Django admin disabled for security - using custom admin system
-    # path("admin/", admin.site.urls),  # DISABLED
+    # Django admin interface
+    path("admin/", admin.site.urls),
     path("robots.txt", robots_txt),
     # Portfolio management routes
     path('', include('portfolio.urls')),

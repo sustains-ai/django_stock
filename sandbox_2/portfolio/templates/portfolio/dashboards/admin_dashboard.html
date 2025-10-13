@@ -3,11 +3,107 @@
 
 {% block title %}Admin Dashboard - {{ institute.name }}{% endblock %}
 
+{% block extra_head %}
+<style>
+.admin-nav-tabs {
+    border-bottom: 2px solid var(--border-light);
+    margin-bottom: 2rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+.admin-nav-tabs .nav-tab {
+    padding: 0.75rem 1.5rem;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+.admin-nav-tabs .nav-tab:hover {
+    color: var(--primary-red);
+    border-bottom-color: var(--primary-red);
+}
+.admin-nav-tabs .nav-tab.active {
+    color: var(--primary-red);
+    border-bottom-color: var(--primary-red);
+}
+.tab-content {
+    display: none;
+}
+.tab-content.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.search-filter-bar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+.search-box {
+    flex: 1;
+    min-width: 250px;
+    position: relative;
+}
+.search-box input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+}
+.search-box i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+}
+.filter-dropdown select {
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+}
+.django-admin-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #417690, #0c4b33);
+    color: white;
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    font-weight: 500;
+    transition: transform 0.2s ease;
+}
+.django-admin-link:hover {
+    transform: translateY(-2px);
+    color: white;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- Page Header -->
-<div class="page-header">
-    <h1>Admin Dashboard</h1>
-    <p>Company-wide management for {{ institute.name }}</p>
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h1>Admin Dashboard</h1>
+        <p>Company-wide management for {{ institute.name }}</p>
+    </div>
+    <div style="display: flex; gap: 1rem;">
+        <a href="/admin/" class="django-admin-link" target="_blank">
+            <i class="fas fa-tools"></i>
+            Open Django Admin
+        </a>
+    </div>
 </div>
 
 <!-- Company Metrics -->
@@ -49,182 +145,394 @@
     </div>
 </div>
 
-<!-- User Management -->
-<div class="card" style="margin-top: 2rem;">
-    <div class="card-header">
-        <h3 class="card-title">User Management</h3>
-        <a href="#" class="btn btn-primary btn-sm">
-            <i class="fas fa-plus"></i>
-            Invite User
-        </a>
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>User</th>
-                        <th>Role</th>
-                        <th>Status</th>
-                        <th>Last Login</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for user in institute_users %}
-                    <tr>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2">
-                                    {{ user.user.first_name|first|upper }}{{ user.user.last_name|first|upper }}
-                                </div>
-                                <div>
-                                    <div class="fw-bold">{{ user.user.get_full_name }}</div>
-                                    <small class="text-muted">{{ user.user.email }}</small>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="badge bg-{% if user.get_role == 'admin' %}danger{% elif user.get_role == 'manager' %}primary{% else %}info{% endif %}">
-                                {{ user.get_role|title }}
-                            </span>
-                        </td>
-                        <td>
-                            <span class="badge bg-{% if user.is_active %}success{% else %}secondary{% endif %}">
-                                {% if user.is_active %}Active{% else %}Inactive{% endif %}
-                            </span>
-                        </td>
-                        <td>{{ user.user.last_login|date:"M d, Y"|default:"Never" }}</td>
-                        <td>
-                            <div class="btn-group btn-group-sm">
-                                <button class="btn btn-outline-primary" title="Edit User">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-outline-danger" title="Deactivate">
-                                    <i class="fas fa-user-slash"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+<!-- Admin Navigation Tabs -->
+<div class="admin-nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('overview')">
+        <i class="fas fa-chart-line"></i> Overview
+    </button>
+    <button class="nav-tab" onclick="switchTab('users')">
+        <i class="fas fa-users"></i> Users
+    </button>
+    <button class="nav-tab" onclick="switchTab('portfolios')">
+        <i class="fas fa-briefcase"></i> Portfolios
+    </button>
+    <button class="nav-tab" onclick="switchTab('settings')">
+        <i class="fas fa-cog"></i> Settings
+    </button>
+</div>
+
+<!-- Overview Tab -->
+<div id="overview-tab" class="tab-content active">
+    <!-- Recent Activity -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Recent Portfolio Activity</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Portfolio</th>
+                            <th>Manager</th>
+                            <th>Created</th>
+                            <th>Stocks</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in recent_portfolios %}
+                        <tr>
+                            <td>
+                                <div class="fw-bold">{{ item.portfolio.name }}</div>
+                                <small class="text-muted">{{ item.portfolio.description|truncatechars:50 }}</small>
+                            </td>
+                            <td>{{ item.portfolio.fund_manager.user.get_full_name }}</td>
+                            <td>{{ item.portfolio.created_at|date:"M d, Y" }}</td>
+                            <td>{{ item.portfolio.stocks.count }}</td>
+                            <td>${{ item.value }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Pending Invitations -->
-{% if pending_invitations %}
-<div class="card" style="margin-top: 2rem;">
-    <div class="card-header">
-        <h3 class="card-title">Pending Invitations</h3>
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Invited By</th>
-                        <th>Date</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for invitation in pending_invitations %}
-                    <tr>
-                        <td>{{ invitation.email }}</td>
-                        <td>
-                            <span class="badge bg-{% if invitation.role == 'admin' %}danger{% elif invitation.role == 'manager' %}primary{% else %}info{% endif %}">
-                                {{ invitation.role|title }}
-                            </span>
-                        </td>
-                        <td>{{ invitation.invited_by.get_full_name }}</td>
-                        <td>{{ invitation.created_at|date:"M d, Y" }}</td>
-                        <td>
-                            <div class="btn-group btn-group-sm">
-                                <button class="btn btn-outline-success" title="Resend">
-                                    <i class="fas fa-paper-plane"></i>
-                                </button>
-                                <button class="btn btn-outline-danger" title="Cancel">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-<!-- Recent Activity -->
-<div class="card" style="margin-top: 2rem;">
-    <div class="card-header">
-        <h3 class="card-title">Recent Portfolio Activity</h3>
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Portfolio</th>
-                        <th>Manager</th>
-                        <th>Created</th>
-                        <th>Stocks</th>
-                        <th>Value</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in recent_portfolios %}
-                    <tr>
-                        <td>
-                            <div class="fw-bold">{{ item.portfolio.name }}</div>
-                            <small class="text-muted">{{ item.portfolio.description|truncatechars:50 }}</small>
-                        </td>
-                        <td>{{ item.portfolio.fund_manager.user.get_full_name }}</td>
-                        <td>{{ item.portfolio.created_at|date:"M d, Y" }}</td>
-                        <td>{{ item.portfolio.stocks.count }}</td>
-                        <td>${{ item.value }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<!-- Quick Actions -->
-<div class="card" style="margin-top: 2rem;">
-    <div class="card-header">
-        <h3 class="card-title">Quick Actions</h3>
-    </div>
-    <div class="card-body">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-            <a href="{% url 'create_user' %}" class="btn btn-primary">
-                <i class="fas fa-user-plus"></i>
-                Add User
-            </a>
-            <a href="{% url 'invite_user' %}" class="btn btn-primary">
-                <i class="fas fa-envelope"></i>
+<!-- Users Tab -->
+<div id="users-tab" class="tab-content">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">User Management</h3>
+            <a href="{% url 'invite_user' %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus"></i>
                 Invite User
             </a>
-            <a href="{% url 'manage_users' %}" class="btn btn-secondary">
-                <i class="fas fa-users-cog"></i>
-                Manage Users
-            </a>
-            <a href="{% url 'settings' %}" class="btn btn-secondary">
-                <i class="fas fa-cog"></i>
-                Company Settings
-            </a>
-            <a href="#" class="btn btn-secondary">
-                <i class="fas fa-download"></i>
-                Export Report
-            </a>
+        </div>
+        <div class="card-body">
+            <!-- Search and Filter Bar -->
+            <div class="search-filter-bar">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="userSearch" placeholder="Search users by name, email..." onkeyup="filterUsers()">
+                </div>
+                <div class="filter-dropdown">
+                    <select id="roleFilter" onchange="filterUsers()">
+                        <option value="">All Roles</option>
+                        <option value="admin">Admin</option>
+                        <option value="manager">Manager</option>
+                        <option value="analyst">Analyst</option>
+                    </select>
+                </div>
+                <div class="filter-dropdown">
+                    <select id="statusFilter" onchange="filterUsers()">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table" id="usersTable">
+                    <thead>
+                        <tr>
+                            <th>
+                                <input type="checkbox" onclick="toggleSelectAll(this)">
+                            </th>
+                            <th>User</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Last Login</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in institute_users %}
+                        <tr class="user-row"
+                            data-name="{{ user.user.get_full_name|lower }}"
+                            data-email="{{ user.user.email|lower }}"
+                            data-role="{{ user.get_role|lower }}"
+                            data-status="{% if user.is_active %}active{% else %}inactive{% endif %}">
+                            <td>
+                                <input type="checkbox" class="user-checkbox">
+                            </td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                    <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-red), var(--primary-blue)); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600;">
+                                        {{ user.user.first_name|first|upper }}{{ user.user.last_name|first|upper }}
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: 600; color: var(--text-primary);">{{ user.user.get_full_name }}</div>
+                                        <small style="color: var(--text-muted);">{{ user.user.email }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge" style="background: {% if user.get_role == 'admin' %}var(--primary-red){% elif user.get_role == 'manager' %}var(--primary-blue){% else %}var(--primary-green){% endif %}; color: white; padding: 0.35rem 0.75rem;">
+                                    {{ user.get_role|title }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge" style="background: {% if user.is_active %}var(--primary-green){% else %}var(--text-muted){% endif %}; color: white; padding: 0.35rem 0.75rem;">
+                                    {% if user.is_active %}Active{% else %}Inactive{% endif %}
+                                </span>
+                            </td>
+                            <td style="color: var(--text-secondary);">{{ user.user.last_login|date:"M d, Y"|default:"Never" }}</td>
+                            <td>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button class="btn btn-sm" style="background: var(--bg-secondary); color: var(--primary-blue);" title="Edit User" onclick="editUser({{ user.user.id }})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm" style="background: var(--bg-secondary); color: var(--primary-red);" title="{% if user.is_active %}Deactivate{% else %}Activate{% endif %}" onclick="toggleUserStatus({{ user.user.id }})">
+                                        <i class="fas fa-{% if user.is_active %}user-slash{% else %}user-check{% endif %}"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Bulk Actions -->
+            <div style="display: flex; gap: 1rem; margin-top: 1rem; padding: 1rem; background: var(--bg-secondary); border-radius: var(--radius-md); display: none;" id="bulkActions">
+                <span style="color: var(--text-primary); font-weight: 600;">
+                    <span id="selectedCount">0</span> users selected
+                </span>
+                <button class="btn btn-sm btn-secondary">
+                    <i class="fas fa-envelope"></i> Send Email
+                </button>
+                <button class="btn btn-sm btn-secondary">
+                    <i class="fas fa-user-slash"></i> Deactivate
+                </button>
+                <button class="btn btn-sm btn-danger">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
         </div>
     </div>
 </div>
+
+<!-- Portfolios Tab -->
+<div id="portfolios-tab" class="tab-content">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Portfolio Management</h3>
+            <a href="{% url 'add_portfolio' %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus"></i>
+                Add Portfolio
+            </a>
+        </div>
+        <div class="card-body">
+            <div class="search-filter-bar">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search portfolios...">
+                </div>
+                <div class="filter-dropdown">
+                    <select>
+                        <option value="">All Managers</option>
+                        {% for manager in active_managers %}
+                        <option value="{{ manager.id }}">{{ manager.user.get_full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Portfolio</th>
+                            <th>Manager</th>
+                            <th>Created</th>
+                            <th>Stocks</th>
+                            <th>Value</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in recent_portfolios %}
+                        <tr>
+                            <td>
+                                <div style="font-weight: 600; color: var(--text-primary);">{{ item.portfolio.name }}</div>
+                                <small style="color: var(--text-muted);">{{ item.portfolio.description|truncatechars:50 }}</small>
+                            </td>
+                            <td>{{ item.portfolio.fund_manager.user.get_full_name }}</td>
+                            <td>{{ item.portfolio.created_at|date:"M d, Y" }}</td>
+                            <td>{{ item.portfolio.stocks.count }}</td>
+                            <td style="font-weight: 600; color: var(--primary-green);">${{ item.value }}</td>
+                            <td>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <a href="{% url 'analyze_portfolio' item.portfolio.id %}" class="btn btn-sm" style="background: var(--bg-secondary); color: var(--primary-blue);" title="Analyze">
+                                        <i class="fas fa-chart-line"></i>
+                                    </a>
+                                    <button class="btn btn-sm" style="background: var(--bg-secondary); color: var(--primary-red);" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Settings Tab -->
+<div id="settings-tab" class="tab-content">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Institute Settings</h3>
+        </div>
+        <div class="card-body">
+            <form>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; color: var(--text-primary); font-weight: 500;">Institute Name</label>
+                        <input type="text" value="{{ institute.name }}" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; color: var(--text-primary); font-weight: 500;">Domain</label>
+                        <input type="text" value="{{ institute.domain }}" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; color: var(--text-primary); font-weight: 500;">Subscription Plan</label>
+                        <select class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+                            <option value="basic" {% if institute.subscription_plan == 'basic' %}selected{% endif %}>Basic</option>
+                            <option value="professional" {% if institute.subscription_plan == 'professional' %}selected{% endif %}>Professional</option>
+                            <option value="enterprise" {% if institute.subscription_plan == 'enterprise' %}selected{% endif %}>Enterprise</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; color: var(--text-primary); font-weight: 500;">Max Users</label>
+                        <input type="number" value="{{ institute.max_users }}" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+                    </div>
+                </div>
+
+                <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border-light);">
+                    <h4 style="margin-bottom: 1rem; color: var(--text-primary);">Feature Access</h4>
+                    <div style="display: grid; gap: 1rem;">
+                        <label style="display: flex; align-items: center; gap: 0.75rem;">
+                            <input type="checkbox" checked style="width: 18px; height: 18px;">
+                            <span style="color: var(--text-primary);">Enable Analytics</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.75rem;">
+                            <input type="checkbox" checked style="width: 18px; height: 18px;">
+                            <span style="color: var(--text-primary);">Enable Risk Analysis</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.75rem;">
+                            <input type="checkbox" checked style="width: 18px; height: 18px;">
+                            <span style="color: var(--text-primary);">Enable AI Features</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                    <button type="button" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Tab Switching
+function switchTab(tabName) {
+    // Hide all tabs
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+
+    // Remove active from all nav tabs
+    document.querySelectorAll('.nav-tab').forEach(nav => {
+        nav.classList.remove('active');
+    });
+
+    // Show selected tab
+    document.getElementById(tabName + '-tab').classList.add('active');
+
+    // Set active nav tab
+    event.target.closest('.nav-tab').classList.add('active');
+}
+
+// User Search and Filter
+function filterUsers() {
+    const searchInput = document.getElementById('userSearch').value.toLowerCase();
+    const roleFilter = document.getElementById('roleFilter').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
+
+    const rows = document.querySelectorAll('.user-row');
+
+    rows.forEach(row => {
+        const name = row.getAttribute('data-name');
+        const email = row.getAttribute('data-email');
+        const role = row.getAttribute('data-role');
+        const status = row.getAttribute('data-status');
+
+        const matchesSearch = name.includes(searchInput) || email.includes(searchInput);
+        const matchesRole = !roleFilter || role === roleFilter;
+        const matchesStatus = !statusFilter || status === statusFilter;
+
+        if (matchesSearch && matchesRole && matchesStatus) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+// Select All Checkboxes
+function toggleSelectAll(checkbox) {
+    const checkboxes = document.querySelectorAll('.user-checkbox');
+    checkboxes.forEach(cb => {
+        cb.checked = checkbox.checked;
+    });
+    updateBulkActions();
+}
+
+// Update Bulk Actions Bar
+function updateBulkActions() {
+    const checkboxes = document.querySelectorAll('.user-checkbox:checked');
+    const count = checkboxes.length;
+    const bulkActions = document.getElementById('bulkActions');
+    const selectedCount = document.getElementById('selectedCount');
+
+    if (count > 0) {
+        bulkActions.style.display = 'flex';
+        selectedCount.textContent = count;
+    } else {
+        bulkActions.style.display = 'none';
+    }
+}
+
+// Add event listeners to checkboxes
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.user-checkbox');
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', updateBulkActions);
+    });
+});
+
+// Placeholder functions for user actions
+function editUser(userId) {
+    alert('Edit user ' + userId + ' - This will be implemented');
+}
+
+function toggleUserStatus(userId) {
+    if (confirm('Are you sure you want to change this user\'s status?')) {
+        alert('Toggle user status ' + userId + ' - This will be implemented');
+    }
+}
+</script>
+
 {% endblock %}
