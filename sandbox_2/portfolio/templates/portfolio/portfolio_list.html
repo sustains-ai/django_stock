@@ -28,6 +28,10 @@
                 <i class="fas fa-chart-bar"></i>
                 Analyze
             </a>
+            <a href="{% url 'advanced_analytics:esg_analytics' portfolio.id %}" class="btn btn-secondary btn-sm" style="background: #9b59b6; border-color: #9b59b6;">
+                <i class="fas fa-rocket"></i>
+                Advanced Analytics
+            </a>
             <a href="{% url 'portfolio_risk' portfolio.id %}" class="btn btn-secondary btn-sm">
                 <i class="fas fa-shield-alt"></i>
                 Risk

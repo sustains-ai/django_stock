@@ -1,5 +1,124 @@
-{% extends "portfolio/base.html" %}
+{% extends 'advanced_analytics/base.html' %}
+
+{% block title %}Rebalancing Insights{% endblock %}
+
 {% block content %}
-<h2>Rebalance Insights for Portfolio {{ portfolio_id }}</h2>
-<p>Coming soon...</p>
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="fas fa-balance-scale"></i> Portfolio Rebalancing Recommendations</h4>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    Optimize your portfolio allocation based on target weights and risk parameters.
+                </p>
+
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="metric-card">
+                            <div class="metric-label">Total Value</div>
+                            <div class="metric-value">${{ total_value|floatformat:2 }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <h5 class="mb-3">Current Allocation</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Stock</th>
+                                <th>Company</th>
+                                <th>Current Value</th>
+                                <th>Current %</th>
+                                <th>Target %</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for allocation in allocations %}
+                            <tr>
+                                <td><strong>{{ allocation.symbol }}</strong></td>
+                                <td>{{ allocation.name }}</td>
+                                <td>${{ allocation.value|floatformat:2 }}</td>
+                                <td>{{ allocation.current_allocation|floatformat:2 }}%</td>
+                                <td>
+                                    <input type="number" class="form-control form-control-sm"
+                                           value="{{ allocation.current_allocation|floatformat:0 }}"
+                                           min="0" max="100" step="1"
+                                           style="width: 80px;">
+                                </td>
+                                <td>
+                                    {% if allocation.current_allocation > 25 %}
+                                        <span class="badge bg-warning">Overweight</span>
+                                    {% elif allocation.current_allocation < 5 %}
+                                        <span class="badge bg-info">Underweight</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Balanced</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <button class="btn btn-primary mt-3">
+                    <i class="fas fa-calculator"></i> Calculate Rebalancing
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Current Allocation</h5>
+            </div>
+            <div class="card-body">
+                <div id="current-allocation-chart"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Recommended Allocation</h5>
+            </div>
+            <div class="card-body">
+                <div id="recommended-allocation-chart"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Current allocation pie chart
+const currentData = [{
+    values: [{% for alloc in allocations %}{{ alloc.current_allocation }},{% endfor %}],
+    labels: [{% for alloc in allocations %}'{{ alloc.symbol }}',{% endfor %}],
+    type: 'pie'
+}];
+
+Plotly.newPlot('current-allocation-chart', currentData, {
+    title: 'Current Portfolio Distribution'
+});
+
+// Recommended allocation (equal weight example)
+const equalWeight = 100 / {{ allocations|length }};
+const recommendedData = [{
+    values: Array({{ allocations|length }}).fill(equalWeight),
+    labels: [{% for alloc in allocations %}'{{ alloc.symbol }}',{% endfor %}],
+    type: 'pie'
+}];
+
+Plotly.newPlot('recommended-allocation-chart', recommendedData, {
+    title: 'Equal Weight Distribution'
+});
+</script>
 {% endblock %}

@@ -1,0 +1,172 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Advanced Analytics{% endblock %} - Portfolio Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+        }
+        .sidebar {
+            min-height: 100vh;
+            background: var(--primary-color);
+            color: white;
+            padding: 20px 0;
+        }
+        .sidebar a {
+            color: #ecf0f1;
+            text-decoration: none;
+            padding: 12px 25px;
+            display: block;
+            transition: all 0.3s;
+        }
+        .sidebar a:hover, .sidebar a.active {
+            background: var(--secondary-color);
+            border-left: 4px solid white;
+        }
+        .content-area {
+            padding: 30px;
+        }
+        .card {
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            border-radius: 10px;
+        }
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 10px 10px 0 0 !important;
+            padding: 15px 20px;
+        }
+        .metric-card {
+            text-align: center;
+            padding: 20px;
+        }
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--secondary-color);
+        }
+        .metric-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+        .btn-primary {
+            background: var(--secondary-color);
+            border: none;
+        }
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .portfolio-header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 sidebar">
+                <h4 class="text-center mb-4">
+                    <i class="fas fa-chart-line"></i> Analytics
+                </h4>
+                <div class="nav flex-column">
+                    <a href="{% url 'portfolio_list' %}" class="mb-2">
+                        <i class="fas fa-arrow-left"></i> Back to Portfolios
+                    </a>
+                    <hr style="border-color: rgba(255,255,255,0.2);">
+                    <a href="{% url 'advanced_analytics:esg_analytics' portfolio_id %}"
+                       class="{% if request.resolver_match.url_name == 'esg_analytics' %}active{% endif %}">
+                        <i class="fas fa-leaf"></i> ESG Analytics
+                    </a>
+                    <a href="{% url 'advanced_analytics:advanced_risk' portfolio_id %}"
+                       class="{% if request.resolver_match.url_name == 'advanced_risk' %}active{% endif %}">
+                        <i class="fas fa-exclamation-triangle"></i> Risk Analysis
+                    </a>
+                    <a href="{% url 'advanced_analytics:ml_strategies' portfolio_id %}"
+                       class="{% if request.resolver_match.url_name == 'ml_strategies' %}active{% endif %}">
+                        <i class="fas fa-robot"></i> ML Predictions
+                    </a>
+                    <a href="{% url 'advanced_analytics:stress_testing' portfolio_id %}"
+                       class="{% if request.resolver_match.url_name == 'stress_testing' %}active{% endif %}">
+                        <i class="fas fa-bolt"></i> Stress Testing
+                    </a>
+                    <a href="{% url 'advanced_analytics:backtesting' portfolio_id %}"
+                       class="{% if request.resolver_match.url_name == 'backtesting' %}active{% endif %}">
+                        <i class="fas fa-history"></i> Backtesting
+                    </a>
+                    <a href="{% url 'advanced_analytics:rebalance_insights' portfolio_id %}"
+                       class="{% if request.resolver_match.url_name == 'rebalance_insights' %}active{% endif %}">
+                        <i class="fas fa-balance-scale"></i> Rebalancing
+                    </a>
+                    <a href="{% url 'advanced_analytics:generate_report' portfolio_id %}"
+                       class="{% if request.resolver_match.url_name == 'generate_report' %}active{% endif %}">
+                        <i class="fas fa-file-pdf"></i> Generate Report
+                    </a>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-10 content-area">
+                <!-- Portfolio Header -->
+                <div class="portfolio-header">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h2><i class="fas fa-briefcase"></i> {{ portfolio.name }}</h2>
+                            <p class="text-muted mb-0">
+                                Manager: {{ portfolio.fund_manager.user.get_full_name }} |
+                                Institute: {{ portfolio.fund_manager.institute.name }}
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <a href="{% url 'analyze_portfolio' portfolio.id %}" class="btn btn-outline-primary">
+                                <i class="fas fa-chart-bar"></i> Standard Analytics
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Page Content -->
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,5 +1,149 @@
-{% extends "portfolio/base.html" %}
+{% extends 'advanced_analytics/base.html' %}
+
+{% block title %}ML Predictions{% endblock %}
+
 {% block content %}
-<h2>Machine Learning Strategies for Portfolio {{ portfolio_id }}</h2>
-<p>Coming soon...</p>
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="fas fa-robot"></i> Machine Learning Predictions & Recommendations</h4>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    AI-powered stock predictions based on historical data, market trends, and advanced algorithms.
+                </p>
+
+                <button class="btn btn-primary" onclick="loadPredictions()">
+                    <i class="fas fa-sync-alt"></i> Generate Predictions
+                </button>
+
+                <div id="loading" class="text-center mt-4" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Analyzing stocks with ML models...</p>
+                </div>
+
+                <div id="predictions-container" class="mt-4"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4" id="charts-row" style="display: none;">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Price Predictions Chart</h5>
+            </div>
+            <div class="card-body">
+                <div id="predictions-chart"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Recommendation Distribution</h5>
+            </div>
+            <div class="card-body">
+                <div id="recommendations-chart"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function loadPredictions() {
+    $('#loading').show();
+    $('#predictions-container').html('');
+    $('#charts-row').hide();
+
+    $.ajax({
+        url: '/api/fetch-ml-predictions/{{ portfolio_id }}/',
+        method: 'GET',
+        success: function(data) {
+            $('#loading').hide();
+            displayPredictions(data.predictions);
+            createCharts(data.predictions);
+        },
+        error: function() {
+            $('#loading').hide();
+            $('#predictions-container').html('<div class="alert alert-danger">Error loading predictions</div>');
+        }
+    });
+}
+
+function displayPredictions(predictions) {
+    let html = '<div class="table-responsive"><table class="table table-hover">';
+    html += '<thead class="table-light"><tr>';
+    html += '<th>Symbol</th><th>Company</th><th>Current Price</th><th>Predicted Price</th>';
+    html += '<th>Change</th><th>Confidence</th><th>Recommendation</th>';
+    html += '</tr></thead><tbody>';
+
+    predictions.forEach(pred => {
+        const changeClass = pred.predicted_change > 0 ? 'text-success' : 'text-danger';
+        const recColor = pred.recommendation === 'BUY' ? 'success' : (pred.recommendation === 'SELL' ? 'danger' : 'warning');
+
+        html += '<tr>';
+        html += `<td><strong>${pred.symbol}</strong></td>`;
+        html += `<td>${pred.name}</td>`;
+        html += `<td>$${pred.current_price.toFixed(2)}</td>`;
+        html += `<td>$${pred.predicted_price.toFixed(2)}</td>`;
+        html += `<td class="${changeClass}"><strong>${pred.predicted_change > 0 ? '+' : ''}${pred.predicted_change.toFixed(2)}%</strong></td>`;
+        html += `<td><div class="progress"><div class="progress-bar" style="width:${pred.confidence*100}%">${(pred.confidence*100).toFixed(0)}%</div></div></td>`;
+        html += `<td><span class="badge bg-${recColor}">${pred.recommendation}</span></td>`;
+        html += '</tr>';
+    });
+
+    html += '</tbody></table></div>';
+    $('#predictions-container').html(html);
+}
+
+function createCharts(predictions) {
+    $('#charts-row').show();
+
+    // Predictions chart
+    const trace1 = {
+        x: predictions.map(p => p.symbol),
+        y: predictions.map(p => p.current_price),
+        name: 'Current Price',
+        type: 'bar'
+    };
+    const trace2 = {
+        x: predictions.map(p => p.symbol),
+        y: predictions.map(p => p.predicted_price),
+        name: 'Predicted Price',
+        type: 'bar'
+    };
+
+    Plotly.newPlot('predictions-chart', [trace1, trace2], {
+        title: 'Current vs Predicted Prices',
+        barmode: 'group'
+    });
+
+    // Recommendations pie chart
+    const recommendations = predictions.reduce((acc, p) => {
+        acc[p.recommendation] = (acc[p.recommendation] || 0) + 1;
+        return acc;
+    }, {});
+
+    const pieData = [{
+        values: Object.values(recommendations),
+        labels: Object.keys(recommendations),
+        type: 'pie',
+        marker: {
+            colors: ['#27ae60', '#e74c3c', '#f39c12']
+        }
+    }];
+
+    Plotly.newPlot('recommendations-chart', pieData, {
+        title: 'Recommendation Distribution'
+    });
+}
+</script>
 {% endblock %}
